@@ -43,6 +43,7 @@
 #include "phosh-wayland.h"
 #include "polkit-auth-agent.h"
 #include "proximity.h"
+#include "rotation-manager.h"
 #include "sensor-proxy-manager.h"
 #include "screen-saver-manager.h"
 #include "session.h"
@@ -71,6 +72,7 @@ enum {
   PHOSH_SHELL_PROP_TRANSFORM,
   PHOSH_SHELL_PROP_LOCKED,
   PHOSH_SHELL_PROP_PRIMARY_MONITOR,
+  PHOSH_SHELL_PROP_ROTATION_MANAGER,
   PHOSH_SHELL_PROP_LAST_PROP
 };
 static GParamSpec *props[PHOSH_SHELL_PROP_LAST_PROP];
@@ -103,6 +105,7 @@ typedef struct
   /* sensors */
   PhoshSensorProxyManager *sensor_proxy_manager;
   PhoshProximity *proximity;
+  PhoshRotationManager *rotation_manager;
 
   gboolean startup_finished;
   PhoshMonitorTransform transform; /* current rotation of primary monitor */
@@ -304,6 +307,9 @@ phosh_shell_get_property (GObject *object,
   case PHOSH_SHELL_PROP_PRIMARY_MONITOR:
     g_value_set_object (value, phosh_shell_get_primary_monitor (self));
     break;
+  case PHOSH_SHELL_PROP_ROTATION_MANAGER:
+    g_value_set_object (value, phosh_shell_get_rotation_manager (self));
+    break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     break;
@@ -349,6 +355,7 @@ phosh_shell_dispose (GObject *object)
 
   /* sensors */
   g_clear_object (&priv->proximity);
+  g_clear_object (&priv->rotation_manager);
   g_clear_object (&priv->sensor_proxy_manager);
   phosh_system_prompter_unregister ();
   phosh_session_unregister ();
@@ -467,7 +474,9 @@ setup_idle_cb (PhoshShell *self)
   if (priv->sensor_proxy_manager) {
     priv->proximity = phosh_proximity_new (priv->sensor_proxy_manager,
                                            priv->lockscreen_manager);
-    /* TODO: accelerometer */
+    priv->rotation_manager = phosh_rotation_manager_new (priv->sensor_proxy_manager,
+                                                         priv->lockscreen_manager);
+    g_object_notify_by_pspec (G_OBJECT (self), props[PHOSH_SHELL_PROP_ROTATION_MANAGER]);
   }
 
   phosh_session_register (PHOSH_APP_ID);
@@ -652,6 +661,13 @@ phosh_shell_class_init (PhoshShellClass *klass)
                          "The primary monitor",
                          PHOSH_TYPE_MONITOR,
                          G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY);
+
+  props[PHOSH_SHELL_PROP_ROTATION_MANAGER] =
+    g_param_spec_object ("rotation-manager",
+                         "Rotation manager",
+                         "The rotation manager",
+                         PHOSH_TYPE_ROTATION_MANAGER,
+                         G_PARAM_READABLE | G_PARAM_EXPLICIT_NOTIFY);
 
   g_object_class_install_properties (object_class, PHOSH_SHELL_PROP_LAST_PROP, props);
 }
@@ -885,6 +901,18 @@ phosh_shell_get_feedback_manager (PhoshShell *self)
   g_return_val_if_fail (PHOSH_IS_FEEDBACK_MANAGER (priv->feedback_manager), NULL);
 
   return priv->feedback_manager;
+}
+
+PhoshRotationManager *
+phosh_shell_get_rotation_manager (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
+  priv = phosh_shell_get_instance_private (self);
+  g_return_val_if_fail (PHOSH_IS_ROTATION_MANAGER (priv->rotation_manager), NULL);
+
+  return priv->rotation_manager;
 }
 
 

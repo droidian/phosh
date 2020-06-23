@@ -14,6 +14,7 @@
 #include "monitor-manager.h"
 #include "monitor/monitor.h"
 #include "osk-manager.h"
+#include "rotation-manager.h"
 #include "toplevel-manager.h"
 #include "torch-manager.h"
 #include "wifimanager.h"
@@ -54,6 +55,7 @@ PhoshFeedbackManager *phosh_shell_get_feedback_manager (PhoshShell *self);
 PhoshBtManager      *phosh_shell_get_bt_manager      (PhoshShell *self);
 PhoshWWan           *phosh_shell_get_wwan        (PhoshShell *self);
 PhoshTorchManager   *phosh_shell_get_torch_manager (PhoshShell *self);
+PhoshRotationManager *phosh_shell_get_rotation_manager (PhoshShell *self);
 void                 phosh_shell_fade_out (PhoshShell *self, guint timeout);
 void                 phosh_shell_enable_power_save (PhoshShell *self, gboolean enable);
 gboolean             phosh_shell_started_by_display_manager(PhoshShell *self);

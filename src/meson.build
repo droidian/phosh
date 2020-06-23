@@ -124,6 +124,8 @@ libphosh_sources = [
   'polkit-auth-prompt.h',
   'proximity.h',
   'proximity.c',
+  'rotation-manager.h',
+  'rotation-manager.c',
   'sensor-proxy-manager.c',
   'sensor-proxy-manager.h',
   'rotateinfo.c',
