@@ -8,6 +8,7 @@
 
 #include "util.h"
 #include <gtk/gtk.h>
+#include <wayland-client-protocol.h>
 
 /* Just wraps gtk_widget_destroy so we can use it with g_clear_pointer */
 void
@@ -56,5 +57,44 @@ phosh_clear_handler (gulong *handler, gpointer object)
   if (*handler > 0) {
     g_signal_handler_disconnect (object, *handler);
     *handler = 0;
+  }
+}
+
+/**
+ * phosh_convert_buffer:
+ * @data: the buffer data to modify
+ * @format: the current pixel format
+ * @width: image width
+ * @height: image height
+ * @stride: image stride
+ *
+ * Converts the buffer to ARGB format so that
+ * is suitable for usage in Cairo.
+ * If the buffer is already ARGB (or the conversion
+ * is not implemented), nothing happens.
+*/
+void
+phosh_convert_buffer (void *data, enum wl_shm_format format, guint width, guint height, guint stride)
+{
+  switch (format) {
+  case WL_SHM_FORMAT_ABGR8888:
+  case WL_SHM_FORMAT_XBGR8888:
+    ;
+    guint8 *_data = (guint8 *)data;
+    for (int i = 0; i < height; i++) {
+      for (int j = 0; j < width; j++) {
+          guint32 *px = (guint32 *)(_data + i * stride + j * 4);
+          guint8 r, g, b, a;
+
+          a = (*px >> 24) & 0xFF;
+          b = (*px >> 16) & 0xFF;
+          g = (*px >> 8) & 0xFF;
+          r = *px & 0xFF;
+          *px = (a << 24) | (r << 16) | (g << 8) | b;
+      }
+    }
+    break;
+  default:
+    break;
   }
 }
