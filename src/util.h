@@ -8,6 +8,7 @@
 #pragma once
 
 #include <gtk/gtk.h>
+#include <wayland-client-protocol.h>
 #include <gio/gdesktopappinfo.h>
 
 #define phosh_async_error_warn(err, ...) \
@@ -21,6 +22,7 @@ GDesktopAppInfo *phosh_get_desktop_app_info_for_app_id (const char *app_id);
 gchar           *phosh_munge_app_id (const gchar *app_id);
 char            *phosh_strip_suffix_from_app_id (const char *app_id);
 gboolean         phosh_find_systemd_session (char **session_id);
+void             phosh_convert_buffer (void *data, enum wl_shm_format format, guint width, guint height, guint stride);
 gboolean         phosh_error_warnv (const char  *log_domain,
                                     GError      *err,
                                     GQuark       domain,
