@@ -132,6 +132,14 @@ phosh_toplevel_thumbnail_get_size (PhoshThumbnail *thumbnail,
     *stride = self->buffer->stride;
 }
 
+static void
+phosh_toplevel_thumbnail_get_format (PhoshThumbnail *thumbnail, enum wl_shm_format *format)
+{
+  PhoshToplevelThumbnail *self = PHOSH_TOPLEVEL_THUMBNAIL (thumbnail);
+  if (format) {
+    *format = (enum wl_shm_format)self->buffer->format;
+  }
+}
 
 static void
 phosh_toplevel_thumbnail_set_property (GObject      *object,
@@ -217,6 +225,7 @@ phosh_toplevel_thumbnail_class_init (PhoshToplevelThumbnailClass *klass)
 
   thumbnail_class->get_image = phosh_toplevel_thumbnail_get_image;
   thumbnail_class->get_size = phosh_toplevel_thumbnail_get_size;
+  thumbnail_class->get_format = phosh_toplevel_thumbnail_get_format;
 
   /**
    * PhoshToplevelThumbnail:handle:

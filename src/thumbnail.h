@@ -6,9 +6,11 @@
 
 #pragma once
 
+#include <wayland-client-protocol.h>
+
 #include <gtk/gtk.h>
 
-#define PHOSH_TYPE_THUMBNAIL (phosh_thumbnail_get_type ())
+#define PHOSH_TYPE_THUMBNAIL (phosh_thumbnail_get_type())
 
 G_DECLARE_DERIVABLE_TYPE (PhoshThumbnail, phosh_thumbnail, PHOSH, THUMBNAIL, GObject)
 
@@ -18,13 +20,15 @@ G_DECLARE_DERIVABLE_TYPE (PhoshThumbnail, phosh_thumbnail, PHOSH, THUMBNAIL, GOb
  * @get_image: Get the current image data
  * @get_size: get current image size and stride
  */
-struct _PhoshThumbnailClass {
+struct _PhoshThumbnailClass
+{
   GObjectClass parent_class;
   gpointer     (*get_image) (PhoshThumbnail *self);
   void         (*get_size)  (PhoshThumbnail *self, guint *width, guint *height, guint *stride);
+  void         (*get_format)(PhoshThumbnail *self, enum wl_shm_format *format);
 };
 
-gpointer phosh_thumbnail_get_image (PhoshThumbnail *self);
-void     phosh_thumbnail_get_size  (PhoshThumbnail *self, guint *width, guint *height,
-                                    guint *stride);
-gboolean phosh_thumbnail_is_ready  (PhoshThumbnail *self);
+void     *phosh_thumbnail_get_image (PhoshThumbnail *self);
+void      phosh_thumbnail_get_size  (PhoshThumbnail *self, guint *width, guint *height, guint *stride);
+void      phosh_thumbnail_get_format(PhoshThumbnail *self, enum wl_shm_format *format);
+gboolean  phosh_thumbnail_is_ready  (PhoshThumbnail *self);
