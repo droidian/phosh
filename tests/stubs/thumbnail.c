@@ -41,6 +41,11 @@ phosh_thumbnail_get_size (PhoshThumbnail *self, guint *width, guint *height, gui
 {
 }
 
+void
+phosh_thumbnail_get_format (PhoshThumbnail *self, enum wl_shm_format *format)
+{
+}
+
 gboolean
 phosh_thumbnail_is_ready (PhoshThumbnail *self)
 {

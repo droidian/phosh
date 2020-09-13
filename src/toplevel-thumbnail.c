@@ -33,7 +33,7 @@ struct _PhoshToplevelThumbnail {
   struct zwlr_screencopy_frame_v1 *handle;
   struct wl_buffer *buffer;
   void *data;
-  int width, height, stride;
+  int width, height, stride, format;
   gboolean ready;
 };
 
@@ -147,6 +147,7 @@ screencopy_handle_buffer (void *data,
   self->width = width;
   self->height = height;
   self->stride = stride;
+  self->format = format;
 }
 
 static void
@@ -212,6 +213,15 @@ phosh_toplevel_thumbnail_get_size (PhoshThumbnail *self, guint *width, guint *he
   }
   if (stride) {
     *stride = thumbnail->stride;
+  }
+}
+
+static void
+phosh_toplevel_thumbnail_get_format (PhoshThumbnail *self, enum wl_shm_format *format)
+{
+  PhoshToplevelThumbnail *thumbnail = PHOSH_TOPLEVEL_THUMBNAIL (self);
+  if (format) {
+    *format = (enum wl_shm_format)thumbnail->format;
   }
 }
 
@@ -312,6 +322,7 @@ phosh_toplevel_thumbnail_class_init (PhoshToplevelThumbnailClass *klass)
   klass->parent_class.is_ready = phosh_toplevel_thumbnail_is_ready;
   klass->parent_class.get_image = phosh_toplevel_thumbnail_get_image;
   klass->parent_class.get_size = phosh_toplevel_thumbnail_get_size;
+  klass->parent_class.get_format = phosh_toplevel_thumbnail_get_format;
   klass->parent_class.set_ready = phosh_toplevel_thumbnail_set_ready;
 
   props[PHOSH_TOPLEVEL_THUMBNAIL_PROP_HANDLE] =
