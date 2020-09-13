@@ -150,6 +150,18 @@ phosh_thumbnail_get_size (PhoshThumbnail *self, guint *width, guint *height, gui
   return klass->get_size (self, width, height, stride);
 }
 
+void
+phosh_thumbnail_get_format (PhoshThumbnail *self, enum wl_shm_format *format)
+{
+  PhoshThumbnailClass *klass;
+
+  g_return_if_fail (PHOSH_IS_THUMBNAIL (self));
+
+  klass = PHOSH_THUMBNAIL_GET_CLASS (self);
+  g_return_if_fail (klass->get_format != NULL);
+
+  return klass->get_format (self, format);
+}
 
 gboolean
 phosh_thumbnail_is_ready (PhoshThumbnail *self)
