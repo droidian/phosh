@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2018 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  *
  * Somewhat based on mutter's src/backends/meta-idle-monitor-dbus.c
@@ -107,6 +109,7 @@ idle_timer_resume_cb (void* data, struct org_kde_kwin_idle_timeout *timer)
   /* Nothing todo here */
   g_debug ("Idle Timer %d resumed", watch->watch_id);
 }
+
 
 /* An DBus idle watch uses an idle_timeout but doesn't care about resume */
 static const struct org_kde_kwin_idle_timeout_listener idle_timer_listener = {
@@ -366,7 +369,7 @@ on_bus_acquired (GDBusConnection *connection,
 {
   PhoshIdleManager *self = user_data;
   PhoshMonitor *monitor;
-  g_autofree gchar *path = NULL;
+  g_autofree char *path = NULL;
 
   /* We need to use Mutter's object path here to make gnome-session happy */
   self->manager = g_dbus_object_manager_server_new ("/org/gnome/Mutter/IdleMonitor");

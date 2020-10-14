@@ -19,7 +19,7 @@ phosh_enum_headers = [
   'notifications/notification.h',
   'notifications/notify-manager.h',
   'app-grid-button.h'
-]
+] + schema_enum_headers
 
 phosh_enums = gnome.mkenums('phosh-enums',
   h_template: 'phosh-enums.h.in',
@@ -60,6 +60,8 @@ libphosh_tool_sources = [
   'layersurface.h',
   'lockshield.c',
   'lockshield.h',
+  'log.h',
+  'log.c',
   'media-player.c',
   'media-player.h',
   'overview.c',
@@ -142,6 +144,10 @@ libphosh_sources = [
   'toplevel-manager.h',
   'toplevel-thumbnail.c',
   'toplevel-thumbnail.h',
+  'torch-info.c',
+  'torch-info.h',
+  'torch-manager.c',
+  'torch-manager.h',
   'toplevel.c',
   'toplevel.h',
   'wifiinfo.c',

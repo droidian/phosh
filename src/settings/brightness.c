@@ -1,7 +1,8 @@
 /*
  * Copyright (C) 2018 Purism SPC
  *
- * SPDX-License-Identifier: GPL-3+
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
@@ -24,7 +25,7 @@ brightness_changed_cb (GDBusProxy *proxy,
                        gpointer   *user_data)
 {
   GtkScale *scale = GTK_SCALE (user_data);
-  gint value;
+  int value;
   gboolean ret;
 
   if (setting_brightness)
@@ -39,6 +40,7 @@ brightness_changed_cb (GDBusProxy *proxy,
   gtk_range_set_value (GTK_RANGE (scale), value);
 }
 
+
 static void
 brightness_init_cb (GObject      *source_object,
                     GAsyncResult *res,
@@ -46,7 +48,7 @@ brightness_init_cb (GObject      *source_object,
 {
   g_autoptr(GError) err = NULL;
   GVariant *var;
-  gint value;
+  int value;
 
   brightness_proxy = g_dbus_proxy_new_finish (res, &err);
   if (!brightness_proxy || err) {
@@ -71,6 +73,7 @@ brightness_init_cb (GObject      *source_object,
                     G_CALLBACK(brightness_changed_cb),
                     scale);
 }
+
 
 void
 brightness_init (GtkScale *scale)

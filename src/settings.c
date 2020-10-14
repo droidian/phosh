@@ -1,7 +1,8 @@
 /*
  * Copyright (C) 2018 Purism SPC
  *
- * SPDX-License-Identifier: GPL-3+
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
@@ -15,6 +16,7 @@
 #include "quick-setting.h"
 #include "settings/brightness.h"
 #include "settings/gvc-channel-bar.h"
+#include "torch-info.h"
 #include "wwan/phosh-wwan-mm.h"
 #include "rotateinfo.h"
 #include "feedbackinfo.h"
@@ -91,11 +93,13 @@ static void
 rotation_setting_clicked_cb (PhoshSettings *self)
 {
   PhoshShell *shell = phosh_shell_get_default ();
-  gboolean rotated;
+  PhoshMonitorTransform transform;
 
   g_return_if_fail (PHOSH_IS_SETTINGS (self));
-  rotated = phosh_shell_get_rotation (shell);
-  phosh_shell_rotate_display (shell, !rotated ? 90 : 0);
+  transform = phosh_shell_get_transform (shell);
+  phosh_shell_set_transform (shell, transform == PHOSH_MONITOR_TRANSFORM_NORMAL
+                             ? PHOSH_MONITOR_TRANSFORM_90
+                             : PHOSH_MONITOR_TRANSFORM_NORMAL);
   g_signal_emit (self, signals[SETTING_DONE], 0);
 }
 
@@ -148,11 +152,26 @@ battery_setting_clicked_cb (PhoshSettings *self)
   g_signal_emit (self, signals[SETTING_DONE], 0);
 }
 
-static void change_volume (PhoshSettings *self,
-                           gint steps)
+
+static void
+torch_setting_clicked_cb (PhoshSettings *self)
+{
+  PhoshShell *shell;
+  PhoshTorchManager *manager;
+
+  shell = phosh_shell_get_default ();
+  g_return_if_fail (PHOSH_IS_SHELL (shell));
+  manager = phosh_shell_get_torch_manager (shell);
+  g_return_if_fail (PHOSH_IS_TORCH_MANAGER (manager));
+  phosh_torch_manager_toggle (manager);
+}
+
+static void
+change_volume (PhoshSettings *self,
+               int            steps)
 {
   GtkAdjustment *adj;
-  gdouble vol, inc;
+  double vol, inc;
 
   adj = GTK_ADJUSTMENT (gvc_channel_bar_get_adjustment (GVC_CHANNEL_BAR (self->output_vol_bar)));
 
@@ -166,34 +185,35 @@ static void change_volume (PhoshSettings *self,
   gtk_adjustment_set_value (adj, vol);
 }
 
-static void lower_volume (PhoshSettings *self)
+static void
+lower_volume (PhoshSettings *self)
 {
   change_volume (self, -1);
 }
 
-static void raise_volume (PhoshSettings *self)
+static void
+raise_volume (PhoshSettings *self)
 {
   change_volume (self, 1);
 }
 
 static void
 accelerator_grabbed_cb (PhoshSettings *self,
-                        const gchar *accelerator,
-                        uint32_t action_id)
+                        const char    *accelerator,
+                        uint32_t       action_id)
 {
   guint64 action = action_id;
   if (g_strcmp0 (accelerator, "XF86AudioLowerVolume") == 0) {
     g_hash_table_insert (self->accelerator_callbacks, (gpointer) action, (gpointer) lower_volume);
-  }
-  else if (g_strcmp0 (accelerator, "XF86AudioRaiseVolume") == 0) {
+  } else if (g_strcmp0 (accelerator, "XF86AudioRaiseVolume") == 0) {
      g_hash_table_insert (self->accelerator_callbacks, (gpointer) action, (gpointer) raise_volume);
   }
 }
 
 static void
 accelerator_activated_cb (PhoshSettings *self,
-                          uint32_t action_id,
-                          uint32_t timestamp)
+                          uint32_t       action_id,
+                          uint32_t       timestamp)
 {
   void (*callback)(PhoshSettings *);
   guint64 action = action_id;
@@ -244,19 +264,6 @@ output_stream_notify_volume_cb (GvcMixerStream *stream, GParamSpec *pspec, gpoin
 }
 
 
-
-static GtkWidget *
-create_vol_channel_bar (PhoshSettings *self)
-{
-  GtkWidget *bar;
-
-  bar = gvc_channel_bar_new ();
-  gtk_widget_set_sensitive (bar, TRUE);
-  gtk_widget_show (bar);
-  return bar;
-}
-
-
 static void
 mixer_control_output_update_cb (GvcMixerControl *mixer, guint id, gpointer *data)
 {
@@ -289,8 +296,8 @@ static void
 vol_adjustment_value_changed_cb (GtkAdjustment *adjustment,
                                  PhoshSettings *self)
 {
-  gdouble volume, rounded;
-  g_autofree gchar *name = NULL;
+  double volume, rounded;
+  g_autofree char *name = NULL;
 
   if (!self->output_stream)
     self->output_stream = gvc_mixer_control_get_default_sink (self->mixer_control);
@@ -359,10 +366,10 @@ end_notify_feedback (PhoshSettings *self)
 
 static void
 on_notifcation_items_changed (PhoshSettings *self,
-                              guint position,
-                              guint removed,
-                              guint added,
-                              GListModel *list)
+                              guint          position,
+                              guint          removed,
+                              guint          added,
+                              GListModel    *list)
 {
   gboolean is_empty;
 
@@ -382,13 +389,10 @@ on_notifcation_items_changed (PhoshSettings *self,
   }
 }
 
-static void
-phosh_settings_constructed (GObject *object)
-{
-  PhoshSettings *self = PHOSH_SETTINGS (object);
-  PhoshNotifyManager *manager;
-  GtkAdjustment *adj;
 
+static void
+setup_brightness_range (PhoshSettings *self)
+{
   gtk_range_set_range (GTK_RANGE (self->scale_brightness), 0, 100);
   gtk_range_set_round_digits (GTK_RANGE (self->scale_brightness), 0);
   gtk_range_set_increments (GTK_RANGE (self->scale_brightness), 1, 10);
@@ -397,8 +401,18 @@ phosh_settings_constructed (GObject *object)
                     "value-changed",
                     G_CALLBACK(brightness_value_changed_cb),
                     NULL);
+}
 
-  self->output_vol_bar = create_vol_channel_bar (self);
+
+static void
+setup_volume_bar (PhoshSettings *self)
+{
+  GtkAdjustment *adj;
+
+  self->output_vol_bar = gvc_channel_bar_new ();
+  gtk_widget_set_sensitive (self->output_vol_bar, TRUE);
+  gtk_widget_show (self->output_vol_bar);
+
   gtk_box_pack_start (GTK_BOX (self->box_settings), self->output_vol_bar, FALSE, FALSE, 0);
   gtk_box_reorder_child (GTK_BOX (self->box_settings), self->output_vol_bar, 1);
 
@@ -415,6 +429,17 @@ phosh_settings_constructed (GObject *object)
                     "value-changed",
                     G_CALLBACK (vol_adjustment_value_changed_cb),
                     self);
+}
+
+
+static void
+phosh_settings_constructed (GObject *object)
+{
+  PhoshSettings *self = PHOSH_SETTINGS (object);
+  PhoshNotifyManager *manager;
+
+  setup_brightness_range (self);
+  setup_volume_bar (self);
 
   g_signal_connect (self->quick_settings,
                     "child-activated",
@@ -448,8 +473,7 @@ phosh_settings_dispose (GObject *object)
     g_clear_object (&self->notify_event);
   }
 
-  if (self->accelerator_callbacks != NULL)
-  {
+  if (self->accelerator_callbacks != NULL) {
     g_hash_table_remove_all (self->accelerator_callbacks);
     g_hash_table_unref (self->accelerator_callbacks);
     self->accelerator_callbacks = NULL;
@@ -489,32 +513,34 @@ phosh_settings_class_init (PhoshSettingsClass *klass)
       NULL, G_TYPE_NONE, 0);
 
   g_type_ensure (PHOSH_TYPE_BT_INFO);
-  g_type_ensure (PHOSH_TYPE_QUICK_SETTING);
-  g_type_ensure (PHOSH_TYPE_ROTATE_INFO);
   g_type_ensure (PHOSH_TYPE_FEEDBACK_INFO);
   g_type_ensure (PHOSH_TYPE_MEDIA_PLAYER);
+  g_type_ensure (PHOSH_TYPE_QUICK_SETTING);
+  g_type_ensure (PHOSH_TYPE_ROTATE_INFO);
+  g_type_ensure (PHOSH_TYPE_TORCH_INFO);
 
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, box_settings);
+  gtk_widget_class_bind_template_child (widget_class, PhoshSettings, list_notifications);
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, quick_settings);
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, scale_brightness);
-  gtk_widget_class_bind_template_child (widget_class, PhoshSettings, list_notifications);
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, sw_notifications);
 
   gtk_widget_class_bind_template_callback (widget_class, battery_setting_clicked_cb);
-  gtk_widget_class_bind_template_callback (widget_class, rotation_setting_clicked_cb);
+  gtk_widget_class_bind_template_callback (widget_class, bt_setting_clicked_cb);
   gtk_widget_class_bind_template_callback (widget_class, feedback_setting_clicked_cb);
   gtk_widget_class_bind_template_callback (widget_class, feedback_setting_long_pressed_cb);
+  gtk_widget_class_bind_template_callback (widget_class, on_media_player_raised);
+  gtk_widget_class_bind_template_callback (widget_class, rotation_setting_clicked_cb);
+  gtk_widget_class_bind_template_callback (widget_class, torch_setting_clicked_cb);
   gtk_widget_class_bind_template_callback (widget_class, wifi_setting_clicked_cb);
   gtk_widget_class_bind_template_callback (widget_class, wwan_setting_clicked_cb);
-  gtk_widget_class_bind_template_callback (widget_class, bt_setting_clicked_cb);
-  gtk_widget_class_bind_template_callback (widget_class, on_media_player_raised);
 }
 
 
 static void
 phosh_settings_init (PhoshSettings *self)
 {
-  gchar *subscribe_accelerators[] = {
+  char *subscribe_accelerators[] = {
     "XF86AudioLowerVolume",
     "XF86AudioRaiseVolume",
     "XF86AudioMute",

@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2018 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
@@ -37,7 +39,7 @@ struct _PhoshNotificationBanner {
   gulong handler_closed;
 
   struct {
-    gdouble progress;
+    double progress;
     gint64  last_frame;
   } animation;
 };
@@ -64,7 +66,7 @@ expired (PhoshNotification       *notification,
 
   clear_handler (self);
 
-  // Close the banner
+  /* Close the banner */
   gtk_widget_destroy (GTK_WIDGET (self));
 }
 
@@ -79,7 +81,7 @@ closed (PhoshNotification       *notification,
 
   clear_handler (self);
 
-  // Close the banner
+  /* Close the banner */
   gtk_widget_destroy (GTK_WIDGET (self));
 }
 
@@ -161,9 +163,9 @@ phosh_notification_banner_finalize (GObject *object)
 static void
 phosh_notification_banner_slide (PhoshNotificationBanner *self)
 {
-  gint margin;
-  gint height;
-  gdouble progress = hdy_ease_out_cubic (self->animation.progress);
+  int margin;
+  int height;
+  double progress = hdy_ease_out_cubic (self->animation.progress);
 
   progress = 1.0 - progress;
 

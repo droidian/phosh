@@ -1,13 +1,12 @@
 /*
- * Copyright © 2020 Zander Brown
+ * Copyright © 2020 Zander Brown <zbrown@gnome.org>
  *
- * SPDX-License-Identifier: GPL-3.0+
+ * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * Author: Zander Brown <zbrown@gnome.org>
  */
 
 #include "notifications/notification-list.c"
-#include "stubs/bad-prop.h"
 
 
 static void

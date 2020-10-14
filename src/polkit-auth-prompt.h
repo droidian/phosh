@@ -1,8 +1,9 @@
 /*
  * Copyright (C) 2019 Purism SPC
  *
- * SPDX-License-Identifier: GPL-3.0+
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
+
 #pragma once
 
 #include <gtk/gtk.h>
@@ -12,10 +13,10 @@
 
 G_DECLARE_FINAL_TYPE (PhoshPolkitAuthPrompt, phosh_polkit_auth_prompt, PHOSH, POLKIT_AUTH_PROMPT, PhoshLayerSurface);
 
-GtkWidget *phosh_polkit_auth_prompt_new (const gchar *action_id,
-                                         const gchar *message,
-                                         const gchar *icon_name,
-                                         const gchar *cookie,
+GtkWidget *phosh_polkit_auth_prompt_new (const char *action_id,
+                                         const char *message,
+                                         const char *icon_name,
+                                         const char *cookie,
                                          GStrv user_names,
                                          gpointer layer_shell,
                                          gpointer wl_output);

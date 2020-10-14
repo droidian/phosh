@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2018 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 #define G_LOG_DOMAIN "phosh-monitor"
@@ -32,6 +34,7 @@ enum {
 static guint signals[N_SIGNALS] = { 0 };
 
 G_DEFINE_TYPE (PhoshMonitor, phosh_monitor, G_TYPE_OBJECT)
+
 
 static void
 output_handle_geometry (void             *data,
@@ -147,7 +150,7 @@ xdg_output_v1_handle_logical_position (void *data,
 
   g_return_if_fail (PHOSH_IS_MONITOR (self));
   self->xdg_output_done = FALSE;
-  g_debug ("%p: Logical pos: %d,%d", self, x, y);
+  g_debug ("Monitor %p: Logical pos: %d,%d", self, x, y);
   self->logical.x = x;
   self->logical.y = y;
 }
@@ -163,11 +166,12 @@ xdg_output_v1_handle_logical_size (void *data,
 
   g_return_if_fail (PHOSH_IS_MONITOR (self));
   self->xdg_output_done = FALSE;
-  g_debug ("%p: Logical size: %dx%d", self, width, height);
+  g_debug ("Monitor %p: Logical size: %dx%d", self, width, height);
   self->logical.width = width;
   self->logical.height = height;
 
 }
+
 
 static void
 xdg_output_v1_handle_done (void *data,
@@ -192,7 +196,7 @@ xdg_output_v1_handle_name (void *data,
 {
   PhoshMonitor *self = PHOSH_MONITOR (data);
   /* wlroots uses the connector's name as xdg_output name */
-  g_debug("Connector name is %s", name);
+  g_debug("Monitor %p: Connector name is %s", self, name);
 
   self->xdg_output_done = FALSE;
   self->name = g_strdup (name);
@@ -230,6 +234,7 @@ static const struct zxdg_output_v1_listener xdg_output_v1_listener =
   xdg_output_v1_handle_description,
 };
 
+
 static void
 wlr_output_power_handle_mode(void *data,
                              struct zwlr_output_power_v1 *output_power,
@@ -257,6 +262,7 @@ wlr_output_power_handle_mode(void *data,
   g_object_notify_by_pspec (G_OBJECT (self), props[PHOSH_MONITOR_PROP_POWER_MODE]);
 }
 
+
 static void
 wlr_output_power_handle_failed(void *data,
                                struct zwlr_output_power_v1 *output_power)
@@ -266,6 +272,7 @@ wlr_output_power_handle_failed(void *data,
   g_return_if_fail (PHOSH_IS_MONITOR (self));
   g_warning("Failed to set output power mode for %s\n", self->name);
 }
+
 
 static const struct zwlr_output_power_v1_listener wlr_output_power_listener_v1 = {
 	.mode = wlr_output_power_handle_mode,
@@ -426,6 +433,7 @@ phosh_monitor_get_current_mode (PhoshMonitor *self)
   return &g_array_index (self->modes, PhoshMonitorMode, self->current_mode);
 }
 
+
 /**
  * phosh_monitor_is_configured:
  * @self: A #PhoshMonitor
@@ -439,6 +447,7 @@ phosh_monitor_is_configured (PhoshMonitor *self)
   g_return_val_if_fail (PHOSH_IS_MONITOR (self), FALSE);
   return self->wl_output_done && self->xdg_output_done;
 }
+
 
 /**
  * phosh_monitor_is_builtin:
@@ -504,31 +513,36 @@ phosh_monitor_is_flipped (PhoshMonitor *self)
 
 
 /**
- * phosh_monitor_get_rotation:
+ * phosh_monitor_get_transform:
  * @self: A #PhoshMonitor
  *
- * Returns: The monitor's rotation in degrees.
+ * Returns: The monitor's output transform
  */
 guint
-phosh_monitor_get_rotation (PhoshMonitor *self)
+phosh_monitor_get_transform (PhoshMonitor *self)
 {
     switch (self->transform) {
     case WL_OUTPUT_TRANSFORM_90:
+      return PHOSH_MONITOR_TRANSFORM_90;
     case WL_OUTPUT_TRANSFORM_FLIPPED_90:
-      return 90;
+      return PHOSH_MONITOR_TRANSFORM_FLIPPED_90;
     case WL_OUTPUT_TRANSFORM_180:
+      return PHOSH_MONITOR_TRANSFORM_180;
     case WL_OUTPUT_TRANSFORM_FLIPPED_180:
-      return 180;
+      return PHOSH_MONITOR_TRANSFORM_FLIPPED_180;
     case WL_OUTPUT_TRANSFORM_270:
+      return PHOSH_MONITOR_TRANSFORM_270;
     case WL_OUTPUT_TRANSFORM_FLIPPED_270:
-      return 270;
+      return PHOSH_MONITOR_TRANSFORM_FLIPPED_270;
     case WL_OUTPUT_TRANSFORM_NORMAL:
+      return PHOSH_MONITOR_TRANSFORM_NORMAL;
     case WL_OUTPUT_TRANSFORM_FLIPPED:
-      return 0;
+      return PHOSH_MONITOR_TRANSFORM_FLIPPED;
     default:
       g_assert_not_reached ();
     }
 }
+
 
 /**
  * phosh_monitor_set_power_save_mode:

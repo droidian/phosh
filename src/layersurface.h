@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2018 Purism SPC
  *
- * SPDX-License-Identifier: GPL-3.0+
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 #pragma once
@@ -10,6 +10,8 @@
 /* TODO: We use the enum constants from here, use glib-mkenums */
 #include "wlr-layer-shell-unstable-v1-client-protocol.h"
 
+G_BEGIN_DECLS
+
 #define PHOSH_TYPE_LAYER_SURFACE                 (phosh_layer_surface_get_type ())
 
 G_DECLARE_DERIVABLE_TYPE (PhoshLayerSurface, phosh_layer_surface, PHOSH, LAYER_SURFACE, GtkWindow)
@@ -17,6 +19,7 @@ G_DECLARE_DERIVABLE_TYPE (PhoshLayerSurface, phosh_layer_surface, PHOSH, LAYER_S
 /**
  * PhoshLayerSurfaceClass
  * @parent_class: The parent class
+ * @configured: invoked when layer surface is configured
  */
 struct _PhoshLayerSurfaceClass
 {
@@ -32,15 +35,17 @@ GtkWidget *phosh_layer_surface_new (gpointer layer_shell,
 struct     zwlr_layer_surface_v1 *phosh_layer_surface_get_layer_surface(PhoshLayerSurface *self);
 struct     wl_surface            *phosh_layer_surface_get_wl_surface(PhoshLayerSurface *self);
 void                              phosh_layer_surface_set_size(PhoshLayerSurface *self,
-                                                               gint width,
-                                                               gint height);
+                                                               int width,
+                                                               int height);
 void                              phosh_layer_surface_set_margins(PhoshLayerSurface *self,
-                                                                  gint top,
-                                                                  gint right,
-                                                                  gint bottom,
-                                                                  gint left);
+                                                                  int top,
+                                                                  int right,
+                                                                  int bottom,
+                                                                  int left);
 void                              phosh_layer_surface_set_exclusive_zone(PhoshLayerSurface *self,
-                                                                         gint zone);
+                                                                         int zone);
 void                              phosh_layer_surface_set_kbd_interactivity(PhoshLayerSurface *self,
                                                                             gboolean interactivity);
 void                              phosh_layer_surface_wl_surface_commit (PhoshLayerSurface *self);
+
+G_END_DECLS

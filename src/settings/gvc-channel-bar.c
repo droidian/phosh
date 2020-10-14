@@ -1,7 +1,8 @@
 /*
  * Copyright (C) 2018 Purism SPC
  *
- * SPDX-License-Identifier: GPL-3+
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  *
  * based on gvc-channel-bar.h from g-c-c which is
@@ -68,6 +69,7 @@ static gboolean on_scale_scroll_event         (GtkWidget      *widget,
                                                GvcChannelBar  *self);
 
 G_DEFINE_TYPE (GvcChannelBar, gvc_channel_bar, GTK_TYPE_BOX)
+
 
 static GtkWidget *
 _scale_box_new (GvcChannelBar *self)
@@ -189,7 +191,7 @@ on_scale_button_release_event (GtkWidget      *widget,
                                GvcChannelBar  *self)
 {
   GtkAdjustment *adj;
-  gdouble value;
+  double value;
 
   self->click_lock = FALSE;
 
@@ -210,9 +212,9 @@ gboolean
 gvc_channel_bar_scroll (GvcChannelBar *self, GdkEventScroll *event)
 {
   GtkAdjustment *adj;
-  gdouble value;
+  double value;
   GdkScrollDirection direction;
-  gdouble dx, dy;
+  double dx, dy;
 
   g_return_val_if_fail (self != NULL, FALSE);
   g_return_val_if_fail (GVC_IS_CHANNEL_BAR (self), FALSE);
@@ -272,7 +274,7 @@ gvc_channel_bar_scroll (GvcChannelBar *self, GdkEventScroll *event)
       value = value + dy * SCROLLSTEP;
   }
 
-  gvc_channel_bar_set_is_muted (self, ((gint)value == 0));
+  gvc_channel_bar_set_is_muted (self, ((int) value == 0));
   adj = gtk_range_get_adjustment (GTK_RANGE (self->scale));
   gtk_adjustment_set_value (adj, value);
 
@@ -293,7 +295,7 @@ static void
 on_zero_adjustment_value_changed (GtkAdjustment *adjustment,
                                   GvcChannelBar *self)
 {
-  gdouble value;
+  double value;
 
   if (self->click_lock != FALSE) {
     return;
@@ -342,7 +344,7 @@ gvc_channel_bar_set_is_amplified (GvcChannelBar *self, gboolean amplified)
   gtk_scale_clear_marks (GTK_SCALE (self->scale));
 
   if (amplified) {
-    g_autofree gchar *str = NULL;
+    g_autofree char *str = NULL;
 
     if ((int)self->base_volume == (int)ADJUSTMENT_MAX_NORMAL) {
       str = g_strdup_printf ("<small>%s</small>", C_("volume", "100%"));
@@ -437,7 +439,6 @@ gvc_channel_bar_get_property (GObject     *object,
     break;
   }
 }
-
 
 
 static void

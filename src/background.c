@@ -1,7 +1,8 @@
 /*
  * Copyright (C) 2018 Purism SPC
  *
- * SPDX-License-Identifier: GPL-3+
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  *
  * Derived in parts from GnomeBG which is
@@ -61,7 +62,7 @@ struct _PhoshBackground
 {
   PhoshLayerSurface parent;
 
-  gchar *uri;
+  char *uri;
   GDesktopBackgroundStyle style;
   GdkRGBA color;
 
@@ -180,10 +181,10 @@ pb_fill_color (int width, int height, GdkRGBA *color)
 static GdkPixbuf *
 pb_scale_to_fit (GdkPixbuf *src, int width, int height, GdkRGBA *color)
 {
-  gint orig_width, orig_height;
-  gint final_width, final_height;
-  gint off_x, off_y;
-  gdouble ratio_horiz, ratio_vert, ratio;
+  int orig_width, orig_height;
+  int final_width, final_height;
+  int off_x, off_y;
+  double ratio_horiz, ratio_vert, ratio;
   GdkPixbuf *bg;
 
   bg = gdk_pixbuf_new (GDK_COLORSPACE_RGB, FALSE, 8, width, height);
@@ -212,6 +213,7 @@ pb_scale_to_fit (GdkPixbuf *src, int width, int height, GdkRGBA *color)
                         255);
   return bg;
 }
+
 
 static GdkPixbuf *
 image_background (GdkPixbuf               *image,
@@ -256,7 +258,7 @@ image_background (GdkPixbuf               *image,
 static void
 background_update (PhoshBackground *self, GdkPixbuf *pixbuf, GDesktopBackgroundStyle style)
 {
-  gint width, height;
+  int width, height;
 
   g_clear_object (&self->pixbuf);
 
@@ -271,6 +273,7 @@ background_update (PhoshBackground *self, GdkPixbuf *pixbuf, GDesktopBackgroundS
   gtk_widget_queue_draw (GTK_WIDGET (self));
   g_signal_emit(self, signals[BACKGROUND_LOADED], 0);
 }
+
 
 /**
  * background_fallback:
@@ -365,7 +368,7 @@ background_draw_cb (PhoshBackground *self,
                     cairo_t         *cr,
                     gpointer         data)
 {
-  gint x = 0, y = 0;
+  int x = 0, y = 0;
 
   g_return_val_if_fail (PHOSH_IS_BACKGROUND (self), TRUE);
 
@@ -388,7 +391,7 @@ background_draw_cb (PhoshBackground *self,
 static void
 get_settings (PhoshBackground *self)
 {
-  g_autofree gchar *color = NULL;
+  g_autofree char *color = NULL;
 
   g_free (self->uri);
   self->uri = g_settings_get_string (self->settings, BG_KEY_PICTURE_URI);
@@ -397,9 +400,10 @@ get_settings (PhoshBackground *self)
   color_from_string (&self->color, color);
 }
 
+
 static void
 on_background_setting_changed (PhoshBackground *self,
-                               const gchar     *key,
+                               const char      *key,
                                GSettings       *settings)
 {
   g_return_if_fail (PHOSH_IS_BACKGROUND (self));
@@ -545,6 +549,7 @@ phosh_background_set_primary (PhoshBackground *self, gboolean primary)
     load_background (self);
   g_object_notify_by_pspec (G_OBJECT (self), props[PROP_PRIMARY]);
 }
+
 
 void
 phosh_background_set_scale (PhoshBackground *self, guint scale)

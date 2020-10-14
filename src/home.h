@@ -1,7 +1,7 @@
 /*
  * Copyright (C) 2018 Purism SPC
  *
- * SPDX-License-Identifier: GPL-3.0+
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 #pragma once
 
@@ -12,9 +12,16 @@
 
 #define PHOSH_HOME_BUTTON_HEIGHT 40
 
+/**
+ * PhoshHomeState:
+ * @PHOSH_HOME_STATE_FOLDED: Only home button is visiable
+ * @PHOSH_HOME_STATE_UNFOLDED: Home screen takes the whole screen except the top panel
+ *
+ * The state of #PhoshHome.
+ */
 typedef enum {
-  PHOSH_HOME_STATE_FOLDED,    /* Only home button is visiable */
-  PHOSH_HOME_STATE_UNFOLDED,  /* Home screen takes the whole screen except the top panel */
+  PHOSH_HOME_STATE_FOLDED,
+  PHOSH_HOME_STATE_UNFOLDED,
 } PhoshHomeState;
 
 G_DECLARE_FINAL_TYPE (PhoshHome, phosh_home, PHOSH, HOME, PhoshLayerSurface)

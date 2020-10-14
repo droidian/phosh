@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2019 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
@@ -100,7 +102,7 @@ static gboolean
 handle_get_capabilities (PhoshNotifyDbusNotifications *skeleton,
                          GDBusMethodInvocation        *invocation)
 {
-  const gchar *const capabilities[] = {
+  const char *const capabilities[] = {
     "body", "body-markup", "actions", "icon-static", NULL,
   };
 
@@ -225,7 +227,7 @@ parse_icon_data (GVariant *variant)
       return NULL;
     }
 
-    // Extract a copy of the raw data
+    /* Extract a copy of the raw data */
     data = (guchar *) g_memdup (g_variant_get_data (wrapped_data),
                                 size_should_be);
 
@@ -242,6 +244,7 @@ parse_icon_data (GVariant *variant)
 
   return icon;
 }
+
 
 static GIcon *
 parse_icon_string (const char *string)
@@ -266,25 +269,26 @@ parse_icon_string (const char *string)
   return icon;
 }
 
+
 static gboolean
 handle_notify (PhoshNotifyDbusNotifications *skeleton,
                GDBusMethodInvocation        *invocation,
                const char                   *app_name,
                guint                         replaces_id,
-               const gchar                  *app_icon,
-               const gchar                  *summary,
-               const gchar                  *body,
-               const gchar * const          *actions,
+               const char                   *app_icon,
+               const char                   *summary,
+               const char                   *body,
+               const char *const            *actions,
                GVariant                     *hints,
-               gint                          expire_timeout)
+               int                           expire_timeout)
 {
   PhoshNotifyManager *self = PHOSH_NOTIFY_MANAGER (skeleton);
   PhoshNotification *notification = NULL;
   GVariant *item;
   GVariantIter iter;
   guint id;
-  g_autofree gchar *desktop_id = NULL;
-  g_autofree gchar *source_id = NULL;
+  g_autofree char *desktop_id = NULL;
+  g_autofree char *source_id = NULL;
   g_autoptr (GAppInfo) info = NULL;
   PhoshNotificationUrgency urgency = PHOSH_NOTIFICATION_URGENCY_NORMAL;
   g_autoptr (GIcon) data_gicon = NULL;
@@ -309,7 +313,7 @@ handle_notify (PhoshNotifyDbusNotifications *skeleton,
 
   g_variant_iter_init (&iter, hints);
   while ((item = g_variant_iter_next_value (&iter))) {
-    g_autofree gchar *key = NULL;
+    g_autofree char *key = NULL;
     g_autoptr(GVariant) value = NULL;
 
     g_variant_get (item, "{sv}", &key, &value);
@@ -462,7 +466,7 @@ phosh_notify_manager_notify_iface_init (PhoshNotifyDbusNotificationsIface *iface
 
 static void
 on_notifications_setting_changed (PhoshNotifyManager *self,
-                                  const gchar        *key,
+                                  const char         *key,
                                   GSettings          *settings)
 {
   g_return_if_fail (PHOSH_IS_NOTIFY_MANAGER (self));

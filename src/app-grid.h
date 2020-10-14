@@ -1,13 +1,12 @@
 /*
  * Copyright © 2019 Zander Brown <zbrown@gnome.org>
  *
- * SPDX-License-Identifier: GPL-3.0+
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 #include <gio/gio.h>
 #include <gio/gdesktopappinfo.h>
 
-#define HANDY_USE_UNSTABLE_API
 #include <handy.h>
 
 #pragma once

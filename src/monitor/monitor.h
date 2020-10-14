@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2018 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 #pragma once
@@ -12,7 +14,30 @@
 #include <glib-object.h>
 #include <glib/gi18n.h>
 
-/* This matches the values in drm_mode.h */
+G_BEGIN_DECLS
+
+/**
+ * PhoshMonitorConnectorType:
+ * @PHOSH_MONITOR_CONNECTOR_TYPE_Unknown: unknown connector type
+ * @PHOSH_MONITOR_CONNECTOR_TYPE_VGA: a VGA connector
+ * @PHOSH_MONITOR_CONNECTOR_TYPE_DVII: a DVII connector
+ * @PHOSH_MONITOR_CONNECTOR_TYPE_DVID: a DVID connector
+ * @PHOSH_MONITOR_CONNECTOR_TYPE_DVIA: a DVIA connector
+ * @PHOSH_MONITOR_CONNECTOR_TYPE_Composite: a Composite connector
+ * @PHOSH_MONITOR_CONNECTOR_TYPE_SVIDEO: a SVIDEO connector
+ * @PHOSH_MONITOR_CONNECTOR_TYPE_LVDS: a LVDS connector
+ * @PHOSH_MONITOR_CONNECTOR_TYPE_Component: a Component connector
+ * @PHOSH_MONITOR_CONNECTOR_TYPE_9PinDIN: a 9PinDIN connector
+ * @PHOSH_MONITOR_CONNECTOR_TYPE_DisplayPort: a DisplayPort connector
+ * @PHOSH_MONITOR_CONNECTOR_TYPE_HDMIA: a HDMIA connector
+ * @PHOSH_MONITOR_CONNECTOR_TYPE_HDMIB: a HDMIB connector
+ * @PHOSH_MONITOR_CONNECTOR_TYPE_TV: a TV connector
+ * @PHOSH_MONITOR_CONNECTOR_TYPE_eDP: a eDP connector
+ * @PHOSH_MONITOR_CONNECTOR_TYPE_VIRTUAL: a Virtual connector
+ * @PHOSH_MONITOR_CONNECTOR_TYPE_DSI: a DSI connector
+ *
+ * This matches the values in drm_mode.h
+ */
 typedef enum _PhoshMonitorConnectorType
 {
   PHOSH_MONITOR_CONNECTOR_TYPE_Unknown = 0,
@@ -34,11 +59,36 @@ typedef enum _PhoshMonitorConnectorType
   PHOSH_MONITOR_CONNECTOR_TYPE_DSI = 16,
 } PhoshMonitorConnectorType;
 
+/**
+ * PhoshMonitorTransform:
+ * @PHOSH_MONITOR_TRANSFORM_NORMAL: normal
+ * @PHOSH_MONITOR_TRANSFORM_90: 90 degree clockwise
+ * @PHOSH_MONITOR_TRANSFORM_180: 180 degree clockwise
+ * @PHOSH_MONITOR_TRANSFORM_270: 270 degree clockwise
+ * @PHOSH_MONITOR_TRANSFORM_FLIPPED: flipped clockwise
+ * @PHOSH_MONITOR_TRANSFORM_FLIPPED_90: flipped and 90 deg
+ * @PHOSH_MONITOR_TRANSFORM_FLIPPED_180: flipped and 180 deg
+ * @PHOSH_MONITOR_TRANSFORM_FLIPPED_270: flipped and 270 deg
+ *
+ * the monitors rotation.
+ */
+typedef enum _PhoshMonitorTransform
+{
+  PHOSH_MONITOR_TRANSFORM_NORMAL,
+  PHOSH_MONITOR_TRANSFORM_90,
+  PHOSH_MONITOR_TRANSFORM_180,
+  PHOSH_MONITOR_TRANSFORM_270,
+  PHOSH_MONITOR_TRANSFORM_FLIPPED,
+  PHOSH_MONITOR_TRANSFORM_FLIPPED_90,
+  PHOSH_MONITOR_TRANSFORM_FLIPPED_180,
+  PHOSH_MONITOR_TRANSFORM_FLIPPED_270,
+} PhoshMonitorTransform;
+
 
 typedef struct _PhoshMonitorMode
 {
-  gint width, height;
-  gint refresh;
+  int width, height;
+  int refresh;
   guint32 flags;
 } PhoshMonitorMode;
 
@@ -64,25 +114,25 @@ struct _PhoshMonitor {
   struct zwlr_output_power_v1 *wlr_output_power;
   PhoshMonitorPowerSaveMode power_mode;
 
-  gint x, y, width, height;
-  gint subpixel;
+  int x, y, width, height;
+  int subpixel;
   gint32 transform, scale;
 
   struct {
     gint32 x, y, width, height;
   } logical;
 
-  gint width_mm;
-  gint height_mm;
+  int width_mm;
+  int height_mm;
 
-  gchar *vendor;
-  gchar *product;
+  char *vendor;
+  char *product;
 
   GArray *modes;
   guint current_mode;
   guint preferred_mode;
 
-  gchar *name;
+  char *name;
   PhoshMonitorConnectorType conn_type;
 
   gboolean wl_output_done;
@@ -92,10 +142,12 @@ struct _PhoshMonitor {
 G_DECLARE_FINAL_TYPE (PhoshMonitor, phosh_monitor, PHOSH, MONITOR, GObject)
 
 PhoshMonitor     * phosh_monitor_new_from_wl_output (gpointer wl_output);
-PhoshMonitorMode * phosh_monitor_get_current_mode (PhoshMonitor *monitor);
-gboolean           phosh_monitor_is_configured (PhoshMonitor *monitor);
-gboolean           phosh_monitor_is_builtin (PhoshMonitor *monitor);
-gboolean           phosh_monitor_is_flipped (PhoshMonitor *monitor);
-guint              phosh_monitor_get_rotation (PhoshMonitor *monitor);
+PhoshMonitorMode * phosh_monitor_get_current_mode (PhoshMonitor *self);
+gboolean           phosh_monitor_is_configured (PhoshMonitor *self);
+gboolean           phosh_monitor_is_builtin (PhoshMonitor *self);
+gboolean           phosh_monitor_is_flipped (PhoshMonitor *self);
+guint              phosh_monitor_get_transform (PhoshMonitor *self);
 void               phosh_monitor_set_power_save_mode (PhoshMonitor *self,
                                                       PhoshMonitorPowerSaveMode mode);
+
+G_END_DECLS

@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2018 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
@@ -18,7 +20,7 @@
  * @Title: PhoshSessionPresence
  *
  * The #PhoshSessionPresence is responsible for getting status updated
- * from gnome-sessin's org.gnome.SessionManager.Presence interface.
+ * from gnome-session's org.gnome.SessionManager.Presence interface.
  *
  * This is just a minimal wrapper so we don't have to provide the
  * object path, names and bus names in several places.
@@ -27,7 +29,7 @@
 
 typedef struct _PhoshSessionPresence
 {
-  PhoshSessionPresenceDbusPresenceProxy parent;
+  PhoshSessionPresenceDBusPresenceProxy parent;
 } PhoshSessionPresence;
 
 

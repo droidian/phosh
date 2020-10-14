@@ -1,7 +1,7 @@
 /*
- * Copyright © 2019 Alexander Mikhaylenko <exalm7659@gmail.com>
+ * Copyright © 2019 Alexander Mikhaylenko <alexm@gnome.org>
  *
- * SPDX-License-Identifier: GPL-3.0+
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 #include "arrow.h"
@@ -35,19 +35,22 @@ enum {
 
 static GParamSpec *properties [N_PROPS];
 
+
 static double
 interpolate_progress (double t)
 {
   if (t < 1.0 / 3.0)
-    return sin (t * 1.5 * M_PI) / 2.0;
+    return sin (t * 1.5 * G_PI) / 2.0;
 
   if (t > 2.0 / 3.0)
-    return cos (t * 1.5 * M_PI) / 2.0 + 1;
+    return cos (t * 1.5 * G_PI) / 2.0 + 1;
 
   return 0.5;
 }
 
-// GtkWidget
+
+/* GtkWidget */
+
 
 static gboolean
 phosh_arrow_draw (GtkWidget *widget,
@@ -61,7 +64,7 @@ phosh_arrow_draw (GtkWidget *widget,
 
   progress = interpolate_progress (self->progress);
 
-  angle = (0.5 - progress) * M_PI / 2.5;
+  angle = (0.5 - progress) * G_PI / 2.5;
 
   center_x = gtk_widget_get_allocated_width (widget) / 2.0;
   center_y = (gtk_widget_get_allocated_height (widget) / 2.0 - 0.5) * (0.5 + progress);
@@ -85,6 +88,7 @@ phosh_arrow_draw (GtkWidget *widget,
   return GDK_EVENT_PROPAGATE;
 }
 
+
 static void
 phosh_arrow_get_property (GObject    *object,
                           guint       prop_id,
@@ -102,6 +106,7 @@ phosh_arrow_get_property (GObject    *object,
   }
 }
 
+
 static void
 phosh_arrow_set_property (GObject      *object,
                           guint         prop_id,
@@ -118,6 +123,7 @@ phosh_arrow_set_property (GObject      *object,
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, prop_id, pspec);
   }
 }
+
 
 static void
 phosh_arrow_class_init (PhoshArrowClass *klass)
@@ -139,6 +145,7 @@ phosh_arrow_class_init (PhoshArrowClass *klass)
   g_object_class_install_properties(object_class, N_PROPS, properties);
 }
 
+
 static void
 phosh_arrow_init (PhoshArrow *self)
 {
@@ -149,11 +156,13 @@ phosh_arrow_init (PhoshArrow *self)
                 NULL);
 }
 
+
 PhoshArrow *
 phosh_arrow_new (void)
 {
   return g_object_new (PHOSH_TYPE_ARROW, NULL);
 }
+
 
 double
 phosh_arrow_get_progress (PhoshArrow *self)
@@ -162,6 +171,7 @@ phosh_arrow_get_progress (PhoshArrow *self)
 
   return self->progress;
 }
+
 
 void
 phosh_arrow_set_progress (PhoshArrow *self,

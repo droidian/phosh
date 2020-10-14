@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2020 Purism SPC
+ *
  * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
@@ -28,7 +30,7 @@
 
 typedef struct _PhoshSensorProxyManager
 {
-  PhoshDbusSensorProxyProxy parent;
+  PhoshDBusSensorProxyProxy parent;
 
 } PhoshSensorProxyManager;
 

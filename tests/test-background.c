@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2020 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
@@ -66,9 +68,9 @@ test_background_new (Fixture *fixture, gconstpointer unused)
   gtk_widget_destroy (background);
 }
 
-gint
-main (gint   argc,
-      gchar *argv[])
+int
+main (int   argc,
+      char *argv[])
 {
   g_test_init (&argc, &argv, NULL);
 

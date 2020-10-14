@@ -1,13 +1,23 @@
 /*
- * Copyright (C) 2018 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ * Copyright (C) 2018-2020 Purism SPC
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
-/* Modem abstraction */
 
 #define G_LOG_DOMAIN "phosh-wwan-iface"
 
 #include "phosh-wwan-iface.h"
+
+/**
+ * SECTION:phosh-wwan-iface
+ * @short_description: Interface for modem handling
+ * @Title: PhoshWWanInterface
+ *
+ * A #PhoshWWanInterface handles modem interaction such as getting
+ * network information and signal strength.
+ **/
 
 G_DEFINE_INTERFACE (PhoshWWan, phosh_wwan, G_TYPE_OBJECT)
 
@@ -90,6 +100,7 @@ phosh_wwan_get_access_tec (PhoshWWan *self)
 
 }
 
+
 gboolean
 phosh_wwan_is_unlocked (PhoshWWan *self)
 {
@@ -101,6 +112,7 @@ phosh_wwan_is_unlocked (PhoshWWan *self)
   g_return_val_if_fail (iface->is_unlocked != NULL, FALSE);
   return iface->is_unlocked (self);
 }
+
 
 gboolean
 phosh_wwan_has_sim (PhoshWWan *self)
@@ -114,6 +126,7 @@ phosh_wwan_has_sim (PhoshWWan *self)
   return iface->has_sim (self);
 }
 
+
 gboolean
 phosh_wwan_is_present (PhoshWWan *self)
 {
@@ -126,7 +139,8 @@ phosh_wwan_is_present (PhoshWWan *self)
   return iface->is_present (self);
 }
 
-const gchar *
+
+const char *
 phosh_wwan_get_operator (PhoshWWan *self)
 {
   PhoshWWanInterface *iface;

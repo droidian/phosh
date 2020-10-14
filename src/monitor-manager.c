@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2018 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  *
  * Somewhat based on mutter's src/backends/meta-monitor-manager.c
@@ -9,6 +11,7 @@
 #define G_LOG_DOMAIN "phosh-monitor-manager"
 
 #include "monitor-manager.h"
+#include "monitor/head.h"
 #include "monitor/monitor.h"
 
 #include "gamma-control-client-protocol.h"
@@ -38,9 +41,12 @@ typedef struct _PhoshMonitorManager
   PhoshDisplayDbusDisplayConfigSkeleton parent;
 
   GPtrArray *monitors;   /* Currently known monitors */
+  GPtrArray *heads;      /* Currently known heads */
 
   int dbus_name_id;
   int serial;
+
+  uint32_t zwlr_output_serial;
 } PhoshMonitorManager;
 
 G_DEFINE_TYPE_WITH_CODE (PhoshMonitorManager,
@@ -62,6 +68,23 @@ get_display_name (PhoshMonitor *monitor)
     return g_strdup (_("Unknown"));
 }
 
+
+static PhoshHead *
+phosh_monitor_manager_get_head_from_monitor (PhoshMonitorManager *self, PhoshMonitor *monitor)
+{
+  for (int i = 0; i < self->heads->len; i++) {
+    PhoshHead *head = g_ptr_array_index (self->heads, i);
+    if (!g_strcmp0 (monitor->name, head->name)) {
+      return head;
+    }
+  }
+
+  return NULL;
+}
+
+/*
+ * DBus Interface
+ */
 
 static gboolean
 phosh_monitor_manager_handle_get_resources (
@@ -134,7 +157,7 @@ phosh_monitor_manager_handle_get_resources (
     g_variant_builder_add (&output_builder, "(uxiausauaua{sv})",
                            (guint32)i, /* ID */
                            (guint64)i, /* output->winsys_id, */
-                           (gint)i,    /* crtc_index, */
+                           (int) i,    /* crtc_index, */
                            &crtcs,
                            monitor->name, /* output->name */
                            &modes,
@@ -145,21 +168,29 @@ phosh_monitor_manager_handle_get_resources (
   /* modes */
   for (int i = 0; i < self->monitors->len; i++) {
     PhoshMonitor *monitor = g_ptr_array_index (self->monitors, i);
-    GArray *modes = monitor->modes;
+    PhoshHead *head;
+    GPtrArray *modes;
 
     if (!phosh_monitor_is_configured(monitor))
       continue;
 
+    head = phosh_monitor_manager_get_head_from_monitor (self, monitor);
+    if (!head) {
+      g_warning ("Failed to get head for monitor %p", monitor);
+      continue;
+    }
+
+    modes = head->modes;
     for (int k = 0; k < modes->len; k++) {
-      PhoshMonitorMode *mode = &g_array_index (modes, PhoshMonitorMode, k);
+      PhoshHeadMode *mode = g_ptr_array_index (modes, k);
       g_variant_builder_add (&mode_builder, "(uxuudu)",
                              (guint32)k,            /* ID */
                              (guint64)k,            /* mode->mode_id, */
-                             (guint32)mode->width,  /* mode->width, */
-                             (guint32)mode->height, /* mode->height, */
-                             (double)mode->refresh / 1000.0, /* (double)mode->refresh_rate, */
+                             (guint32)mode->width,
+                             (guint32)mode->height,
+                             (double)mode->refresh / 1000.0,
                              (guint32)0             /* mode->flags); */
-      );
+        );
     }
   }
 
@@ -184,7 +215,7 @@ phosh_monitor_manager_handle_change_backlight (
   GDBusMethodInvocation *invocation,
   guint                  serial,
   guint                  output_index,
-  gint                   value)
+  int                    value)
 {
   g_debug ("Unimplemented DBus call %s", __func__);
   g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
@@ -386,6 +417,7 @@ phosh_monitor_manager_handle_set_crtc_gamma (
   return TRUE;
 }
 
+
 #define MODE_FORMAT "(siiddada{sv})"
 #define MODES_FORMAT "a" MODE_FORMAT
 #define MONITOR_SPEC_FORMAT "(ssss)"
@@ -395,6 +427,7 @@ phosh_monitor_manager_handle_set_crtc_gamma (
 #define LOGICAL_MONITOR_MONITORS_FORMAT "a" MONITOR_SPEC_FORMAT
 #define LOGICAL_MONITOR_FORMAT "(iidub" LOGICAL_MONITOR_MONITORS_FORMAT "a{sv})"
 #define LOGICAL_MONITORS_FORMAT "a" LOGICAL_MONITOR_FORMAT
+
 
 static gboolean
 phosh_monitor_manager_handle_get_current_state (
@@ -415,32 +448,41 @@ phosh_monitor_manager_handle_get_current_state (
     PhoshMonitor *monitor = g_ptr_array_index (self->monitors, i);
     GVariantBuilder modes_builder, supported_scales_builder, mode_properties_builder,
       monitor_properties_builder;
-    g_autofree gchar *serial = NULL;
-    gchar *display_name;
+    char *display_name;
     gboolean is_builtin;
+    PhoshHeadMode *preferred;
+    g_autofree char *serial = NULL;
+    PhoshHead *head = NULL;
 
     if (!phosh_monitor_is_configured(monitor))
       continue;
 
+    head = phosh_monitor_manager_get_head_from_monitor (self, monitor);
+    if (!head) {
+      g_warning ("Failed to get head for monitor %p", monitor);
+      continue;
+    }
+
     g_variant_builder_init (&modes_builder, G_VARIANT_TYPE (MODES_FORMAT));
 
-    for (int k = 0; k < monitor->modes->len; k++) {
-      PhoshMonitorMode *mode = &g_array_index (monitor->modes, PhoshMonitorMode, k);
-      g_autofree gchar *mode_name = NULL;
+    preferred = phosh_head_get_preferred_mode (head);
+    for (int k = 0; k < head->modes->len; k++) {
+      PhoshHeadMode *mode = g_ptr_array_index (head->modes, k);
+      g_autofree char *mode_name = NULL;
 
       g_variant_builder_init (&supported_scales_builder,
                               G_VARIANT_TYPE ("ad"));
       g_variant_builder_add (&supported_scales_builder, "d",
-                             (double)monitor->scale);
+                             (double)head->scale);
 
       g_variant_builder_init (&mode_properties_builder,
                               G_VARIANT_TYPE ("a{sv}"));
       g_variant_builder_add (&mode_properties_builder, "{sv}",
                              "is-current",
-                             g_variant_new_boolean (k == monitor->current_mode));
+                             g_variant_new_boolean (mode == head->mode));
       g_variant_builder_add (&mode_properties_builder, "{sv}",
                              "is-preferred",
-                             g_variant_new_boolean (k == monitor->preferred_mode));
+                             g_variant_new_boolean (mode == preferred));
 
       mode_name = g_strdup_printf ("%dx%d@%.0f", mode->width, mode->height,
                                    mode->refresh / 1000.0);
@@ -482,7 +524,7 @@ phosh_monitor_manager_handle_get_current_state (
   for (int i = 0; i < self->monitors->len; i++) {
     PhoshMonitor *monitor = g_ptr_array_index (self->monitors, i);
     GVariantBuilder logical_monitor_monitors_builder;
-    g_autofree gchar *serial = NULL;
+    g_autofree char *serial = NULL;
     gboolean is_primary;
 
     if (!phosh_monitor_is_configured(monitor))
@@ -530,6 +572,8 @@ phosh_monitor_manager_handle_get_current_state (
 
   return TRUE;
 }
+
+
 #undef LOGICAL_MONITORS_FORMAT
 #undef LOGICAL_MONITOR_FORMAT
 #undef LOGICAL_MONITOR_MONITORS_FORMAT
@@ -570,7 +614,9 @@ find_monitor_from_variant(PhoshMonitorManager *self,
   return monitor;
 }
 
+
 #define LOGICAL_MONITOR_CONFIG_FORMAT "(iidub" MONITOR_CONFIGS_FORMAT ")"
+
 
 /* TODO: this can later become get-logical_monitor_config_from_variant */
 static PhoshMonitor *
@@ -614,9 +660,12 @@ check_primary_monitor_from_variant (PhoshMonitorManager *self,
   g_variant_iter_free (monitor_configs_iter);
   return monitor;
 }
+
+
 #undef LOGICAL_MONITOR_CONFIG_FORMAT
 #undef MONITOR_CONFIGS_FORMAT
 #undef MONITOR_CONFIG_FORMAT
+
 
 static gboolean
 phosh_monitor_manager_handle_apply_monitors_config (
@@ -633,7 +682,7 @@ phosh_monitor_manager_handle_apply_monitors_config (
   PhoshMonitor *primary_monitor = NULL;
   PhoshShell *shell = phosh_shell_get_default();
 
-  g_debug ("Mostly Stubbed DBus call %s", __func__);
+  g_debug ("Mostly Stubbed DBus call %s, method: %d", __func__, method);
 
   if (serial != self->serial) {
     g_dbus_method_invocation_return_error (invocation, G_DBUS_ERROR,
@@ -646,13 +695,11 @@ phosh_monitor_manager_handle_apply_monitors_config (
                        logical_monitor_configs_variant);
 
   while (TRUE) {
-    GVariant *logical_monitor_config_variant =
+    g_autoptr (GVariant) logical_monitor_config_variant =
       g_variant_iter_next_value (&logical_monitor_configs_iter);
 
     if (!logical_monitor_config_variant)
       break;
-
-    g_variant_unref (logical_monitor_config_variant);
 
     primary_monitor =
       check_primary_monitor_from_variant (self,
@@ -675,9 +722,12 @@ phosh_monitor_manager_handle_apply_monitors_config (
                                            "No primary monitor found");
     return TRUE;
   }
-  if (primary_monitor != phosh_shell_get_primary_monitor (shell)) {
-    g_debug ("New primary monitor is %s", primary_monitor->name);
-    phosh_shell_set_primary_monitor (shell, primary_monitor);
+
+  if (method == PHOSH_MONITOR_MANAGER_CONFIG_METHOD_PERSISTENT) {
+    if (primary_monitor != phosh_shell_get_primary_monitor (shell)) {
+      g_debug ("New primary monitor is %s", primary_monitor->name);
+      phosh_shell_set_primary_monitor (shell, primary_monitor);
+    }
   }
 
   phosh_display_dbus_display_config_complete_apply_monitors_config (
@@ -705,7 +755,7 @@ power_save_mode_changed_cb (PhoshMonitorManager *self,
                             GParamSpec          *pspec,
                             gpointer             user_data)
 {
-  gint mode, ps_mode;
+  int mode, ps_mode;
 
   mode = phosh_display_dbus_display_config_get_power_save_mode (
     PHOSH_DISPLAY_DBUS_DISPLAY_CONFIG (self));
@@ -760,6 +810,9 @@ on_bus_acquired (GDBusConnection *connection,
                                     NULL);
 }
 
+/*
+ * wl_output wayland protocol
+ */
 
 static PhoshMonitor *
 find_monitor_by_wl_output (PhoshMonitorManager *self, struct wl_output *output)
@@ -771,6 +824,7 @@ find_monitor_by_wl_output (PhoshMonitorManager *self, struct wl_output *output)
   }
   return NULL;
 }
+
 
 static void
 on_monitor_removed (PhoshMonitorManager *self,
@@ -818,16 +872,108 @@ on_wl_outputs_changed (PhoshMonitorManager *self, GParamSpec *pspec, PhoshWaylan
 }
 
 
+/*
+ * wlr_output_manager wayland protocol
+ */
+
+static void
+on_head_finished (PhoshMonitorManager *self,
+                  PhoshHead *head)
+{
+  g_return_if_fail (PHOSH_IS_MONITOR_MANAGER (self));
+
+  if (g_ptr_array_remove (self->heads, head))
+    g_debug ("Removing head %p", head);
+  else
+    g_warning ("Tried to remove inexistend head %p", head);
+}
+
+
+static void
+zwlr_output_manager_v1_handle_head (void *data,
+                                    struct zwlr_output_manager_v1 *manager,
+                                    struct zwlr_output_head_v1 *wlr_head)
+{
+  PhoshMonitorManager *self = data;
+  PhoshHead *head;
+
+  g_return_if_fail (PHOSH_IS_MONITOR_MANAGER (self));
+
+  head = phosh_head_new_from_wlr_head (wlr_head);
+  g_debug ("New head %p", head);
+  g_ptr_array_add (self->heads, head);
+  g_signal_connect_swapped (head, "head-finished", G_CALLBACK (on_head_finished), self);
+}
+
+
+static void
+zwlr_output_manager_v1_handle_done (void *data,
+                                    struct zwlr_output_manager_v1 *manager,
+                                    uint32_t serial)
+{
+  PhoshMonitorManager *self = data;
+
+  g_return_if_fail (PHOSH_IS_MONITOR_MANAGER (self));
+  g_debug ("Got zwlr_output_serial %u", serial);
+  self->zwlr_output_serial = serial;
+}
+
+
+static const struct zwlr_output_manager_v1_listener zwlr_output_manager_v1_listener = {
+  .head = zwlr_output_manager_v1_handle_head,
+  .done = zwlr_output_manager_v1_handle_done,
+};
+
+
+static void
+zwlr_output_configuration_v1_handle_succeeded (void *data,
+                                               struct zwlr_output_configuration_v1 *config)
+{
+  g_debug ("New output configuration %p applied", config);
+  zwlr_output_configuration_v1_destroy (config);
+}
+
+
+static void
+zwlr_output_configuration_v1_handle_failed (void *data,
+                                            struct zwlr_output_configuration_v1 *config)
+{
+  /* TODO: bubble up error */
+  g_warning ("Failed to apply New output %p configuration", config);
+  zwlr_output_configuration_v1_destroy (config);
+}
+
+
+static void
+zwlr_output_configuration_v1_handle_cancelled (void *data,
+                                               struct zwlr_output_configuration_v1 *config)
+{
+  zwlr_output_configuration_v1_destroy(config);
+  g_warning("Failed to apply New output configuration %p due to changes", config);
+}
+
+
+static const struct zwlr_output_configuration_v1_listener config_listener = {
+  .succeeded = zwlr_output_configuration_v1_handle_succeeded,
+  .failed = zwlr_output_configuration_v1_handle_failed,
+  .cancelled = zwlr_output_configuration_v1_handle_cancelled,
+};
+
+
 static void
 phosh_monitor_manager_finalize (GObject *object)
 {
   PhoshMonitorManager *self = PHOSH_MONITOR_MANAGER (object);
 
   g_ptr_array_free (self->monitors, TRUE);
+  g_ptr_array_free (self->heads, TRUE);
 
   G_OBJECT_CLASS (phosh_monitor_manager_parent_class)->finalize (object);
 }
 
+/*
+ * PhoshMonitorManager Class
+ */
 
 static void
 phosh_monitor_manager_constructed (GObject *object)
@@ -836,6 +982,7 @@ phosh_monitor_manager_constructed (GObject *object)
   PhoshWayland *wl = phosh_wayland_get_default();
   GHashTableIter iter;
   struct wl_output *wl_output;
+  struct zwlr_output_manager_v1 *zwlr_output_manager_v1;
 
   G_OBJECT_CLASS (phosh_monitor_manager_parent_class)->constructed (object);
   self->dbus_name_id = g_bus_own_name (G_BUS_TYPE_SESSION,
@@ -861,6 +1008,11 @@ phosh_monitor_manager_constructed (GObject *object)
     PhoshMonitor *monitor = phosh_monitor_new_from_wl_output (wl_output);
     phosh_monitor_manager_add_monitor (self, monitor);
   }
+
+  zwlr_output_manager_v1 = phosh_wayland_get_zwlr_output_manager_v1 (wl);
+  zwlr_output_manager_v1_add_listener (zwlr_output_manager_v1,
+                                       &zwlr_output_manager_v1_listener,
+                                       self);
 }
 
 
@@ -907,8 +1059,10 @@ static void
 phosh_monitor_manager_init (PhoshMonitorManager *self)
 {
   self->monitors = g_ptr_array_new_with_free_func ((GDestroyNotify) (g_object_unref));
+  self->heads = g_ptr_array_new_with_free_func ((GDestroyNotify) (g_object_unref));
   self->serial = 1;
 }
+
 
 PhoshMonitorManager *
 phosh_monitor_manager_new (void)
@@ -936,7 +1090,7 @@ phosh_monitor_manager_get_monitor (PhoshMonitorManager *self, guint num)
 
 
 PhoshMonitor *
-phosh_monitor_manager_find_monitor (PhoshMonitorManager *self, const gchar *name)
+phosh_monitor_manager_find_monitor (PhoshMonitorManager *self, const char *name)
 {
   for (int i = 0; i < self->monitors->len; i++) {
     PhoshMonitor *monitor = g_ptr_array_index (self->monitors, i);
@@ -951,4 +1105,74 @@ guint
 phosh_monitor_manager_get_num_monitors (PhoshMonitorManager *self)
 {
   return self->monitors->len;
+}
+
+/**
+ * phosh_monitor_set_transform:
+ * @self: A #PhoshMonitor
+ * @mode: The #PhoshMonitorPowerSaveMode
+ *
+ * Sets monitor's transform. This will become active after the next
+ * call to #phosh_monitor_manager_apply_monitor_config().
+ */
+void
+phosh_monitor_manager_set_monitor_transform (PhoshMonitorManager *self,
+                                             PhoshMonitor *monitor,
+                                             PhoshMonitorTransform transform)
+{
+  g_autoptr(PhoshHead) head = NULL;
+
+  g_return_if_fail (PHOSH_IS_MONITOR_MANAGER (self));
+  g_return_if_fail (PHOSH_IS_MONITOR (monitor));
+  g_return_if_fail (phosh_monitor_is_configured (monitor));
+  head = g_object_ref (phosh_monitor_manager_get_head_from_monitor (self, monitor));
+  g_return_if_fail (PHOSH_IS_HEAD (head));
+
+  head->pending.transform = transform;
+}
+
+/**
+ * phosh_monitor_manager_apply_monitor_config
+ * @self: a #PhoshMonitorManager
+ *
+ * Applies a full output configuration
+ */
+void
+phosh_monitor_manager_apply_monitor_config (PhoshMonitorManager *self)
+{
+  PhoshWayland *wl = phosh_wayland_get_default();
+  struct zwlr_output_configuration_v1 *config;
+  struct zwlr_output_manager_v1 *output_manager =
+    phosh_wayland_get_zwlr_output_manager_v1 (wl);
+
+  g_return_if_fail (PHOSH_IS_MONITOR_MANAGER (self));
+
+  config = zwlr_output_manager_v1_create_configuration (output_manager,
+                                                        self->zwlr_output_serial);
+
+  zwlr_output_configuration_v1_add_listener (config, &config_listener, self);
+  for (int i = 0; i < self->heads->len; i++) {
+    struct zwlr_output_configuration_head_v1 *config_head;
+    PhoshHead *head = g_ptr_array_index (self->heads, i);
+    struct zwlr_output_head_v1 *wlr_head = phosh_head_get_wlr_head (head);
+
+    g_debug ("Adding head %s to configuration", head->name);
+
+    if (!phosh_head_get_enabled (head)) {
+      zwlr_output_configuration_v1_disable_head (config, wlr_head);
+      continue;
+    }
+
+    config_head = zwlr_output_configuration_v1_enable_head (config, wlr_head);
+    zwlr_output_configuration_head_v1_set_mode (config_head,
+                                                head->pending.mode->wlr_mode);
+    zwlr_output_configuration_head_v1_set_position (config_head,
+                                                    head->pending.x, head->pending.y);
+    zwlr_output_configuration_head_v1_set_transform (config_head,
+                                                     head->pending.transform);
+    zwlr_output_configuration_head_v1_set_scale (config_head,
+                                                 wl_fixed_from_double(head->pending.scale));
+  }
+
+  zwlr_output_configuration_v1_apply (config);
 }

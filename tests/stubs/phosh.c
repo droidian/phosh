@@ -1,3 +1,9 @@
+/*
+ * Copyright (C) 2018 Purism SPC
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ */
+
 /* Stubs so we don't need to run the shell */
 
 #include <glib.h>
@@ -13,7 +19,7 @@ phosh_shell_get_default (void)
 }
 
 void
-phosh_shell_get_usable_area (PhoshShell *self,  gint *x, gint *y, gint *width, gint *height)
+phosh_shell_get_usable_area (PhoshShell *self, int *x, int *y, int *width, int *height)
 {
   if (x)
     *x = 16;

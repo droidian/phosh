@@ -1,7 +1,7 @@
 /*
  * Copyright © 2019 Zander Brown <zbrown@gnome.org>
  *
- * SPDX-License-Identifier: GPL-3.0+
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 #define G_LOG_DOMAIN "phosh-app-grid-button"
@@ -72,6 +72,7 @@ phosh_app_grid_button_set_property (GObject      *object,
   }
 }
 
+
 static void
 phosh_app_grid_button_get_property (GObject    *object,
                                     guint       property_id,
@@ -96,6 +97,7 @@ phosh_app_grid_button_get_property (GObject    *object,
   }
 }
 
+
 static void
 phosh_app_grid_button_dispose (GObject *object)
 {
@@ -106,6 +108,7 @@ phosh_app_grid_button_dispose (GObject *object)
 
   G_OBJECT_CLASS (phosh_app_grid_button_parent_class)->dispose (object);
 }
+
 
 static void
 phosh_app_grid_button_finalize (GObject *object)
@@ -165,22 +168,22 @@ activate_cb (PhoshAppGridButton *self)
   g_autoptr (GdkAppLaunchContext) context = NULL;
   g_autoptr (GError) error = NULL;
   PhoshToplevelManager *toplevel_manager = phosh_shell_get_toplevel_manager (phosh_shell_get_default ());
-  g_autofree gchar *app_id = g_strdup (g_app_info_get_id (G_APP_INFO (priv->info)));
+  g_autofree char *app_id = g_strdup (g_app_info_get_id (G_APP_INFO (priv->info)));
 
   g_debug ("Launching %s", app_id);
 
-  // strip ".desktop" suffix
+  /* strip ".desktop" suffix */
   if (app_id && g_str_has_suffix (app_id, ".desktop")) {
     *(app_id + strlen (app_id) - strlen (".desktop")) = '\0';
   }
 
   for (guint i=0; i < phosh_toplevel_manager_get_num_toplevels (toplevel_manager); i++) {
     PhoshToplevel *toplevel = phosh_toplevel_manager_get_toplevel (toplevel_manager, i);
-    const gchar *window_id = phosh_toplevel_get_app_id (toplevel);
-    g_autofree gchar *fixed_id = phosh_fix_app_id (window_id);
+    const char *window_id = phosh_toplevel_get_app_id (toplevel);
+    g_autofree char *fixed_id = phosh_fix_app_id (window_id);
 
     if (g_strcmp0 (app_id, window_id) == 0 || g_strcmp0 (app_id, fixed_id) == 0) {
-      // activate the first matching window for now, since we don't have toplevels sorted by last-focus yet
+      /* activate the first matching window for now, since we don't have toplevels sorted by last-focus yet */
       phosh_toplevel_activate (toplevel, phosh_wayland_get_wl_seat (phosh_wayland_get_default ()));
       g_signal_emit (self, signals[APP_LAUNCHED], 0, priv->info);
       return;
@@ -280,6 +283,7 @@ phosh_app_grid_button_class_init (PhoshAppGridButtonClass *klass)
   gtk_widget_class_set_css_name (widget_class, "phosh-app-grid-button");
 }
 
+
 static void
 action_activated (GSimpleAction *action,
                   GVariant      *parameter,
@@ -334,8 +338,8 @@ favorite_add_activated (GSimpleAction *action,
 
 static void
 long_pressed (GtkGestureLongPress *gesture,
-              gdouble              x,
-              gdouble              y,
+              double               x,
+              double               y,
               GtkWidget           *self)
 {
   context_menu (self, NULL);
@@ -448,7 +452,7 @@ phosh_app_grid_button_set_app_info (PhoshAppGridButton *self,
   PhoshFavoriteListModel *list = NULL;
   PhoshAppGridButtonPrivate *priv;
   GIcon *icon;
-  const gchar* name;
+  const char *name;
 
   g_return_if_fail (PHOSH_IS_APP_GRID_BUTTON (self));
   g_return_if_fail (G_IS_APP_INFO (info) || info == NULL);
@@ -501,16 +505,18 @@ phosh_app_grid_button_set_app_info (PhoshAppGridButton *self,
 
       actions = g_desktop_app_info_list_actions (G_DESKTOP_APP_INFO (priv->info));
 
-      // So the dummy GAppInfo for the tests is (for reasons known only to gio)
-      // actually a GDesktopAppInfo rather than something like GDummyAppInfo,
-      // this means that guarding this block with G_IS_DESKTOP_APP_INFO
-      // doesn't actually help much. This seems to surprise even gio as instead
-      // of always returning at least an empty array (as the API promises) it
-      // returns NULL
-      //
-      // tl;dr: we do (actions && actions[i]) instead of (actions[i]) otherwise
-      //        the tests explode because of a condition that can only exist in
-      //        the tests
+      /*
+       * So the dummy GAppInfo for the tests is (for reasons known only to gio)
+       * actually a GDesktopAppInfo rather than something like GDummyAppInfo,
+       * this means that guarding this block with G_IS_DESKTOP_APP_INFO
+       * doesn't actually help much. This seems to surprise even gio as instead
+       * of always returning at least an empty array (as the API promises) it
+       * returns NULL
+       *
+       * tl;dr: we do (actions && actions[i]) instead of (actions[i]) otherwise
+       *        the tests explode because of a condition that can only exist in
+       *        the tests
+       */
 
       while (actions && actions[i]) {
         g_autofree char *detailed_action = NULL;

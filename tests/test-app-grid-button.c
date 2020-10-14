@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2019 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
@@ -114,16 +116,31 @@ test_phosh_app_grid_button_set_mode (void)
   mode = phosh_app_grid_button_get_mode (PHOSH_APP_GRID_BUTTON (btn));
   g_assert_true (mode == PHOSH_APP_GRID_BUTTON_LAUNCHER);
 
-  g_test_expect_message ("phosh-app-grid-button",
-                         G_LOG_LEVEL_CRITICAL,
-                         "Invalid mode*");
-  phosh_app_grid_button_set_mode (PHOSH_APP_GRID_BUTTON (btn),
-                                  G_MAXINT);
-  // The mode shouldn't have actually changed
-  mode = phosh_app_grid_button_get_mode (PHOSH_APP_GRID_BUTTON (btn));
-  g_assert_true (mode == PHOSH_APP_GRID_BUTTON_LAUNCHER);
-
   gtk_widget_destroy (btn);
+}
+
+
+static void
+test_phosh_app_grid_button_set_invalid_mode (void)
+{
+
+  if (g_test_subprocess ()) {
+    GAppInfo *info = g_app_info_create_from_commandline ("foo",
+                                                         "com.example.foo",
+                                                         G_APP_INFO_CREATE_NONE,
+                                                         NULL);
+    GtkWidget *btn = phosh_app_grid_button_new (info);
+
+    g_test_expect_message ("phosh-app-grid-button",
+                           G_LOG_LEVEL_CRITICAL,
+                           "Invalid mode*");
+    /* Boom */
+    phosh_app_grid_button_set_mode (PHOSH_APP_GRID_BUTTON (btn),
+                                    G_MAXINT);
+  }
+  g_test_trap_subprocess (NULL, 0, 0);
+  g_test_trap_assert_failed ();
+  g_test_trap_assert_stderr ("*: phosh-app-grid-button-CRITICAL * Invalid mode 2147483647\n");
 }
 
 
@@ -154,9 +171,9 @@ test_phosh_app_grid_button_menu (void)
 
   btn = phosh_app_grid_button_new (info);
 
-  // Pretend someone pressed the menu button
+  /* Pretend someone pressed the menu button */
   GTK_WIDGET_GET_CLASS (btn)->popup_menu (btn);
-  // Ideally we would check the popover actually opened
+  /* Ideally we would check the popover actually opened */
 
   actions = gtk_widget_get_action_group (btn, "app-btn");
   g_action_group_activate_action (actions, "favorite-add", NULL);
@@ -187,7 +204,7 @@ test_phosh_app_grid_button_is_favorite (void)
 
   info = G_APP_INFO (g_desktop_app_info_new ("demo.app.Second.desktop"));
 
-  // Clear all favorites
+  /* Clear all favorites */
   settings = g_settings_new ("sm.puri.phosh");
   g_settings_set_strv (settings, "favorites", NULL);
 
@@ -214,9 +231,9 @@ test_phosh_app_grid_button_is_favorite (void)
 }
 
 
-gint
-main (gint argc,
-      gchar *argv[])
+int
+main (int   argc,
+      char *argv[])
 {
   gtk_test_init (&argc, &argv, NULL);
 
@@ -224,6 +241,7 @@ main (gint argc,
   g_test_add_func("/phosh/app-grid-button/new_favorite", test_phosh_app_grid_button_new_favorite);
   g_test_add_func("/phosh/app-grid-button/set_app_info", test_phosh_app_grid_button_set_app_info);
   g_test_add_func("/phosh/app-grid-button/set_mode", test_phosh_app_grid_button_set_mode);
+  g_test_add_func("/phosh/app-grid-button/set_invalid_mode", test_phosh_app_grid_button_set_invalid_mode);
   g_test_add_func("/phosh/app-grid-button/null_app_info", test_phosh_app_grid_button_null_app_info);
   g_test_add_func("/phosh/app-grid-button/menu", test_phosh_app_grid_button_menu);
   g_test_add_func("/phosh/app-grid-button/is_favorite", test_phosh_app_grid_button_is_favorite);

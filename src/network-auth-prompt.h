@@ -1,13 +1,15 @@
 /*
  * Copyright (C) 2019 Purism SPC
  *
- * SPDX-License-Identifier: GPL-3.0+
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 #pragma once
 
 #include <gtk/gtk.h>
 #include <NetworkManager.h>
 #include "layersurface.h"
+
+G_BEGIN_DECLS
 
 #define PHOSH_TYPE_NETWORK_AUTH_PROMPT (phosh_network_auth_prompt_get_type())
 
@@ -18,8 +20,9 @@ GtkWidget *phosh_network_auth_prompt_new         (ShellNetworkAgent *agent,
                                                   gpointer           layer_shell,
                                                   gpointer           wl_output);
 void       phosh_network_auth_prompt_set_request (PhoshNetworkAuthPrompt        *self,
-                                                  gchar                         *request_id,
+                                                  char                          *request_id,
                                                   NMConnection                  *connection,
-                                                  gchar                         *setting_name,
-                                                  gchar                        **hints,
+                                                  char                          *setting_name,
+                                                  char                         **hints,
                                                   NMSecretAgentGetSecretsFlags   flags);
+G_END_DECLS

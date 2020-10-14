@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2018 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
@@ -8,8 +10,11 @@
 
 #include "config.h"
 
+#include "log.h"
 #include "shell.h"
 #include "phosh-wayland.h"
+
+#include <handy.h>
 
 #include <glib/gi18n.h>
 #include <glib-unix.h>
@@ -22,6 +27,28 @@ quit (gpointer unused)
   gtk_main_quit ();
 
   return G_SOURCE_REMOVE;
+}
+
+
+static gboolean
+on_sigusr1_signal (gpointer unused)
+{
+  static gboolean logall = FALSE;
+
+  if (logall) {
+    const char *domains;
+
+    domains = g_getenv ("G_MESSAGES_DEBUG");
+    g_message ("Enabling messages for %s", domains);
+    phosh_log_set_log_domains (domains);
+    logall = FALSE;
+  } else {
+    g_message ("Enabling all log messages");
+    phosh_log_set_log_domains ("all");
+    logall = TRUE;
+  }
+
+  return G_SOURCE_CONTINUE;
 }
 
 
@@ -75,13 +102,17 @@ int main(int argc, char *argv[])
     print_version ();
   }
 
+  phosh_log_set_log_domains (g_getenv("G_MESSAGES_DEBUG"));
+
   textdomain (GETTEXT_PACKAGE);
   bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
   bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
   gtk_init (&argc, &argv);
+  hdy_init ();
 
   g_unix_signal_add (SIGTERM, on_shutdown_signal, NULL);
   g_unix_signal_add (SIGINT, on_shutdown_signal, NULL);
+  g_unix_signal_add (SIGUSR1, on_sigusr1_signal, NULL);
 
   wl = phosh_wayland_get_default ();
   shell = phosh_shell_get_default ();

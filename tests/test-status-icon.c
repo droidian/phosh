@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2019 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
@@ -10,7 +12,7 @@ static void
 test_phosh_status_icon_new (void)
 {
   GtkWidget *widget;
-  g_autofree gchar *icon_name = NULL;
+  g_autofree char *icon_name = NULL;
   GtkIconSize icon_size;
 
   widget = phosh_status_icon_new ();
@@ -54,7 +56,7 @@ static void
 test_phosh_status_icon_icon_name (void)
 {
   GtkWidget *widget;
-  const gchar *icon_name;
+  const char *icon_name;
 
   widget = phosh_status_icon_new ();
   g_assert_true (PHOSH_IS_STATUS_ICON (widget));
@@ -92,9 +94,9 @@ test_phosh_status_icon_extra_widget (void)
 
 
 
-gint
-main (gint argc,
-      gchar *argv[])
+int
+main (int   argc,
+      char *argv[])
 {
   gtk_test_init (&argc, &argv, NULL);
 

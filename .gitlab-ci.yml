@@ -45,7 +45,7 @@ variables:
     CI_REPO: "deb http://ci.puri.sm/ scratch librem5"
     DIST: buster
     DEPS: phoc wget gnome-session gdb weston valgrind
-          libhandy-0.0-0-dbgsym libgtk-3-0-dbgsym libglib2.0-0-dbgsym
+          libhandy-1-0-dbgsym libgtk-3-0-dbgsym libglib2.0-0-dbgsym
           dconf-gsettings-backend-dbgsym libfeedback-0.0-0-dbgsym
           xvfb imagemagick
     WANT_BUILD_DEPS: "false"
@@ -163,7 +163,7 @@ build-gtkdoc:
     - build:native-debian-bullseye
   <<: *bullseye_vars
   script:
-    - ninja -C _build phosh-doc
+    - tools/doc-check
     - mv _build/docs/html/ _reference/
   artifacts:
     paths:
@@ -192,6 +192,21 @@ check-po:
     variables:
       - $PKG_ONLY == "1"
 
+check-license-headers:
+  <<: *tags
+  stage: test+docs
+  image: debian:bullseye
+  dependencies:
+    - build:native-debian-bullseye
+  <<: *bullseye_vars
+  script:
+    # Checks .c and .h files begin with a license header as
+    # defined in HACKING.md
+    - ./tools/check-license-headers.py
+  except:
+    variables:
+      - $PKG_ONLY == "1"
+
 build:native-alpinelinux-edge:
   <<: *tags
   stage: build
@@ -200,7 +215,7 @@ build:native-alpinelinux-edge:
   before_script:
     - echo "https://alpine.global.ssl.fastly.net/alpine/edge/testing" >> /etc/apk/repositories
     - apk -q add alpine-sdk
-    - apk -q add meson ninja gtk+3.0-dev gnome-desktop-dev libhandy-dev gcr-dev upower-dev linux-pam-dev git pulseaudio-dev networkmanager-dev polkit-elogind-dev libsecret-dev feedbackd-dev
+    - apk -q add meson ninja gtk+3.0-dev gnome-desktop-dev libhandy1-dev gcr-dev upower-dev linux-pam-dev git pulseaudio-dev networkmanager-dev polkit-elogind-dev libsecret-dev feedbackd-dev
   artifacts:
     paths:
       - _build
@@ -222,7 +237,7 @@ unit-test:native-alpinelinux-edge:
   before_script:
     - echo "https://alpine.global.ssl.fastly.net/alpine/edge/testing" >> /etc/apk/repositories
     - apk -q add alpine-sdk
-    - apk -q add xvfb-run meson ninja glib-dev wayland-protocols wayland-dev musl-dev gnome-desktop-dev libhandy-dev gcr-dev upower-dev linux-pam-dev pulseaudio-dev networkmanager-dev polkit-elogind-dev libsecret-dev gcovr feedbackd-dev
+    - apk -q add xvfb-run meson ninja glib-dev wayland-protocols wayland-dev musl-dev gnome-desktop-dev libhandy1-dev gcr-dev upower-dev linux-pam-dev pulseaudio-dev networkmanager-dev polkit-elogind-dev libsecret-dev gcovr feedbackd-dev
   script:
     - export LC_ALL=C.UTF-8
     - ${XVFB_RUN} ninja -C _build test

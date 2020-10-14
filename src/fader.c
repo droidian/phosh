@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2018 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
@@ -10,7 +12,6 @@
 #include "fader.h"
 #include "shell.h"
 
-#define HANDY_USE_UNSTABLE_API
 #include <handy.h>
 
 /**
@@ -28,12 +29,13 @@ typedef struct _PhoshFader
 } PhoshFader;
 G_DEFINE_TYPE (PhoshFader, phosh_fader, PHOSH_TYPE_LAYER_SURFACE)
 
+
 static void
 phosh_fader_show (GtkWidget *widget)
 {
   gboolean enable_animations;
   GtkStyleContext *context;
-  
+
   enable_animations = hdy_get_enable_animations (widget);
 
   if (enable_animations) {
@@ -43,7 +45,8 @@ phosh_fader_show (GtkWidget *widget)
 
   GTK_WIDGET_CLASS (phosh_fader_parent_class)->show (widget);
 }
-  
+
+
 static void
 phosh_fader_class_init (PhoshFaderClass *klass)
 {
@@ -51,6 +54,7 @@ phosh_fader_class_init (PhoshFaderClass *klass)
 
   widget_class->show = phosh_fader_show;
 }
+
 
 static void
 phosh_fader_init (PhoshFader *self)

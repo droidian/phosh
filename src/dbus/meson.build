@@ -1,22 +1,26 @@
 # DBus client interfaces
 generated_dbus_sources = []
 
-
 # iio-sensor-proxy
 generated_dbus_sources += gnome.gdbus_codegen('iio-sensor-proxy-dbus',
 					      'net.hadess.SensorProxy.xml',
 					      interface_prefix: 'net.hadess',
-					      namespace: 'PhoshDbus')
+					      namespace: 'PhoshDBus')
+# org.freedesktop.UPower.Torch
+generated_dbus_sources += gnome.gdbus_codegen('upower-torch-dbus',
+					      'org.freedesktop.UPower.Torch.xml',
+					      interface_prefix: 'org.freedesktop.UPower',
+					      namespace: 'PhoshUPowerDBus')
 # org.gnome.SessionManager.Presence
 generated_dbus_sources += gnome.gdbus_codegen('gnome-session-presence-dbus',
 					      'org.gnome.SessionManager.Presence.xml',
 					      interface_prefix: 'org.gnome.SessionManager',
-					      namespace: 'PhoshSessionPresenceDbus')
+					      namespace: 'PhoshSessionPresenceDBus')
 # org.gnome.SettingsDaemon.Rfkill
 generated_dbus_sources += gnome.gdbus_codegen('gsd-rfkill-dbus',
 					      'org.gnome.SettingsDaemon.Rfkill.xml',
 					      interface_prefix: 'org.gnome.SettingsDaemon',
-					      namespace: 'PhoshRfkillDbus')
+					      namespace: 'PhoshRfkillDBus')
 # MPris2
 generated_dbus_sources += gnome.gdbus_codegen('mpris-dbus',
 					      'org.mpris.MediaPlayer2.xml',

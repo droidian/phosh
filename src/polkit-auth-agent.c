@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2019 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
@@ -19,7 +21,7 @@
 #ifdef PHOSH_POLKIT_AUTH_DEBUG
 #define auth_debug(...) g_debug(__VA_ARGS__)
 #else
-static void auth_debug(const gchar *str, ...) {}
+static void auth_debug(const char *str, ...) {}
 #endif
 
 /**
@@ -38,11 +40,11 @@ typedef struct {
   gulong handler_id;
 
   /* copies */
-  gchar          *action_id;
-  gchar          *message;
-  gchar          *icon_name;
+  char           *action_id;
+  char           *message;
+  char           *icon_name;
   PolkitDetails  *details;
-  gchar          *cookie;
+  char           *cookie;
   GList          *identities;
 
   GTask *simple;
@@ -142,8 +144,8 @@ auth_request_initiate (AuthRequest *request)
   for (l = request->identities; l != NULL; l = l->next) {
       if (POLKIT_IS_UNIX_USER (l->data)) {
           PolkitUnixUser *user = POLKIT_UNIX_USER (l->data);
-          gint uid;
-          gchar buf[4096];
+          int uid;
+          char buf[4096];
           struct passwd pwd;
           struct passwd *ppwd;
           int ret;
@@ -164,7 +166,7 @@ auth_request_initiate (AuthRequest *request)
   }
 
   g_ptr_array_add (p, NULL);
-  user_names = (gchar **) g_ptr_array_free (p, FALSE);
+  user_names = (char **) g_ptr_array_free (p, FALSE);
 
   g_debug("New prompt for %s", request->message);
   primary_monitor = phosh_shell_get_primary_monitor (shell);
@@ -277,11 +279,11 @@ on_request_cancelled (GCancellable *cancellable,
 
 static void
 initiate_authentication (PolkitAgentListener  *listener,
-                         const gchar          *action_id,
-                         const gchar          *message,
-                         const gchar          *icon_name,
+                         const char           *action_id,
+                         const char           *message,
+                         const char           *icon_name,
                          PolkitDetails        *details,
-                         const gchar          *cookie,
+                         const char           *cookie,
                          GList                *identities,
                          GCancellable         *cancellable,
                          GAsyncReadyCallback   callback,

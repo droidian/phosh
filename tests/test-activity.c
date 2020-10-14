@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2018 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
@@ -17,9 +19,9 @@ test_phosh_activity_new(void)
 }
 
 
-gint
-main (gint argc,
-      gchar *argv[])
+int
+main (int   argc,
+      char *argv[])
 {
   gtk_test_init (&argc, &argv, NULL);
 

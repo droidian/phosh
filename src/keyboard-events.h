@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2020 Evangelos Ribeiro Tzaras
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Evangelos Ribeiro Tzaras <devrtz@fortysixandtwo.eu>
  */
 
@@ -19,5 +21,5 @@ G_DECLARE_FINAL_TYPE (PhoshKeyboardEvents,
 
 PhoshKeyboardEvents  *phosh_keyboard_events_new           (void);
 void                  phosh_keyboard_events_register_keys (PhoshKeyboardEvents *self,
-                                                           gchar              **keys,
+                                                           char               **keys,
                                                            size_t               len);

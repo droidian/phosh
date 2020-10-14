@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2018 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  *
  * Based on code from gnome-settings-daemon
@@ -26,8 +28,8 @@
  * @short_description: Manages gnome-session registration and shutdown
  * @Title: PhoshSession
  *
- * The #PhoshSession is responsible for registration with
- * gnome-session and system shutdown
+ * The PhoshSession is responsible for registration with
+ * gnome-session and for triggering system shutdown and reboot.
  */
 static GDBusProxy *_proxy;
 
@@ -54,8 +56,8 @@ do_stop (void)
 
 static void
 client_proxy_signal_cb (GDBusProxy *proxy,
-                        gchar *sender_name,
-                        gchar *signal_name,
+                        char *sender_name,
+                        char *signal_name,
                         GVariant *parameters,
                         gpointer user_data)
 {
@@ -80,7 +82,7 @@ on_client_registered (GObject             *source_object,
   GVariant *variant;
   GDBusProxy *client_proxy;
   g_autoptr (GError) error = NULL;
-  g_autofree gchar *object_path = NULL;
+  g_autofree char *object_path = NULL;
 
   variant = g_dbus_proxy_call_finish (G_DBUS_PROXY (source_object), res, &error);
   if (!variant) {

@@ -1,7 +1,7 @@
 /*
  * Copyright © 2020 Zander Brown <zbrown@gnome.org>
  *
- * SPDX-License-Identifier: GPL-3.0+
+ * SPDX-License-Identifier: GPL-3.0-or-later
  */
 
 #pragma once
@@ -10,13 +10,25 @@
 
 G_BEGIN_DECLS
 
+/**
+ * PhoshNotificationUrgency:
+ * @PHOSH_NOTIFICATION_URGENCY_LOW: low urgency
+ * @PHOSH_NOTIFICATION_URGENCY_NORMAL: normal urgency
+ * @PHOSH_NOTIFICATION_URGENCY_CRITICAL: critical urgency
+ */
 typedef enum {
   PHOSH_NOTIFICATION_URGENCY_LOW = 0,
   PHOSH_NOTIFICATION_URGENCY_NORMAL,
   PHOSH_NOTIFICATION_URGENCY_CRITICAL,
 } PhoshNotificationUrgency;
 
-
+/**
+ * PhoshNotificationReason:
+ * @PHOSH_NOTIFICATION_REASON_EXPIRED: notification expired
+ * @PHOSH_NOTIFICATION_REASON_DISMISSED: notification was dismissed
+ * @PHOSH_NOTIFICATION_REASON_CLOSED: notification was closed
+ * @PHOSH_NOTIFICATION_REASON_UNDEFINED: undefined reason
+*/
 typedef enum {
   PHOSH_NOTIFICATION_REASON_EXPIRED = 1,
   PHOSH_NOTIFICATION_REASON_DISMISSED = 2,

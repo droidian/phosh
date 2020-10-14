@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2018 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  *
  * Somewhat based on maynard's panel which is
@@ -139,7 +141,7 @@ wall_clock_notify_cb (PhoshPanel *self,
                       GnomeWallClock *wall_clock)
 {
   PhoshPanelPrivate *priv = phosh_panel_get_instance_private (self);
-  const gchar *str;
+  const char *str;
 
   g_return_if_fail (PHOSH_IS_PANEL (self));
   g_return_if_fail (GNOME_IS_WALL_CLOCK (wall_clock));
@@ -189,16 +191,16 @@ on_seat_device_changed (PhoshPanel *self, GdkDevice  *device, GdkSeat *seat)
 
 
 static void
-on_input_setting_changed (PhoshPanel  *self,
-                          const gchar *key,
-                          GSettings   *settings)
+on_input_setting_changed (PhoshPanel *self,
+                          const char *key,
+                          GSettings  *settings)
 {
   PhoshPanelPrivate *priv = phosh_panel_get_instance_private (self);
   g_autoptr(GVariant) sources = NULL;
   GVariantIter iter;
-  g_autofree gchar *id = NULL;
-  g_autofree gchar *type = NULL;
-  const gchar *name;
+  g_autofree char *id = NULL;
+  g_autofree char *type = NULL;
+  const char *name;
 
   if (!needs_keyboard_label (self)) {
     gtk_widget_hide (priv->lbl_lang);
@@ -224,6 +226,7 @@ on_input_setting_changed (PhoshPanel  *self,
   gtk_widget_show (priv->lbl_lang);
 }
 
+
 static gboolean
 on_key_press_event (PhoshPanel *self, GdkEventKey *event, gpointer data)
 {
@@ -248,6 +251,7 @@ on_key_press_event (PhoshPanel *self, GdkEventKey *event, gpointer data)
   return handled;
 }
 
+
 static gboolean
 on_button_press_event (PhoshPanel *self, GdkEventKey *event, gpointer data)
 {
@@ -256,12 +260,14 @@ on_button_press_event (PhoshPanel *self, GdkEventKey *event, gpointer data)
   return FALSE;
 }
 
+
 static GActionEntry entries[] = {
   { "poweroff", on_shutdown_action, NULL, NULL, NULL },
   { "restart", on_restart_action, NULL, NULL, NULL },
   { "lockscreen", on_lockscreen_action, NULL, NULL, NULL },
   { "logout", on_logout_action, NULL, NULL, NULL },
 };
+
 
 static void
 phosh_panel_constructed (GObject *object)
@@ -357,6 +363,7 @@ phosh_panel_dispose (GObject *object)
   G_OBJECT_CLASS (phosh_panel_parent_class)->dispose (object);
 }
 
+
 static void
 phosh_panel_class_init (PhoshPanelClass *klass)
 {
@@ -410,11 +417,12 @@ phosh_panel_new (struct zwlr_layer_shell_v1 *layer_shell,
                        NULL);
 }
 
+
 void
 phosh_panel_fold (PhoshPanel *self)
 {
   PhoshPanelPrivate *priv;
-  gint width;
+  int width;
 
   g_return_if_fail (PHOSH_IS_PANEL (self));
   priv = phosh_panel_get_instance_private (self);
@@ -430,6 +438,7 @@ phosh_panel_fold (PhoshPanel *self)
   gtk_window_resize (GTK_WINDOW (self), width, PHOSH_PANEL_HEIGHT);
   priv->state = PHOSH_PANEL_STATE_FOLDED;
 }
+
 
 void
 phosh_panel_unfold (PhoshPanel *self)
@@ -452,6 +461,7 @@ phosh_panel_unfold (PhoshPanel *self)
                             self);
   priv->state =PHOSH_PANEL_STATE_UNFOLDED;
 }
+
 
 void
 phosh_panel_toggle_fold (PhoshPanel *self)

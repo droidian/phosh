@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2018 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
@@ -51,7 +53,7 @@ typedef struct _PhoshLockscreen
 
 
 typedef struct {
-  GtkWidget *paginator;
+  GtkWidget *carousel;
 
   /* info page */
   GtkWidget *box_info;
@@ -93,10 +95,10 @@ static void
 show_info_page (PhoshLockscreen *self)
 {
   PhoshLockscreenPrivate *priv = phosh_lockscreen_get_instance_private (self);
-  if (hdy_paginator_get_position (HDY_PAGINATOR (priv->paginator)) <= 0)
+  if (hdy_carousel_get_position (HDY_CAROUSEL (priv->carousel)) <= 0)
     return;
 
-  hdy_paginator_scroll_to (HDY_PAGINATOR (priv->paginator), priv->box_info);
+  hdy_carousel_scroll_to (HDY_CAROUSEL (priv->carousel), priv->box_info);
 }
 
 
@@ -120,10 +122,10 @@ static void
 show_unlock_page (PhoshLockscreen *self)
 {
   PhoshLockscreenPrivate *priv = phosh_lockscreen_get_instance_private (self);
-  if (hdy_paginator_get_position (HDY_PAGINATOR (priv->paginator)) > 0)
+  if (hdy_carousel_get_position (HDY_CAROUSEL (priv->carousel)) > 0)
     return;
 
-  hdy_paginator_scroll_to (HDY_PAGINATOR (priv->paginator), priv->box_unlock);
+  hdy_carousel_scroll_to (HDY_CAROUSEL (priv->carousel), priv->box_unlock);
 
   /* skip signal on init */
   if (signals[WAKEUP_OUTPUT])
@@ -149,8 +151,8 @@ shake_label (GtkWidget *widget,
   gint64 end_time = start_time + 1000 * 300;
   gint64 now = gdk_frame_clock_get_frame_time (frame_clock);
 
-  gfloat t = (gfloat) (now - start_time) / (gfloat)(end_time - start_time);
-  gfloat pos = sin(t * 10) * 0.05 + 0.5;
+  float t = (float) (now - start_time) / (float) (end_time - start_time);
+  float pos = sin (t * 10) * 0.05 + 0.5;
 
   if (now > end_time) {
     /* Stop the animation only when we would step over the idle position (0.5) */
@@ -215,8 +217,8 @@ delete_button_clicked_cb (PhoshLockscreen *self,
 
 static void
 long_press_del_cb (PhoshLockscreen *self,
-                   gdouble              x,
-                   gdouble              y,
+                   double           x,
+                   double           y,
                    GtkGesture      *gesture)
 {
   g_return_if_fail (PHOSH_IS_LOCKSCREEN (self));
@@ -245,7 +247,7 @@ static void
 submit_cb (PhoshLockscreen *self)
 {
   PhoshLockscreenPrivate *priv;
-  const gchar *input;
+  const char *input;
   guint16 length;
 
   g_assert (PHOSH_IS_LOCKSCREEN (self));
@@ -327,7 +329,7 @@ key_press_event_cb (PhoshLockscreen *self, GdkEventKey *event, gpointer data)
  * set to something different since LANGUAGE overrides
  * LC_{ALL,MESSAGE}.
  */
-static const gchar *
+static const char *
 date_fmt (void)
 {
   const char *locale;
@@ -343,6 +345,7 @@ date_fmt (void)
   return fmt;
 }
 
+
 /**
  * local_date:
  *
@@ -351,13 +354,13 @@ date_fmt (void)
  * the user has LC_MESSAGES=en_US.UTF-8 but LC_TIME to their local
  * time zone.
  */
-static gchar*
+static char *
 local_date (void)
 {
   time_t current = time (NULL);
   struct tm local;
-  g_autofree gchar *date = NULL;
-  const gchar *fmt;
+  g_autofree char *date = NULL;
+  const char *fmt;
   const char *locale;
 
   g_return_val_if_fail (current != (time_t) -1, NULL);
@@ -383,8 +386,8 @@ wall_clock_notify_cb (PhoshLockscreen *self,
                       GnomeWallClock *wall_clock)
 {
   PhoshLockscreenPrivate *priv = phosh_lockscreen_get_instance_private (self);
-  const gchar *time;
-  g_autofree gchar *date = NULL;
+  const char *time;
+  g_autofree char *date = NULL;
 
   time = gnome_wall_clock_get_clock(wall_clock);
   gtk_label_set_text (GTK_LABEL (priv->lbl_clock), time);
@@ -394,16 +397,15 @@ wall_clock_notify_cb (PhoshLockscreen *self,
 }
 
 
-
 static void
-paginator_position_notified_cb (PhoshLockscreen *self,
-                                GParamSpec      *pspec,
-                                HdyPaginator    *paginator)
+carousel_position_notified_cb (PhoshLockscreen *self,
+                               GParamSpec      *pspec,
+                               HdyCarousel     *carousel)
 {
   PhoshLockscreenPrivate *priv = phosh_lockscreen_get_instance_private (self);
   double position;
 
-  position = hdy_paginator_get_position (HDY_PAGINATOR (priv->paginator));
+  position = hdy_carousel_get_position (HDY_CAROUSEL (priv->carousel));
 
   if (position <= 0) {
     clear_input (self, TRUE);
@@ -426,6 +428,7 @@ paginator_position_notified_cb (PhoshLockscreen *self,
     priv->idle_timer = 0;
   }
 }
+
 
 static void
 phosh_lockscreen_constructed (GObject *object)
@@ -459,6 +462,7 @@ phosh_lockscreen_constructed (GObject *object)
                             self);
   wall_clock_notify_cb (self, NULL, priv->wall_clock);
 }
+
 
 static void
 phosh_lockscreen_dispose (GObject *object)
@@ -505,10 +509,10 @@ phosh_lockscreen_class_init (PhoshLockscreenClass *klass)
   gtk_widget_class_set_css_name (widget_class, "phosh-lockscreen");
   gtk_widget_class_set_template_from_resource (widget_class,
                                                "/sm/puri/phosh/ui/lockscreen.ui");
-  gtk_widget_class_bind_template_child_private (widget_class, PhoshLockscreen, paginator);
+  gtk_widget_class_bind_template_child_private (widget_class, PhoshLockscreen, carousel);
   gtk_widget_class_bind_template_callback_full (widget_class,
-                                                "paginator_position_notified_cb",
-                                                G_CALLBACK(paginator_position_notified_cb));
+                                                "carousel_position_notified_cb",
+                                                G_CALLBACK(carousel_position_notified_cb));
 
   /* unlock page */
   gtk_widget_class_bind_template_child_private (widget_class, PhoshLockscreen, box_unlock);

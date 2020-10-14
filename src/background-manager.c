@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2018 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
@@ -28,6 +30,7 @@ struct _PhoshBackgroundManager {
   PhoshMonitor *primary_monitor;
   GHashTable   *backgrounds;
 };
+
 
 G_DEFINE_TYPE (PhoshBackgroundManager, phosh_background_manager, G_TYPE_OBJECT);
 
@@ -78,6 +81,7 @@ on_monitor_configured (PhoshBackgroundManager *self,
   phosh_background_set_scale (background, monitor->scale);
   gtk_widget_show (GTK_WIDGET (background));
 }
+
 
 static void
 on_monitor_added (PhoshBackgroundManager *self,

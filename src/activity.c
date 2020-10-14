@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2018 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
@@ -23,7 +25,7 @@
  * The #PhoshActivity is used to select a running application in the overview.
  */
 
-// Icons actually sized according to the pixel-size set in the template
+/* Icons actually sized according to the pixel-size set in the template */
 #define ACTIVITY_ICON_SIZE -1
 
 enum {
@@ -79,7 +81,7 @@ phosh_activity_set_property (GObject *object,
 {
   PhoshActivity *self = PHOSH_ACTIVITY (object);
   PhoshActivityPrivate *priv = phosh_activity_get_instance_private(self);
-  gint height, width;
+  int height, width;
 
   switch (property_id) {
     case PROP_APP_ID:
@@ -182,9 +184,11 @@ draw_cb (PhoshActivity *self, cairo_t *cairo, GtkDrawingArea *area)
   if (height / (float)image_height < scale)
     scale = height / (float)image_height;
 
-  // If the window is maximized, draw it from the top with a grayish background;
-  // otherwise center it on transparent background - a poor man's way to take
-  // exclusive areas like virtual keyboard into account.
+  /*
+   * If the window is maximized, draw it from the top with a grayish background;
+   * otherwise center it on transparent background - a poor man's way to take
+   * exclusive areas like virtual keyboard into account.
+   */
 
   if (priv->maximized)
     cairo_set_source_rgba (cairo, 0.1, 0.1, 0.1, 1.0);
@@ -206,19 +210,20 @@ draw_cb (PhoshActivity *self, cairo_t *cairo, GtkDrawingArea *area)
   return FALSE;
 }
 
+
 static void
 phosh_activity_constructed (GObject *object)
 {
   PhoshActivity *self = PHOSH_ACTIVITY (object);
   PhoshActivityPrivate *priv = phosh_activity_get_instance_private (self);
-  g_autofree gchar *desktop_id = NULL;
+  g_autofree char *desktop_id = NULL;
 
   desktop_id = g_strdup_printf ("%s.desktop", priv->app_id);
   g_return_if_fail (desktop_id);
   priv->info = g_desktop_app_info_new (desktop_id);
 
   if (!priv->info) {
-    g_autofree gchar *name = phosh_fix_app_id (priv->app_id);
+    g_autofree char *name = phosh_fix_app_id (priv->app_id);
     g_return_if_fail (name);
     g_free (desktop_id);
     desktop_id = g_strdup_printf ("%s.desktop", name);
@@ -274,11 +279,13 @@ phosh_activity_finalize (GObject *object)
   G_OBJECT_CLASS (phosh_activity_parent_class)->finalize (object);
 }
 
+
 static GtkSizeRequestMode
 phosh_activity_get_request_mode (GtkWidget *widgte)
 {
   return GTK_SIZE_REQUEST_WIDTH_FOR_HEIGHT;
 }
+
 
 static void
 phosh_activity_get_preferred_height (GtkWidget *widget,
@@ -305,6 +312,7 @@ phosh_activity_get_preferred_height (GtkWidget *widget,
   if (nat)
     *nat = smallest;
 }
+
 
 static void
 phosh_activity_get_preferred_width_for_height (GtkWidget *widget,
@@ -339,6 +347,7 @@ phosh_activity_get_preferred_width_for_height (GtkWidget *widget,
     *nat = size;
 }
 
+
 static void
 phosh_activity_get_preferred_height_for_width (GtkWidget *widget,
                                                int        width,
@@ -347,6 +356,7 @@ phosh_activity_get_preferred_height_for_width (GtkWidget *widget,
 {
   phosh_activity_get_preferred_height (widget, min, nat);
 }
+
 
 static void
 phosh_activity_class_init (PhoshActivityClass *klass)
@@ -464,6 +474,7 @@ phosh_activity_get_app_id (PhoshActivity *self)
   return priv->app_id;
 }
 
+
 void
 phosh_activity_set_title (PhoshActivity *self, const char *title)
 {
@@ -481,6 +492,7 @@ phosh_activity_set_title (PhoshActivity *self, const char *title)
   g_object_notify_by_pspec (G_OBJECT (self), props[PROP_TITLE]);
 }
 
+
 const char *
 phosh_activity_get_title (PhoshActivity *self)
 {
@@ -491,6 +503,7 @@ phosh_activity_get_title (PhoshActivity *self)
 
   return priv->title;
 }
+
 
 void
 phosh_activity_set_thumbnail (PhoshActivity *self, PhoshThumbnail *thumbnail)

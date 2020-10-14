@@ -1,8 +1,11 @@
 /*
  * Copyright (C) 2018 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
+
 #define G_LOG_DOMAIN "phosh-auth"
 
 #include "config.h"
@@ -67,12 +70,12 @@ pam_conversation_cb(int num_msg, const struct pam_message **msg,
 
 /* return TRUE if pin is correct, FALSE otherwise */
 static gboolean
-authenticate (PhoshAuth *self, const gchar* number)
+authenticate (PhoshAuth *self, const char *number)
 {
   PhoshAuthPrivate *priv = phosh_auth_get_instance_private (self);
   int ret;
   gboolean authenticated = FALSE;
-  const gchar *username;
+  const char *username;
   const struct pam_conv conv = {
     .conv = pam_conversation_cb,
     .appdata_ptr = (void*)number,
@@ -131,7 +134,7 @@ phosh_auth_finalize (GObject *object)
 {
   PhoshAuthPrivate *priv = phosh_auth_get_instance_private (PHOSH_AUTH(object));
   GObjectClass *parent_class = G_OBJECT_CLASS (phosh_auth_parent_class);
-  gint ret;
+  int ret;
 
   if (priv->pamh) {
     ret = pam_end(priv->pamh, PAM_AUTH_ERR);
@@ -168,7 +171,7 @@ phosh_auth_new (void)
 
 void
 phosh_auth_authenticate_async_start (PhoshAuth           *self,
-                                     const gchar         *number,
+                                     const char          *number,
                                      GCancellable        *cancellable,
                                      GAsyncReadyCallback  callback,
                                      gpointer             callback_data)

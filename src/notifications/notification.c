@@ -1,7 +1,7 @@
 /*
  * Copyright © 2020 Zander Brown <zbrown@gnome.org>
  *
- * SPDX-License-Identifier: GPL-3.0+
+ * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * Author: Zander Brown <zbrown@gnome.org>
  */
@@ -190,7 +190,7 @@ phosh_notification_finalize (GObject *object)
 {
   PhoshNotification *self = PHOSH_NOTIFICATION (object);
 
-  // If we've been dismissed cancel the auto timeout
+  /* If we've been dismissed cancel the auto timeout */
   if (self->timeout != 0) {
     g_source_remove (self->timeout);
   }
@@ -405,7 +405,7 @@ phosh_notification_new (guint                     id,
                        "body", body,
                        "app-name", app_name,
                        "app-icon", icon,
-                       // Set info after fallback name and icon
+                       /* Set info after fallback name and icon */
                        "app-info", info,
                        "image", image,
                        "urgency", urgency,
@@ -556,7 +556,7 @@ phosh_notification_get_summary (PhoshNotification *self)
 
 void
 phosh_notification_set_body (PhoshNotification *self,
-                             const gchar       *body)
+                             const char        *body)
 {
   g_return_if_fail (PHOSH_IS_NOTIFICATION (self));
 
@@ -583,7 +583,7 @@ phosh_notification_get_body (PhoshNotification *self)
 
 void
 phosh_notification_set_app_name (PhoshNotification *self,
-                                 const gchar       *app_name)
+                                 const char        *app_name)
 {
   g_return_if_fail (PHOSH_IS_NOTIFICATION (self));
 
@@ -869,7 +869,7 @@ phosh_notification_close (PhoshNotification       *self,
 {
   g_return_if_fail (PHOSH_IS_NOTIFICATION (self));
 
-  // No point running the timeout, we're already closing
+  /* No point running the timeout, we're already closing */
   if (self->timeout != 0) {
     g_source_remove (self->timeout);
     self->timeout = 0;

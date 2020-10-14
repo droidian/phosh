@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2020 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
@@ -20,7 +22,7 @@
  * #PhoshConnectivityInfo monitors the connectivity to the internet
  * via NetworkManager and alerts the user about connectivity problems.
  * Usually there's no point in showing the widget when
- * #Phosh:connectivity it %TRUE but it's up to the container to
+ * #PhoshConnectivityInfo:connectivity it %TRUE but it's up to the container to
  * decide.
  */
 
@@ -38,6 +40,7 @@ struct _PhoshConnectivityInfo {
   NMClient       *nmclient;
 };
 G_DEFINE_TYPE (PhoshConnectivityInfo, phosh_connectivity_info, PHOSH_TYPE_STATUS_ICON);
+
 
 static void
 phosh_connectivity_info_get_property (GObject    *object,
@@ -60,7 +63,7 @@ phosh_connectivity_info_get_property (GObject    *object,
 static void
 on_connectivity_changed (PhoshConnectivityInfo *self, GParamSpec *pspec, NMClient *nmclient)
 {
-  const gchar *icon_name;
+  const char *icon_name;
   NMConnectivityState state;
   gboolean connectivity = FALSE;
 
@@ -125,6 +128,7 @@ on_nm_client_ready (GObject *obj, GAsyncResult *res, PhoshConnectivityInfo *self
 
   g_idle_add ((GSourceFunc) on_idle, self);
 }
+
 
 static void
 phosh_connectivity_info_constructed (GObject *object)

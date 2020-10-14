@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2018 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
@@ -14,7 +16,6 @@
 #include "phosh-enums.h"
 #include "osk/osk-button.h"
 
-#define HANDY_USE_UNSTABLE_API
 #include <handy.h>
 
 /**
@@ -53,7 +54,7 @@ struct _PhoshHome
   GtkWidget *overview;
 
   struct {
-    gdouble progress;
+    double progress;
     gint64 last_frame;
   } animation;
 
@@ -104,9 +105,9 @@ phosh_home_get_property (GObject *object,
 static void
 phosh_home_resize (PhoshHome *self)
 {
-  gint margin;
-  gint height;
-  gdouble progress = hdy_ease_out_cubic (self->animation.progress);
+  int margin;
+  int height;
+  double progress = hdy_ease_out_cubic (self->animation.progress);
 
   if (self->state == PHOSH_HOME_STATE_UNFOLDED)
     progress = 1.0 - progress;
@@ -154,6 +155,7 @@ fold_cb (PhoshHome *self, PhoshOverview *overview)
 
   phosh_home_set_state (self, PHOSH_HOME_STATE_FOLDED);
 }
+
 
 static gboolean
 key_press_event_cb (PhoshHome *self, GdkEventKey *event, gpointer data)
@@ -317,15 +319,18 @@ animate_cb(GtkWidget *widget,
   return finished ? G_SOURCE_REMOVE : G_SOURCE_CONTINUE;
 }
 
+
 /**
  * phosh_home_set_state:
+ * @self: The home surface
+ * @state: The state to set
  *
  * Set the state of the home screen. See #PhoshHomeState.
  */
 void
 phosh_home_set_state (PhoshHome *self, PhoshHomeState state)
 {
-  g_autofree gchar *state_name = NULL;
+  g_autofree char *state_name = NULL;
   gboolean enable_animations;
   gboolean kbd_interactivity;
 

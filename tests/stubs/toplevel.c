@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2019 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Sebastian Krzyszkowiak <sebastian.krzyszkowiak@puri.sm>
  */
 
@@ -34,14 +36,14 @@ phosh_toplevel_init (PhoshToplevel *self)
 }
 
 
-const gchar*
+const char *
 phosh_toplevel_get_title (PhoshToplevel *self) {
   g_return_val_if_fail (PHOSH_IS_TOPLEVEL (self), NULL);
   return "Mock Title";
 }
 
 
-const gchar*
+const char *
 phosh_toplevel_get_app_id (PhoshToplevel *self) {
   g_return_val_if_fail (PHOSH_IS_TOPLEVEL (self), NULL);
   return "mock.app.id";

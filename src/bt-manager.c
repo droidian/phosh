@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2020 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
@@ -39,15 +41,16 @@ static GParamSpec *props[PROP_LAST_PROP];
 struct _PhoshBtManager {
   GObject                parent;
 
-  /* Wheter bt  radio is on */
+  /* Whether bt radio is on */
   gboolean               enabled;
   /* Whether we have a bt device is present */
   gboolean               present;
-  const gchar           *icon_name;
+  const char            *icon_name;
 
-  PhoshRfkillDbusRfkill *proxy;
+  PhoshRfkillDBusRfkill *proxy;
 };
 G_DEFINE_TYPE (PhoshBtManager, phosh_bt_manager, G_TYPE_OBJECT);
+
 
 static void
 phosh_bt_manager_get_property (GObject    *object,
@@ -77,10 +80,10 @@ phosh_bt_manager_get_property (GObject    *object,
 static void
 on_bt_airplane_mode_changed (PhoshBtManager        *self,
                              GParamSpec            *pspec,
-                             PhoshRfkillDbusRfkill *proxy)
+                             PhoshRfkillDBusRfkill *proxy)
 {
   gboolean enabled;
-  const gchar *icon_name;
+  const char *icon_name;
 
   g_return_if_fail (PHOSH_IS_BT_MANAGER (self));
   g_return_if_fail (PHOSH_RFKILL_DBUS_IS_RFKILL (proxy));
@@ -110,7 +113,7 @@ on_bt_airplane_mode_changed (PhoshBtManager        *self,
 static void
 on_bt_has_airplane_mode_changed (PhoshBtManager        *self,
                                  GParamSpec            *pspec,
-                                 PhoshRfkillDbusRfkill *proxy)
+                                 PhoshRfkillDBusRfkill *proxy)
 {
   gboolean present;
 
@@ -212,6 +215,7 @@ on_idle (PhoshBtManager *self)
   return G_SOURCE_REMOVE;
 }
 
+
 static void
 phosh_bt_manager_init (PhoshBtManager *self)
 {
@@ -228,7 +232,7 @@ phosh_bt_manager_new (void)
 }
 
 
-const gchar*
+const char *
 phosh_bt_manager_get_icon_name (PhoshBtManager *self)
 {
   g_return_val_if_fail (PHOSH_IS_BT_MANAGER (self), NULL);

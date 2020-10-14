@@ -1,9 +1,11 @@
 /*
  * Copyright (C) 2018 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  *
- * Based on  gnome-shell's shell-keyring-prompt.c
+ * Based on gnome-shell's shell-keyring-prompt.c
  * Author: Stef Walter <stefw@gnome.org>
  */
 
@@ -60,16 +62,16 @@ typedef enum
 
 typedef struct
 {
-  gchar *title;
-  gchar *message;
-  gchar *description;
-  gchar *warning;
-  gchar *choice_label;
+  char *title;
+  char *message;
+  char *description;
+  char *warning;
+  char *choice_label;
   gboolean choice_chosen;
   gboolean password_new;
   guint password_strength;
-  gchar *continue_label;
-  gchar *cancel_label;
+  char *continue_label;
+  char *cancel_label;
 
   GtkWidget *btn_cancel;
   GtkWidget *btn_continue;
@@ -269,7 +271,7 @@ phosh_system_prompt_password_async (GcrPrompt *prompt,
 }
 
 
-static const gchar *
+static const char *
 phosh_system_prompt_password_finish (GcrPrompt *prompt,
                                      GAsyncResult *result,
                                      GError **error)
@@ -352,9 +354,9 @@ prompt_complete (PhoshSystemPrompt *self)
   PhoshSystemPromptPrivate *priv = phosh_system_prompt_get_instance_private (self);
   GTask *res;
   PromptingMode mode;
-  const gchar *password;
-  const gchar *confirm;
-  const gchar *env;
+  const char *password;
+  const char *confirm;
+  const char *env;
 
   g_return_val_if_fail (PHOSH_IS_SYSTEM_PROMPT (self), FALSE);
   g_return_val_if_fail (priv->mode != PROMPTING_NONE, FALSE);
@@ -440,7 +442,7 @@ on_password_changed (PhoshSystemPrompt *self,
   PhoshSystemPromptPrivate *priv;
   int upper, lower, digit, misc;
   const char *password;
-  gdouble pwstrength;
+  double pwstrength;
   int length, i;
 
   g_return_if_fail (PHOSH_IS_SYSTEM_PROMPT (self));

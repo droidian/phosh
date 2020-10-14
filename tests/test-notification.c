@@ -1,7 +1,7 @@
 /*
- * Copyright © 2020 Zander Brown
+ * Copyright © 2020 Zander Brown <zbrown@gnome.org>
  *
- * SPDX-License-Identifier: GPL-3.0+
+ * SPDX-License-Identifier: GPL-3.0-or-later
  *
  * Author: Zander Brown <zbrown@gnome.org>
  */
@@ -193,10 +193,10 @@ actioned (PhoshNotification *noti,
 }
 
 
-// g_strv_equal from GLib 2.60
+/* g_strv_equal from GLib 2.60 */
 static gboolean
-strv_equal (const gchar * const *strv1,
-            const gchar * const *strv2)
+strv_equal (const char *const *strv1,
+            const char *const *strv2)
 {
   g_return_val_if_fail (strv1 != NULL, FALSE);
   g_return_val_if_fail (strv2 != NULL, FALSE);
@@ -238,8 +238,8 @@ test_phosh_notification_actions (void)
 
   actions = phosh_notification_get_actions (noti);
 
-  g_assert_true (strv_equal ((const gchar * const*) original_actions,
-                             (const gchar * const*) actions));
+  g_assert_true (strv_equal ((const char *const *) original_actions,
+                             (const char *const *) actions));
 
   g_signal_connect (noti, "actioned", G_CALLBACK (actioned), NULL);
   phosh_notification_activate (noti, "app.test");
@@ -311,8 +311,6 @@ test_phosh_notification_get (void)
   g_assert_cmpint (urgency, ==, PHOSH_NOTIFICATION_URGENCY_CRITICAL);
   g_assert_nonnull (timestamp);
   g_assert_true (timestamp == now);
-
-  BAD_PROP (noti, phosh_notification, PhoshNotification);
 }
 
 
@@ -379,10 +377,10 @@ test_phosh_notification_expires (void)
 
   g_assert_true (did_expire);
 
-  // Set it to expire in the future
+  /* Set it to expire in the future */
   phosh_notification_expires (noti, 100000);
 
-  // Kill the object taking the timeout with it
+  /* Kill the object taking the timeout with it */
   g_clear_object (&noti);
 }
 
@@ -408,11 +406,52 @@ test_phosh_notification_close (void)
                                  NULL,
                                  now);
 
-  // Set it to expire in the future
+  /* Set it to expire in the future */
   phosh_notification_expires (noti, 1000);
 
-  // Send a close event, kills any timeout
+  /* Send a close event, kills any timeout */
   phosh_notification_close (noti, PHOSH_NOTIFICATION_REASON_CLOSED);
+}
+
+static void
+test_phosh_notification_set_prop_invalid (void)
+{
+  g_autoptr (GDateTime) now = g_date_time_new_now_local ();
+  g_autoptr (PhoshNotification) noti = phosh_notification_new (0,
+                                                               NULL,
+                                                               NULL,
+                                                               "Hey",
+                                                               "Testing",
+                                                               NULL,
+                                                               NULL,
+                                                               PHOSH_NOTIFICATION_URGENCY_NORMAL,
+                                                               NULL,
+                                                               FALSE,
+                                                               FALSE,
+                                                               NULL,
+                                                               now);
+  BAD_PROP_SET (noti, phosh_notification, PhoshNotification);
+}
+
+
+static void
+test_phosh_notification_get_prop_invalid (void)
+{
+  g_autoptr (GDateTime) now = g_date_time_new_now_local ();
+  g_autoptr (PhoshNotification) noti = phosh_notification_new (0,
+                                                               NULL,
+                                                               NULL,
+                                                               "Hey",
+                                                               "Testing",
+                                                               NULL,
+                                                               NULL,
+                                                               PHOSH_NOTIFICATION_URGENCY_NORMAL,
+                                                               NULL,
+                                                               FALSE,
+                                                               FALSE,
+                                                               NULL,
+                                                               now);
+  BAD_PROP_GET (noti, phosh_notification, PhoshNotification);
 }
 
 
@@ -427,6 +466,8 @@ main (int argc, char **argv)
   g_test_add_func ("/phosh/notification/get", test_phosh_notification_get);
   g_test_add_func ("/phosh/notification/expires", test_phosh_notification_expires);
   g_test_add_func ("/phosh/notification/close", test_phosh_notification_close);
+  g_test_add_func ("/phosh/notification/get_prop_invalid", test_phosh_notification_get_prop_invalid);
+  g_test_add_func ("/phosh/notification/set_prop_invalid", test_phosh_notification_set_prop_invalid);
 
   return g_test_run ();
 }

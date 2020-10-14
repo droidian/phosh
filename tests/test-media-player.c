@@ -1,6 +1,8 @@
 /*
  * Copyright (C) 2019 Purism SPC
- * SPDX-License-Identifier: GPL-3.0+
+ *
+ * SPDX-License-Identifier: GPL-3.0-or-later
+ *
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
@@ -49,10 +51,10 @@ test_phosh_media_player_new (TestFixture *fixture, gconstpointer data)
 #endif
 }
 
-gint
-main (gint argc, gchar *argv[])
+int
+main (int argc, char *argv[])
 {
-  gint ret = -1;
+  int ret = -1;
 
   g_autoptr(GTestDBus) bus = NULL;
   const char *display;
