@@ -500,6 +500,8 @@ on_builtin_monitor_power_mode_changed (PhoshShell *self, GParamSpec *pspec, Phos
   g_return_if_fail (PHOSH_IS_SHELL (self));
   g_return_if_fail (PHOSH_IS_MONITOR (monitor));
 
+  g_debug ("monitor builtin power mode changed!");
+
   g_object_get (monitor, "power-mode", &mode, NULL);
   if (mode == PHOSH_MONITOR_POWER_SAVE_MODE_OFF)
     phosh_shell_lock (self);
@@ -747,21 +749,34 @@ phosh_shell_get_builtin_monitor (PhoshShell *self)
 {
   PhoshShellPrivate *priv;
   PhoshMonitor *monitor = NULL;
+  gboolean found = FALSE;
 
   g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
   priv = phosh_shell_get_instance_private (self);
 
-  if (priv->builtin_monitor)
+  if (priv->builtin_monitor) {
+    g_debug ("Monitor %s is builtin and has been already detected", priv->builtin_monitor->name);
     return priv->builtin_monitor;
+  }
 
   for (int i = 0; i < phosh_monitor_manager_get_num_monitors (priv->monitor_manager); i++) {
     monitor = phosh_monitor_manager_get_monitor (priv->monitor_manager, i);
-    if (phosh_monitor_is_builtin (monitor))
+    g_debug ("Processing monitor %s", monitor->name);
+    if (phosh_monitor_is_builtin (monitor)) {
+      g_debug ("  > monitor is builtin!");
+      found = TRUE;
       break;
+    }
   }
 
-  if (!monitor)
+  if (!found) {
     monitor = phosh_monitor_manager_get_monitor (priv->monitor_manager, 0);
+    g_debug ("2Processing monitor %s", monitor->name);
+    if (phosh_monitor_is_builtin (monitor)) {
+      g_debug ("   > yay monitor is builtin");
+    }
+  }
+
   g_return_val_if_fail (monitor, NULL);
 
   return monitor;

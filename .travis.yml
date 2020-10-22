@@ -1,6 +1,6 @@
 env:
   global:
-    BUILD_ON="amd64 arm64 armhf"
+    BUILD_ON="arm64"
 
 import:
   source: hybris-mobian-releng/build-snippets:debian-package.yml@master
