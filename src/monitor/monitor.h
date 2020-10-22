@@ -35,6 +35,7 @@ G_BEGIN_DECLS
  * @PHOSH_MONITOR_CONNECTOR_TYPE_eDP: a eDP connector
  * @PHOSH_MONITOR_CONNECTOR_TYPE_VIRTUAL: a Virtual connector
  * @PHOSH_MONITOR_CONNECTOR_TYPE_DSI: a DSI connector
+ * @PHOSH_MONITOR_CONNECTOR_TYPE_HWC: a HWC connector
  *
  * This matches the values in drm_mode.h
  */
@@ -57,6 +58,7 @@ typedef enum _PhoshMonitorConnectorType
   PHOSH_MONITOR_CONNECTOR_TYPE_eDP = 14,
   PHOSH_MONITOR_CONNECTOR_TYPE_VIRTUAL = 15,
   PHOSH_MONITOR_CONNECTOR_TYPE_DSI = 16,
+  PHOSH_MONITOR_CONNECTOR_TYPE_HWC = 17,
 } PhoshMonitorConnectorType;
 
 /**
