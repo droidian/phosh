@@ -507,6 +507,32 @@ on_builtin_monitor_power_mode_changed (PhoshShell *self, GParamSpec *pspec, Phos
     phosh_shell_lock (self);
 }
 
+static void
+on_monitor_added (PhoshShell *self, PhoshMonitor *monitor)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_if_fail (PHOSH_IS_SHELL (self));
+  g_return_if_fail (PHOSH_IS_MONITOR (monitor));
+  priv = phosh_shell_get_instance_private (self);
+
+  /* Skip if a built-in monitor has already been found */
+  if (priv->builtin_monitor)
+    return;
+
+  if (phosh_monitor_is_builtin(priv->primary_monitor))
+    priv->builtin_monitor = priv->primary_monitor;
+  else
+    priv->builtin_monitor = phosh_shell_get_builtin_monitor(self);
+
+  if (priv->builtin_monitor) {
+    g_signal_connect_swapped (
+      priv->builtin_monitor,
+      "notify::power-mode",
+      G_CALLBACK(on_builtin_monitor_power_mode_changed),
+      self);
+  }
+}
 
 static void
 on_primary_monitor_configured (PhoshShell   *self,
@@ -526,6 +552,10 @@ on_primary_monitor_configured (PhoshShell   *self,
   priv->transform = transform;
   g_debug ("Primary monitor transform %d", transform);
   g_object_notify_by_pspec (G_OBJECT (self), props[PHOSH_SHELL_PROP_TRANSFORM]);
+
+  /* monitor-added might haven't be emitted for this primary monitor, so force the hand */
+  if (!priv->builtin_monitor)
+    on_monitor_added (self, monitor);
 }
 
 
@@ -561,7 +591,6 @@ on_monitor_removed (PhoshShell *self, PhoshMonitor *monitor)
   g_assert (priv->primary_monitor && priv->primary_monitor != monitor);
 }
 
-
 static void
 phosh_shell_constructed (GObject *object)
 {
@@ -576,6 +605,10 @@ phosh_shell_constructed (GObject *object)
                             "monitor-removed",
                             G_CALLBACK (on_monitor_removed),
                             self);
+  g_signal_connect_swapped (priv->monitor_manager,
+                            "monitor-added",
+                            G_CALLBACK (on_monitor_added),
+                            self);
 
   if (phosh_monitor_manager_get_num_monitors(priv->monitor_manager)) {
     PhoshMonitor *monitor = phosh_monitor_manager_get_monitor (priv->monitor_manager, 0);
@@ -588,11 +621,6 @@ phosh_shell_constructed (GObject *object)
                               G_CALLBACK (on_primary_monitor_configured),
                               self);
   }
-
-  if (phosh_monitor_is_builtin(priv->primary_monitor))
-    priv->builtin_monitor = priv->primary_monitor;
-  else
-    priv->builtin_monitor = phosh_shell_get_builtin_monitor(self);
 
   gtk_icon_theme_add_resource_path (gtk_icon_theme_get_default (),
                                     "/sm/puri/phosh/icons");
@@ -609,14 +637,6 @@ phosh_shell_constructed (GObject *object)
   priv->polkit_auth_agent = phosh_polkit_auth_agent_new ();
 
   priv->feedback_manager = phosh_feedback_manager_new ();
-
-  if (priv->builtin_monitor) {
-    g_signal_connect_swapped (
-      priv->builtin_monitor,
-      "notify::power-mode",
-      G_CALLBACK(on_builtin_monitor_power_mode_changed),
-      self);
-  }
 
   g_idle_add ((GSourceFunc) setup_idle_cb, self);
 }
