@@ -570,6 +570,8 @@ phosh_monitor_connector_type_from_name (const char *name)
     return PHOSH_MONITOR_CONNECTOR_TYPE_eDP;
   else if (g_str_has_prefix (name, "DSI-"))
     return PHOSH_MONITOR_CONNECTOR_TYPE_DSI;
+  else if (g_str_has_prefix (name, "HWCOMPOSER-"))
+    return PHOSH_MONITOR_CONNECTOR_TYPE_HWC;
   else
     return PHOSH_MONITOR_CONNECTOR_TYPE_Unknown;
 }
@@ -582,6 +584,7 @@ phosh_monitor_connector_is_builtin (PhoshMonitorConnectorType conn_type)
   case PHOSH_MONITOR_CONNECTOR_TYPE_eDP:
   case PHOSH_MONITOR_CONNECTOR_TYPE_LVDS:
   case PHOSH_MONITOR_CONNECTOR_TYPE_DSI:
+  case PHOSH_MONITOR_CONNECTOR_TYPE_HWC:
     return TRUE;
   case PHOSH_MONITOR_CONNECTOR_TYPE_Unknown:
   case PHOSH_MONITOR_CONNECTOR_TYPE_VGA:
