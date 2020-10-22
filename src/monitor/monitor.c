@@ -211,6 +211,10 @@ xdg_output_v1_handle_name (void *data,
       self->conn_type = PHOSH_MONITOR_CONNECTOR_TYPE_eDP;
   else if (g_str_has_prefix (name, "DSI-"))
     self->conn_type = PHOSH_MONITOR_CONNECTOR_TYPE_DSI;
+  else if (g_strcmp0 (name, "HWCOMPOSER-1"))
+    self->conn_type = PHOSH_MONITOR_CONNECTOR_TYPE_HWCOMPOSER_BUILTIN;
+  else if (g_str_has_prefix (name, "HWCOMPOSER-"))
+    self->conn_type = PHOSH_MONITOR_CONNECTOR_TYPE_HWCOMPOSER;
   else
     self->conn_type = PHOSH_MONITOR_CONNECTOR_TYPE_Unknown;
 }
@@ -465,6 +469,7 @@ phosh_monitor_is_builtin (PhoshMonitor *self)
   case PHOSH_MONITOR_CONNECTOR_TYPE_eDP:
   case PHOSH_MONITOR_CONNECTOR_TYPE_LVDS:
   case PHOSH_MONITOR_CONNECTOR_TYPE_DSI:
+  case PHOSH_MONITOR_CONNECTOR_TYPE_HWCOMPOSER_BUILTIN:
     return TRUE;
   case PHOSH_MONITOR_CONNECTOR_TYPE_Unknown:
   case PHOSH_MONITOR_CONNECTOR_TYPE_VGA:
