@@ -29,11 +29,14 @@
 #include "batteryinfo.h"
 #include "background-manager.h"
 #include "bt-manager.h"
+#include "docked-manager.h"
 #include "fader.h"
 #include "feedback-manager.h"
 #include "home.h"
 #include "idle-manager.h"
+#include "keyboard-events.h"
 #include "lockscreen-manager.h"
+#include "mode-manager.h"
 #include "monitor-manager.h"
 #include "monitor/monitor.h"
 #include "notifications/notify-manager.h"
@@ -99,6 +102,9 @@ typedef struct
   PhoshBtManager *bt_manager;
   PhoshWWan *wwan;
   PhoshTorchManager *torch_manager;
+  PhoshModeManager *mode_manager;
+  PhoshDockedManager *docked_manager;
+  PhoshKeyboardEvents *keyboard_events;
 
   /* sensors */
   PhoshSensorProxyManager *sensor_proxy_manager;
@@ -329,7 +335,10 @@ phosh_shell_dispose (GObject *object)
 
   g_clear_object (&priv->notification_banner);
 
+  g_clear_object (&priv->keyboard_events);
   /* dispose managers in opposite order of declaration */
+  g_clear_object (&priv->docked_manager);
+  g_clear_object (&priv->mode_manager);
   g_clear_object (&priv->torch_manager);
   g_clear_object (&priv->wwan);
   g_clear_object (&priv->bt_manager);
@@ -405,7 +414,8 @@ on_new_notification (PhoshShell         *self,
   }
 
   if (phosh_notify_manager_get_show_banners (manager) &&
-      !phosh_lockscreen_manager_get_locked (priv->lockscreen_manager)) {
+      !phosh_lockscreen_manager_get_locked (priv->lockscreen_manager) &&
+      phosh_panel_get_state (PHOSH_PANEL (priv->panel)) == PHOSH_PANEL_STATE_FOLDED) {
     g_set_weak_pointer (&priv->notification_banner,
                         phosh_notification_banner_new (notification));
 
@@ -434,6 +444,8 @@ static gboolean
 setup_idle_cb (PhoshShell *self)
 {
   PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
+
+  priv->mode_manager = phosh_mode_manager_new ();
 
   panels_create (self);
   /* Create background after panel since it needs the panel's size */
@@ -568,6 +580,10 @@ phosh_shell_constructed (GObject *object)
 
   G_OBJECT_CLASS (phosh_shell_parent_class)->constructed (object);
 
+  /* We bind this early since a wl_display_roundtrip () would make us miss
+     exising toplevels */
+  priv->toplevel_manager = phosh_toplevel_manager_new ();
+
   priv->transform = -1; /* force initial update */
   priv->monitor_manager = phosh_monitor_manager_new ();
   g_signal_connect_swapped (priv->monitor_manager,
@@ -575,22 +591,23 @@ phosh_shell_constructed (GObject *object)
                             G_CALLBACK (on_monitor_removed),
                             self);
 
+  /* Make sure all outputs are up to date */
+  phosh_wayland_roundtrip (phosh_wayland_get_default ());
+
   if (phosh_monitor_manager_get_num_monitors(priv->monitor_manager)) {
-    PhoshMonitor *monitor = phosh_monitor_manager_get_monitor (priv->monitor_manager, 0);
+    priv->builtin_monitor = phosh_shell_get_builtin_monitor (self);
+
+    g_debug ("Builtin monitor is %s, %d", priv->builtin_monitor->name,
+             phosh_monitor_is_configured (priv->builtin_monitor));
     /* Can't invoke phosh_shell_set_primary_monitor () since the shell
        object does not really exist yet but we need the primary monitor
        early for the panels */
-    priv->primary_monitor = g_object_ref (monitor);
+    priv->primary_monitor = g_object_ref (priv->builtin_monitor);
     g_signal_connect_swapped (priv->primary_monitor,
                               "configured",
                               G_CALLBACK (on_primary_monitor_configured),
                               self);
   }
-
-  if (phosh_monitor_is_builtin(priv->primary_monitor))
-    priv->builtin_monitor = priv->primary_monitor;
-  else
-    priv->builtin_monitor = phosh_shell_get_builtin_monitor(self);
 
   gtk_icon_theme_add_resource_path (gtk_icon_theme_get_default (),
                                     "/sm/puri/phosh/icons");
@@ -600,7 +617,6 @@ phosh_shell_constructed (GObject *object)
   priv->lockscreen_manager = phosh_lockscreen_manager_new ();
   priv->idle_manager = phosh_idle_manager_get_default();
 
-  priv->toplevel_manager = phosh_toplevel_manager_new ();
   priv->faders = g_ptr_array_new_with_free_func ((GDestroyNotify) (gtk_widget_destroy));
 
   phosh_system_prompter_register ();
@@ -615,6 +631,8 @@ phosh_shell_constructed (GObject *object)
       G_CALLBACK(on_builtin_monitor_power_mode_changed),
       self);
   }
+
+  priv->keyboard_events = phosh_keyboard_events_new ();
 
   g_idle_add ((GSourceFunc) setup_idle_cb, self);
 }
@@ -931,6 +949,23 @@ phosh_shell_get_torch_manager (PhoshShell *self)
   return priv->torch_manager;
 }
 
+
+PhoshDockedManager *
+phosh_shell_get_docked_manager (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
+  priv = phosh_shell_get_instance_private (self);
+
+  if (!priv->docked_manager)
+    priv->docked_manager = phosh_docked_manager_new (priv->mode_manager);
+
+  g_return_val_if_fail (PHOSH_IS_DOCKED_MANAGER (priv->docked_manager), NULL);
+  return priv->docked_manager;
+}
+
+
 /**
  * Returns the usable area in pixels usable by a client on the phone
  * display
@@ -1076,3 +1111,42 @@ phosh_shell_is_startup_finished(PhoshShell *self)
 
   return priv->startup_finished;
 }
+
+
+void
+phosh_shell_add_global_keyboard_action_entries (PhoshShell *self,
+                                                const GActionEntry *entries,
+                                                gint n_entries,
+                                                gpointer user_data)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_if_fail (PHOSH_IS_SHELL (self));
+  priv = phosh_shell_get_instance_private (self);
+  g_return_if_fail (priv->keyboard_events);
+
+  g_action_map_add_action_entries (G_ACTION_MAP (priv->keyboard_events),
+                                   entries,
+                                   n_entries,
+                                   user_data);
+}
+
+
+void
+phosh_shell_remove_global_keyboard_action_entries (PhoshShell *self,
+                                                   const GActionEntry *entries,
+                                                   gint n_entries)
+
+{
+  PhoshShellPrivate *priv;
+
+  g_return_if_fail (PHOSH_IS_SHELL (self));
+  priv = phosh_shell_get_instance_private (self);
+  g_return_if_fail (priv->keyboard_events);
+
+  for (int i = 0; i < n_entries; i++) {
+    g_action_map_remove_action (G_ACTION_MAP (priv->keyboard_events),
+                                entries[i].name);
+  }
+}
+

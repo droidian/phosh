@@ -400,6 +400,13 @@ phosh_app_grid_class_init (PhoshAppGridClass *klass)
 }
 
 
+GtkWidget *
+phosh_app_grid_new (void)
+{
+  return g_object_new (PHOSH_TYPE_APP_GRID, NULL);
+}
+
+
 void
 phosh_app_grid_reset (PhoshAppGrid *self)
 {
@@ -418,8 +425,12 @@ phosh_app_grid_reset (PhoshAppGrid *self)
 }
 
 
-GtkWidget *
-phosh_app_grid_new (void)
+void
+phosh_app_grid_focus_search (PhoshAppGrid *self)
 {
-  return g_object_new (PHOSH_TYPE_APP_GRID, NULL);
+  PhoshAppGridPrivate *priv;
+
+  g_return_if_fail (PHOSH_IS_APP_GRID (self));
+  priv = phosh_app_grid_get_instance_private (self);
+  gtk_widget_grab_focus (priv->search);
 }

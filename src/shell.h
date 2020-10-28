@@ -9,6 +9,7 @@
 #pragma once
 
 #include "bt-manager.h"
+#include "docked-manager.h"
 #include "feedback-manager.h"
 #include "lockscreen-manager.h"
 #include "monitor-manager.h"
@@ -54,9 +55,17 @@ PhoshFeedbackManager *phosh_shell_get_feedback_manager (PhoshShell *self);
 PhoshBtManager      *phosh_shell_get_bt_manager      (PhoshShell *self);
 PhoshWWan           *phosh_shell_get_wwan        (PhoshShell *self);
 PhoshTorchManager   *phosh_shell_get_torch_manager (PhoshShell *self);
+PhoshDockedManager  *phosh_shell_get_docked_manager (PhoshShell *self);
 void                 phosh_shell_fade_out (PhoshShell *self, guint timeout);
 void                 phosh_shell_enable_power_save (PhoshShell *self, gboolean enable);
 gboolean             phosh_shell_started_by_display_manager(PhoshShell *self);
 gboolean             phosh_shell_is_startup_finished (PhoshShell *self);
+void                 phosh_shell_add_global_keyboard_action_entries (PhoshShell *self,
+                                                                     const GActionEntry *actions,
+                                                                     gint n_entries,
+                                                                     gpointer user_data);
+void                 phosh_shell_remove_global_keyboard_action_entries (PhoshShell *self,
+                                                                        const GActionEntry *actions,
+                                                                        gint n_entries);
 
 G_END_DECLS

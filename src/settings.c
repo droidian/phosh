@@ -11,6 +11,8 @@
 #include <glib/gi18n.h>
 
 #include "bt-info.h"
+#include "docked-info.h"
+#include "mode-manager.h"
 #include "shell.h"
 #include "settings.h"
 #include "quick-setting.h"
@@ -70,15 +72,18 @@ typedef struct _PhoshSettings
   GtkWidget *list_notifications;
   GtkWidget *sw_notifications;
   LfbEvent  *notify_event;
-
-  /* KeyboardEvents */
-  PhoshKeyboardEvents *keyboard_events;
-  GHashTable *accelerator_callbacks;
 } PhoshSettings;
 
 
 G_DEFINE_TYPE (PhoshSettings, phosh_settings, GTK_TYPE_BIN)
 
+static void raise_volume (GSimpleAction *action, GVariant *param, gpointer self);
+static void lower_volume (GSimpleAction *action, GVariant *param, gpointer self);
+
+const GActionEntry action_entries[] = {
+  { "XF86AudioLowerVolume", lower_volume, },
+  { "XF86AudioRaiseVolume", raise_volume, },
+};
 
 static void
 brightness_value_changed_cb (GtkScale *scale_brightness, gpointer *unused)
@@ -166,6 +171,24 @@ torch_setting_clicked_cb (PhoshSettings *self)
   phosh_torch_manager_toggle (manager);
 }
 
+
+static void
+docked_setting_clicked_cb (PhoshSettings *self)
+{
+  PhoshShell *shell;
+  PhoshDockedManager *manager;
+  gboolean enabled;
+
+  shell = phosh_shell_get_default ();
+  g_return_if_fail (PHOSH_IS_SHELL (shell));
+  manager = phosh_shell_get_docked_manager (shell);
+  g_return_if_fail (PHOSH_IS_DOCKED_MANAGER (manager));
+
+  enabled = phosh_docked_manager_get_enabled (manager);
+  phosh_docked_manager_set_enabled (manager, !enabled);
+}
+
+
 static void
 change_volume (PhoshSettings *self,
                int            steps)
@@ -186,45 +209,21 @@ change_volume (PhoshSettings *self,
 }
 
 static void
-lower_volume (PhoshSettings *self)
+lower_volume (GSimpleAction *action, GVariant *param, gpointer self)
 {
-  change_volume (self, -1);
-}
-
-static void
-raise_volume (PhoshSettings *self)
-{
-  change_volume (self, 1);
-}
-
-static void
-accelerator_grabbed_cb (PhoshSettings *self,
-                        const char    *accelerator,
-                        uint32_t       action_id)
-{
-  guint64 action = action_id;
-  if (g_strcmp0 (accelerator, "XF86AudioLowerVolume") == 0) {
-    g_hash_table_insert (self->accelerator_callbacks, (gpointer) action, (gpointer) lower_volume);
-  } else if (g_strcmp0 (accelerator, "XF86AudioRaiseVolume") == 0) {
-     g_hash_table_insert (self->accelerator_callbacks, (gpointer) action, (gpointer) raise_volume);
-  }
-}
-
-static void
-accelerator_activated_cb (PhoshSettings *self,
-                          uint32_t       action_id,
-                          uint32_t       timestamp)
-{
-  void (*callback)(PhoshSettings *);
-  guint64 action = action_id;
   g_return_if_fail (PHOSH_IS_SETTINGS (self));
-  callback = g_hash_table_lookup (self->accelerator_callbacks, (gpointer) action);
-  if (callback == NULL) {
-    g_warning ("No callback for action %d", action_id);
-    return;
-  }
-  callback (self);
+
+  change_volume (PHOSH_SETTINGS (self), -1);
 }
+
+static void
+raise_volume (GSimpleAction *action, GVariant *param, gpointer self)
+{
+  g_return_if_fail (PHOSH_IS_SETTINGS (self));
+
+  change_volume (PHOSH_SETTINGS (self), 1);
+}
+
 
 static void
 update_output_vol_bar (PhoshSettings *self)
@@ -452,10 +451,18 @@ phosh_settings_constructed (GObject *object)
                            create_notification_row,
                            NULL,
                            NULL);
-  g_signal_connect_swapped (phosh_notify_manager_get_list (manager),
-                            "items-changed",
-                            G_CALLBACK (on_notifcation_items_changed),
-                            self);
+  g_signal_connect_object (phosh_notify_manager_get_list (manager),
+                           "items-changed",
+                           G_CALLBACK (on_notifcation_items_changed),
+                           self,
+                           G_CONNECT_SWAPPED);
+  on_notifcation_items_changed (self, -1, -1, -1,
+                                G_LIST_MODEL (phosh_notify_manager_get_list (manager)));
+
+  phosh_shell_add_global_keyboard_action_entries (phosh_shell_get_default (),
+                                                  action_entries,
+                                                  G_N_ELEMENTS (action_entries),
+                                                  self);
 
   G_OBJECT_CLASS (phosh_settings_parent_class)->constructed (object);
 }
@@ -473,11 +480,9 @@ phosh_settings_dispose (GObject *object)
     g_clear_object (&self->notify_event);
   }
 
-  if (self->accelerator_callbacks != NULL) {
-    g_hash_table_remove_all (self->accelerator_callbacks);
-    g_hash_table_unref (self->accelerator_callbacks);
-    self->accelerator_callbacks = NULL;
-  }
+  phosh_shell_remove_global_keyboard_action_entries (phosh_shell_get_default (),
+                                                     action_entries,
+                                                     G_N_ELEMENTS (action_entries));
 
   G_OBJECT_CLASS (phosh_settings_parent_class)->dispose (object);
 }
@@ -513,6 +518,7 @@ phosh_settings_class_init (PhoshSettingsClass *klass)
       NULL, G_TYPE_NONE, 0);
 
   g_type_ensure (PHOSH_TYPE_BT_INFO);
+  g_type_ensure (PHOSH_TYPE_DOCKED_INFO);
   g_type_ensure (PHOSH_TYPE_FEEDBACK_INFO);
   g_type_ensure (PHOSH_TYPE_MEDIA_PLAYER);
   g_type_ensure (PHOSH_TYPE_QUICK_SETTING);
@@ -527,6 +533,7 @@ phosh_settings_class_init (PhoshSettingsClass *klass)
 
   gtk_widget_class_bind_template_callback (widget_class, battery_setting_clicked_cb);
   gtk_widget_class_bind_template_callback (widget_class, bt_setting_clicked_cb);
+  gtk_widget_class_bind_template_callback (widget_class, docked_setting_clicked_cb);
   gtk_widget_class_bind_template_callback (widget_class, feedback_setting_clicked_cb);
   gtk_widget_class_bind_template_callback (widget_class, feedback_setting_long_pressed_cb);
   gtk_widget_class_bind_template_callback (widget_class, on_media_player_raised);
@@ -540,36 +547,11 @@ phosh_settings_class_init (PhoshSettingsClass *klass)
 static void
 phosh_settings_init (PhoshSettings *self)
 {
-  char *subscribe_accelerators[] = {
-    "XF86AudioLowerVolume",
-    "XF86AudioRaiseVolume",
-    "XF86AudioMute",
-  };
-
   self->notify_event = lfb_event_new ("message-missed-notification");
 
   gtk_widget_init_template (GTK_WIDGET (self));
-
-  self->keyboard_events = phosh_keyboard_events_new ();
-
-  if (!self->keyboard_events)
-    return;
-
-  self->accelerator_callbacks = g_hash_table_new (g_direct_hash, g_direct_equal);
-
-  phosh_keyboard_events_register_keys (self->keyboard_events,
-                                       subscribe_accelerators,
-                                       G_N_ELEMENTS (subscribe_accelerators));
-  g_signal_connect_swapped (self->keyboard_events,
-                            "accelerator-activated",
-                            G_CALLBACK (accelerator_activated_cb),
-                            self);
-  g_signal_connect_swapped (self->keyboard_events,
-                            "accelerator-grabbed",
-                            G_CALLBACK (accelerator_grabbed_cb),
-                            self);
-
 }
+
 
 GtkWidget *
 phosh_settings_new (void)

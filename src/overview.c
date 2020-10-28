@@ -52,6 +52,7 @@ typedef struct
   /* Running activities */
   GtkWidget *carousel_running_activities;
   GtkWidget *app_grid;
+  GtkWidget *activity;
 } PhoshOverviewPrivate;
 
 
@@ -157,8 +158,10 @@ on_toplevel_activated_changed (PhoshToplevel *toplevel, GParamSpec *pspec, Phosh
   priv = phosh_overview_get_instance_private (overview);
 
   activity = find_activity_by_toplevel (overview, toplevel);
-  if (phosh_toplevel_is_activated (toplevel))
+  if (phosh_toplevel_is_activated (toplevel)) {
+    priv->activity = GTK_WIDGET (activity);
     hdy_carousel_scroll_to (HDY_CAROUSEL (priv->carousel_running_activities), GTK_WIDGET (activity));
+  }
 }
 
 
@@ -191,6 +194,20 @@ static void
 on_activity_size_allocated (PhoshActivity *activity, GtkAllocation *alloc, PhoshToplevel *toplevel)
 {
   request_thumbnail (activity, toplevel);
+}
+
+
+static void
+on_activity_has_focus_changed (PhoshOverview *self, GParamSpec *pspec, PhoshActivity *activity)
+{
+  PhoshOverviewPrivate *priv;
+
+  g_return_if_fail (PHOSH_IS_ACTIVITY (activity));
+  g_return_if_fail (PHOSH_IS_OVERVIEW (self));
+  priv = phosh_overview_get_instance_private (self);
+
+  if (gtk_widget_has_focus (GTK_WIDGET (activity)))
+    hdy_carousel_scroll_to (HDY_CAROUSEL (priv->carousel_running_activities), GTK_WIDGET (activity));
 }
 
 
@@ -229,11 +246,14 @@ add_activity (PhoshOverview *self, PhoshToplevel *toplevel)
   g_object_bind_property (toplevel, "maximized", activity, "maximized", G_BINDING_DEFAULT);
 
   g_signal_connect (activity, "size-allocate", G_CALLBACK (on_activity_size_allocated), toplevel);
+  g_signal_connect_swapped (activity, "notify::has-focus", G_CALLBACK (on_activity_has_focus_changed), self);
 
   phosh_connect_button_feedback (GTK_BUTTON (activity));
 
-  if (phosh_toplevel_is_activated (toplevel))
+  if (phosh_toplevel_is_activated (toplevel)) {
     hdy_carousel_scroll_to (HDY_CAROUSEL (priv->carousel_running_activities), activity);
+    priv->activity = GTK_WIDGET (activity);
+  }
 }
 
 
@@ -415,6 +435,13 @@ phosh_overview_init (PhoshOverview *self)
 }
 
 
+GtkWidget *
+phosh_overview_new (void)
+{
+  return g_object_new (PHOSH_TYPE_OVERVIEW, NULL);
+}
+
+
 void
 phosh_overview_reset (PhoshOverview *self)
 {
@@ -422,11 +449,17 @@ phosh_overview_reset (PhoshOverview *self)
   g_return_if_fail(PHOSH_IS_OVERVIEW (self));
   priv = phosh_overview_get_instance_private (self);
   phosh_app_grid_reset (PHOSH_APP_GRID (priv->app_grid));
+
+  if (priv->activity)
+    gtk_widget_grab_focus (GTK_WIDGET (priv->activity));
 }
 
-
-GtkWidget *
-phosh_overview_new (void)
+void
+phosh_overview_focus_app_search (PhoshOverview *self)
 {
-  return g_object_new (PHOSH_TYPE_OVERVIEW, NULL);
+  PhoshOverviewPrivate *priv;
+
+  g_return_if_fail(PHOSH_IS_OVERVIEW (self));
+  priv = phosh_overview_get_instance_private (self);
+  phosh_app_grid_focus_search (PHOSH_APP_GRID (priv->app_grid));
 }

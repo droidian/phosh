@@ -14,11 +14,13 @@ phosh_resources = gnome.compile_resources(
 )
 
 phosh_enum_headers = [
+  'app-grid-button.h',
   'home.h',
+  'mode-manager.h',
   'monitor/monitor.h',
   'notifications/notification.h',
   'notifications/notify-manager.h',
-  'app-grid-button.h'
+  'phosh-wayland.h',
 ] + schema_enum_headers
 
 phosh_enums = gnome.mkenums('phosh-enums',
@@ -52,6 +54,10 @@ libphosh_tool_sources = [
   'background.h',
   'connectivity-info.c',
   'connectivity-info.h',
+  'docked-info.c',
+  'docked-info.h',
+  'docked-manager.c',
+  'docked-manager.h',
   'favorite-list-model.c',
   'favorite-list-model.h',
   'feedback-manager.c',
@@ -64,6 +70,8 @@ libphosh_tool_sources = [
   'log.c',
   'media-player.c',
   'media-player.h',
+  'mode-manager.c',
+  'mode-manager.h',
   'overview.c',
   'overview.h',
   'status-icon.c',
