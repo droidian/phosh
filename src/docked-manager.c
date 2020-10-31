@@ -135,6 +135,28 @@ mode_changed_cb (PhoshDockedManager *self, GParamSpec *pspec, PhoshModeManager *
   phosh_docked_manager_set_enabled (self, can_dock);
 }
 
+static void
+phoc_switch_event (void *data,
+                   struct phosh_private *phosh_private,
+                   uint32_t event,
+                   uint32_t state)
+{
+  PhoshDockedManager *self = data;
+
+  g_return_if_fail (PHOSH_IS_DOCKED_MANAGER (self));
+
+  g_info ("Hey hey heyyyy");
+
+  switch (event) {
+  case 3: /* KEYPAD_SLIDE */
+    g_info ("KEYPAD SLIDE!!!, status %i", state);
+    break;
+  }
+}
+
+static const struct phosh_private_listener phoc_switch_event_listener = {
+  phoc_switch_event,
+};
 
 static void
 phosh_docked_manager_constructed (GObject *object)
@@ -142,7 +164,7 @@ phosh_docked_manager_constructed (GObject *object)
   PhoshDockedManager *self = PHOSH_DOCKED_MANAGER (object);
   GSettingsSchemaSource *schema_source = g_settings_schema_source_get_default();
   g_autoptr (GSettingsSchema) schema = NULL;
-
+  PhoshWayland *wl = phosh_wayland_get_default();
 
   G_OBJECT_CLASS (phosh_docked_manager_parent_class)->constructed (object);
 
@@ -162,6 +184,10 @@ phosh_docked_manager_constructed (GObject *object)
     "swapped-object-signal::notify::mimicry", G_CALLBACK (mode_changed_cb), self,
     NULL);
   mode_changed_cb (self, NULL, self->mode_manager);
+
+  phosh_private_add_listener (phosh_wayland_get_phosh_private (wl),
+                              &phoc_switch_event_listener,
+                              self);
 }
 
 

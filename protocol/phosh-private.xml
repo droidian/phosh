@@ -1,5 +1,5 @@
 <protocol name="phosh">
-  <interface name="phosh_private" version="5">
+  <interface name="phosh_private" version="6">
     <description summary="Phone shell extensions">
       Private protocol between phosh and the compositor.
     </description>
@@ -47,6 +47,14 @@
       </description>
       <arg name="id" type="new_id" interface="phosh_private_keyboard_event"/>
     </request>
+
+    <event name="switch_event" since="6">
+      <description summary="forward a switch event">
+        Forwards a switch event to the client.
+      </description>
+      <arg name="event" type="uint" summary="the switch event"/>
+      <arg name="state" type="uint" summary="the switch event state"/>
+    </event>
 
   </interface>
 
