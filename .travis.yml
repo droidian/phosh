@@ -1,6 +1,7 @@
 env:
   global:
     BUILD_ON="amd64 arm64 armhf"
+    EXTRA_REPOS="deb http://hybris-mobian-libinput.repo.hybris-mobian.org/bullseye-keypad-slide/ bullseye main|deb http://hybris-mobian-wlroots.repo.hybris-mobian.org/bullseye-keypad-slide/ bullseye main|deb http://hybris-mobian-phoc.repo.hybris-mobian.org/bullseye-slider-detection/ bullseye main" 
 
 import:
   source: hybris-mobian-releng/build-snippets:debian-package.yml@master
