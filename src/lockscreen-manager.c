@@ -23,6 +23,10 @@
  * SECTION:lockscreen-manager
  * @short_description: The singleton that manages screen locking
  * @Title: PhoshLockscreenManager
+ *
+ * The #PhoshLockscreenManager is responsible for putting the #PhoshLockscreen
+ * on the primary output and a #PhoshLockshield on other outputs when the session
+ * becomes idle or when invoked explicitly via phosh_lockscreen_manager_set_locked().
  */
 
 /* See https://people.gnome.org/~mccann/gnome-session/docs/gnome-session.html#org.gnome.SessionManager.Presence:status */
@@ -68,15 +72,18 @@ lockscreen_unlock_cb (PhoshLockscreenManager *self, PhoshLockscreen *lockscreen)
 {
   PhoshShell *shell = phosh_shell_get_default ();
   PhoshMonitorManager *monitor_manager = phosh_shell_get_monitor_manager (shell);
-
-  phosh_shell_set_transform (shell, self->transform);
-  self->transform = PHOSH_MONITOR_TRANSFORM_NORMAL;
+  PhoshMonitor *primary_monitor = phosh_shell_get_primary_monitor (shell);
 
   g_return_if_fail (PHOSH_IS_LOCKSCREEN (lockscreen));
   g_return_if_fail (lockscreen == PHOSH_LOCKSCREEN (self->lockscreen));
 
-  g_signal_handlers_disconnect_by_data (lockscreen, self);
+  /* Fixup transform in case the lockscreen needed to rotate to unlock */
+  g_debug ("Restoring transform %d", self->transform);
+  phosh_shell_set_transform (shell, self->transform);
+
   g_signal_handlers_disconnect_by_data (monitor_manager, self);
+  g_signal_handlers_disconnect_by_data (primary_monitor, self);
+  g_signal_handlers_disconnect_by_data (shell, self);
   g_clear_pointer (&self->lockscreen, phosh_cp_widget_destroy);
 
   /* Unlock all other outputs */
@@ -99,7 +106,7 @@ lockscreen_wakeup_output_cb (PhoshLockscreenManager *self, PhoshLockscreen *lock
 }
 
 
-/* Lock a particular monitor bringing up a shield */
+/* Lock a non primary monitor bringing up a shield */
 static void
 lock_monitor (PhoshLockscreenManager *self,
               PhoshMonitor           *monitor)
@@ -111,8 +118,29 @@ lock_monitor (PhoshLockscreenManager *self,
     phosh_wayland_get_zwlr_layer_shell_v1 (wl),
     monitor->wl_output);
 
+  g_object_set_data (G_OBJECT (shield), "phosh-monitor", monitor);
+
   g_ptr_array_add (self->shields, shield);
   gtk_widget_show (shield);
+}
+
+
+static void
+remove_shield_by_monitor (PhoshLockscreenManager *self,
+                          PhoshMonitor           *monitor)
+{
+  for (int i = 0; i < self->shields->len; i++) {
+    PhoshMonitor *shield_monitor;
+    PhoshLockshield *shield = g_ptr_array_index (self->shields, i);
+
+    shield_monitor = g_object_get_data (G_OBJECT (shield), "phosh-monitor");
+    g_return_if_fail (PHOSH_IS_MONITOR (shield_monitor));
+    if (shield_monitor == monitor) {
+      g_debug ("Removing shield %p", shield);
+      g_ptr_array_remove (self->shields, shield);
+      break;
+    }
+  }
 }
 
 
@@ -121,12 +149,13 @@ on_monitor_removed (PhoshLockscreenManager *self,
                     PhoshMonitor           *monitor,
                     PhoshMonitorManager    *monitormanager)
 {
+
+
   g_return_if_fail (PHOSH_IS_MONITOR (monitor));
   g_return_if_fail (PHOSH_IS_LOCKSCREEN_MANAGER (self));
 
-  g_debug ("Monitor removed");
-  /* TODO: We just leave the widget dangling, it will be destroyed on
-   * unlock */
+  g_debug ("Monitor '%s' removed", monitor->name);
+  remove_shield_by_monitor (self, monitor);
 }
 
 
@@ -138,8 +167,82 @@ on_monitor_added (PhoshLockscreenManager *self,
   g_return_if_fail (PHOSH_IS_MONITOR (monitor));
   g_return_if_fail (PHOSH_IS_LOCKSCREEN_MANAGER (self));
 
-  g_debug ("Monitor added");
+  g_debug ("Monitor '%s' added", monitor->name);
   lock_monitor (self, monitor);
+}
+
+static void
+on_primary_monitor_power_mode_changed (PhoshLockscreenManager *self,
+                                       GParamSpec             *pspec,
+                                       PhoshMonitor           *monitor)
+{
+  PhoshShell *shell = phosh_shell_get_default ();
+  PhoshModeManager *mode_manager = phosh_shell_get_mode_manager(shell);
+
+  /*
+   * Only phones need to switch orientation so that the lock screen fits
+   * https://source.puri.sm/Librem5/phosh/-/issues/388
+   */
+  if (phosh_mode_manager_get_device_type(mode_manager) != PHOSH_MODE_DEVICE_TYPE_PHONE)
+    return;
+
+  /* Don't mess with transforms on external screens either */
+  if (!phosh_monitor_is_builtin (monitor))
+    return;
+
+  switch (phosh_monitor_get_power_save_mode (monitor)) {
+  case PHOSH_MONITOR_POWER_SAVE_MODE_ON:
+    phosh_shell_set_transform (shell, PHOSH_MONITOR_TRANSFORM_NORMAL);
+    break;
+  case PHOSH_MONITOR_POWER_SAVE_MODE_OFF:
+    break;
+  default:
+    g_warn_if_reached ();
+  }
+}
+
+static void
+lock_primary_monitor (PhoshLockscreenManager *self)
+{
+  PhoshMonitor *primary_monitor;
+  PhoshWayland *wl = phosh_wayland_get_default ();
+  PhoshShell *shell = phosh_shell_get_default ();
+
+  primary_monitor = phosh_shell_get_primary_monitor (shell);
+  self->transform = phosh_shell_get_transform (shell);
+
+  /* The primary output gets the clock, keypad, ... */
+  self->lockscreen = PHOSH_LOCKSCREEN (phosh_lockscreen_new (
+                                         phosh_wayland_get_zwlr_layer_shell_v1 (wl),
+                                         primary_monitor->wl_output));
+
+  g_object_connect (
+    self->lockscreen,
+    "swapped-object-signal::lockscreen-unlock", G_CALLBACK (lockscreen_unlock_cb), self,
+    "swapped-object-signal::wakeup-output", G_CALLBACK (lockscreen_wakeup_output_cb), self,
+    NULL);
+
+  g_signal_connect_swapped (primary_monitor, "notify::power-mode",
+                            G_CALLBACK(on_primary_monitor_power_mode_changed),
+                            self);
+
+  gtk_widget_show (GTK_WIDGET (self->lockscreen));
+  /* Old lockscreen gets remove due to `layer_surface_closed` */
+}
+
+
+static void
+on_primary_monitor_changed (PhoshLockscreenManager *self,
+                            GParamSpec *pspec,
+                            PhoshShell *shell)
+{
+  g_return_if_fail (PHOSH_IS_SHELL (shell));
+  g_return_if_fail (PHOSH_IS_LOCKSCREEN_MANAGER (self));
+
+  g_debug ("primary monitor changed, need to move lockscreen");
+  lock_primary_monitor (self);
+  /* We don't remove a shield that might exist to avoid the screen
+     content flickering in. The shield will be removed on unlock */
 }
 
 
@@ -147,7 +250,6 @@ static void
 lockscreen_lock (PhoshLockscreenManager *self)
 {
   PhoshMonitor *primary_monitor;
-  PhoshWayland *wl = phosh_wayland_get_default ();
   PhoshShell *shell = phosh_shell_get_default ();
   PhoshMonitorManager *monitor_manager = phosh_shell_get_monitor_manager (shell);
 
@@ -155,10 +257,6 @@ lockscreen_lock (PhoshLockscreenManager *self)
 
   primary_monitor = phosh_shell_get_primary_monitor (shell);
   g_return_if_fail (primary_monitor);
-
-  /* Undo any transform on the primary display so the keypad becomes usable */
-  self->transform = phosh_shell_get_transform (shell);
-  phosh_shell_set_transform (shell, PHOSH_MONITOR_TRANSFORM_NORMAL);
 
   /* Listen for monitor changes */
   g_signal_connect_object (monitor_manager, "monitor-added",
@@ -171,12 +269,13 @@ lockscreen_lock (PhoshLockscreenManager *self)
                            self,
                            G_CONNECT_SWAPPED);
 
-  /* The primary output gets the clock, keypad, ... */
-  self->lockscreen = PHOSH_LOCKSCREEN (phosh_lockscreen_new (
-                                         phosh_wayland_get_zwlr_layer_shell_v1 (wl),
-                                         primary_monitor->wl_output));
-  gtk_widget_show (GTK_WIDGET (self->lockscreen));
+  g_signal_connect_object (shell,
+                           "notify::primary-monitor",
+                           G_CALLBACK (on_primary_monitor_changed),
+                           self,
+                           G_CONNECT_SWAPPED);
 
+  lock_primary_monitor (self);
   /* Lock all other outputs */
   self->shields = g_ptr_array_new_with_free_func ((GDestroyNotify) (gtk_widget_destroy));
 
@@ -187,12 +286,6 @@ lockscreen_lock (PhoshLockscreenManager *self)
       continue;
     lock_monitor (self, monitor);
   }
-
-  g_object_connect (
-    self->lockscreen,
-    "swapped-object-signal::lockscreen-unlock", G_CALLBACK (lockscreen_unlock_cb), self,
-    "swapped-object-signal::wakeup-output", G_CALLBACK (lockscreen_wakeup_output_cb), self,
-    NULL);
 
   self->locked = TRUE;
   self->active_time = g_get_monotonic_time ();
@@ -261,10 +354,7 @@ phosh_lockscreen_manager_dispose (GObject *object)
   PhoshLockscreenManager *self = PHOSH_LOCKSCREEN_MANAGER (object);
 
   g_clear_pointer (&self->shields, g_ptr_array_unref);
-  if (self->lockscreen) {
-    g_signal_handlers_disconnect_by_data (self->lockscreen, self);
-    g_clear_pointer (&self->lockscreen, phosh_cp_widget_destroy);
-  }
+  g_clear_pointer (&self->lockscreen, phosh_cp_widget_destroy);
   g_clear_object (&self->settings);
 
   G_OBJECT_CLASS (phosh_lockscreen_manager_parent_class)->dispose (object);

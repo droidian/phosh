@@ -70,7 +70,16 @@
 /*
  * Overview (app grid with favories and, activities)
  */
-phosh-activity {
+phosh-activity > widget > button {
+  background: none;
+  box-shadow: none;
+  border: none;
+  border-radius: 0;
+  padding: 0;
+  margin: 0;
+}
+
+phosh-activity box button {
   background: white;
   border: none;
   border-radius: 0;
@@ -100,10 +109,9 @@ phosh-home, .phosh-panel {
 
 .phosh-activity-close-button {
   border-radius: 50%;
-  min-width: 0;
-  min-height: 0;
-  margin: 12px;
-  padding: 12px;
+  min-width: 48px;
+  min-height: 48px;
+  padding: 0;
 }
 
 .phosh-overview {

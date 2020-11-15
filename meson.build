@@ -1,5 +1,5 @@
 project('phosh', 'c',
-          version: '0.5.0',
+          version: '0.6.0',
           license: 'GPLv3+',
     meson_version: '>= 0.49.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
@@ -138,6 +138,11 @@ network_agent_dep = dependency('libsecret-1')
 upower_glib_dep = dependency('upower-glib', version: '>=0.99.1')
 wayland_client_dep = dependency('wayland-client', version: '>=1.14')
 wayland_protos_dep = dependency('wayland-protocols', version: '>=1.12')
+
+meson.add_install_script(
+  join_paths('build-aux', 'post_install.py'),
+  datadir
+)
 
 subdir('data')
 subdir('po')

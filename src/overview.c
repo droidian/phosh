@@ -119,7 +119,7 @@ on_activity_clicked (PhoshOverview *self, PhoshActivity *activity)
 
 
 static void
-on_activity_close_clicked (PhoshOverview *self, PhoshActivity *activity)
+on_activity_closed (PhoshOverview *self, PhoshActivity *activity)
 {
   PhoshToplevel *toplevel;
 
@@ -238,8 +238,8 @@ add_activity (PhoshOverview *self, PhoshToplevel *toplevel)
   gtk_widget_show (activity);
 
   g_signal_connect_swapped (activity, "clicked", G_CALLBACK (on_activity_clicked), self);
-  g_signal_connect_swapped (activity, "close-clicked",
-                            G_CALLBACK (on_activity_close_clicked), self);
+  g_signal_connect_swapped (activity, "closed",
+                            G_CALLBACK (on_activity_closed), self);
 
   g_signal_connect_object (toplevel, "closed", G_CALLBACK (on_toplevel_closed), activity, 0);
   g_signal_connect_object (toplevel, "notify::activated", G_CALLBACK (on_toplevel_activated_changed), self, 0);
@@ -248,7 +248,7 @@ add_activity (PhoshOverview *self, PhoshToplevel *toplevel)
   g_signal_connect (activity, "size-allocate", G_CALLBACK (on_activity_size_allocated), toplevel);
   g_signal_connect_swapped (activity, "notify::has-focus", G_CALLBACK (on_activity_has_focus_changed), self);
 
-  phosh_connect_button_feedback (GTK_BUTTON (activity));
+  phosh_connect_feedback (activity);
 
   if (phosh_toplevel_is_activated (toplevel)) {
     hdy_carousel_scroll_to (HDY_CAROUSEL (priv->carousel_running_activities), activity);

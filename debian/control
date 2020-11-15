@@ -12,7 +12,7 @@ Build-Depends:
  libgnome-desktop-3-dev,
  libgtk-3-dev,
  libgtk-3-doc <!nodoc>,
- libhandy-1-dev (>= 1.0.0),
+ libhandy-1-dev (>= 1.0.2),
  libnm-dev,
  libpam0g-dev,
  libpolkit-agent-1-dev,
@@ -38,6 +38,7 @@ Depends:
  ${shlibs:Depends},
  fonts-lato,
  gsettings-desktop-schemas,
+ gnome-shell-common,
  phoc (>= 0.4.4~),
 Recommends:
  feedbackd,
@@ -47,19 +48,12 @@ Provides:
  notification-daemon,
  polkit-1-auth-agent,
 Description: Pure Wayland shell for mobile devices
- Phosh is a simple shell for Wayland compositors speaking the layer-surface
- protocol. It currently supports
+ Phosh is a graphical shell for Wayland compositors speaking the layer-surface
+ protocol and aimed at mobile devices like smart phones and tablets using touch
+ based inputs and and small screens.
  .
-  * a lockscreen
-  * brightness control and nighlight
-  * the gcr system-prompter interface
-  * acting as a polkit auth agent
-  * enough of org.gnome.Mutter.DisplayConfig to make gnome-settings-daemon happy
-  * a homebutton that toggles a simple favorites menu
-  * status icons for battery, wwan and wifi
- .
- If you're not working on a Wayland compositor then this package is likely not
- very useful for you.
+ It's part of the Phosh Mobile Environment based on GNOME/GTK. For the full
+ stack see the phosh-full and phosh-core meta packages.
 
 Package: phosh-osk-stub
 Architecture: any
@@ -78,7 +72,20 @@ Build-Profiles: <!nodoc>
 Depends:
  ${misc:Depends},
 Description: Pure Wayland shell for mobile devices - development documentation
- Phosh is a simple shell for Wayland compositors speaking the layer-surface
- protocol.
+ Phosh is a graphical shell for Wayland compositors speaking the layer-surface
+ protocol and aimed at mobile devices like smart phones and tablets using touch
+ based inputs and and small screens.
  .
  This package contains the development documentation.
+
+Package: phosh-mobile-tweaks
+Architecture: all
+Depends:
+ ${misc:Depends},
+ dconf-gsettings-backend | gsettings-backend,
+Description: Pure Wayland shell for mobile devices - GSettings tweaks
+ Phosh is a graphical shell for Wayland compositors speaking the layer-surface
+ protocol and aimed at mobile devices like smart phones and tablets using touch
+ based inputs and and small screens.
+ .
+ This package contains settings to improve behaviour on mobile devices.
