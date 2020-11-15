@@ -1,6 +1,7 @@
 env:
   global:
     BUILD_ON="amd64 arm64 armhf"
+    EXTRA_REPOS="deb http://hybris-mobian-libhandy-1.repo.hybris-mobian.org/bullseye-upgrade-1-0-2/ bullseye main"
 
 import:
   source: hybris-mobian-releng/build-snippets:debian-package.yml@master
