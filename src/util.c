@@ -10,6 +10,8 @@
 #include <gtk/gtk.h>
 #include <wayland-client-protocol.h>
 
+#include <systemd/sd-login.h>
+
 /* Just wraps gtk_widget_destroy so we can use it with g_clear_pointer */
 void
 phosh_cp_widget_destroy (void *widget)
@@ -58,6 +60,91 @@ phosh_clear_handler (gulong *handler, gpointer object)
     g_signal_handler_disconnect (object, *handler);
     *handler = 0;
   }
+}
+
+/**
+ * phosh_munge_app_id:
+ * @app_id: the app_id
+ *
+ * Munges an app_id according to the rules used by
+ * gnome-shell, feedbackd and phoc:
+ *
+ * Returns: The munged_app id
+ */
+char *
+phosh_munge_app_id (const char *app_id)
+{
+  char *id = g_strdup (app_id);
+  int i;
+
+  if (g_str_has_suffix (id, ".desktop")) {
+    char *c = g_strrstr (id, ".desktop");
+    if (c)
+      *c = '\0';
+  }
+
+  g_strcanon (id,
+              "0123456789"
+              "abcdefghijklmnopqrstuvwxyz"
+              "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+              "-",
+              '-');
+  for (i = 0; id[i] != '\0'; i++)
+    id[i] = g_ascii_tolower (id[i]);
+
+  return id;
+}
+
+gboolean
+phosh_find_systemd_session (char **session_id)
+{
+  int n_sessions;
+
+  g_auto (GStrv) sessions = NULL;
+  char *session;
+  int i;
+
+  n_sessions = sd_uid_get_sessions (getuid (), 0, &sessions);
+
+  if (n_sessions < 0) {
+    g_debug ("Failed to get sessions for user %d", getuid ());
+    return FALSE;
+  }
+
+  session = NULL;
+  for (i = 0; i < n_sessions; i++) {
+    int r;
+    g_autofree char *type = NULL;
+    g_autofree char *desktop = NULL;
+
+    r = sd_session_get_desktop (sessions[i], &desktop);
+    if (r < 0) {
+      g_debug ("Couldn't get desktop for session '%s': %s",
+               sessions[i], strerror (-r));
+      continue;
+    }
+
+    if (g_strcmp0 (desktop, "phosh") != 0)
+      continue;
+
+    r = sd_session_get_type (sessions[i], &type);
+    if (r < 0) {
+      g_debug ("Couldn't get type for session '%s': %s",
+               sessions[i], strerror (-r));
+      continue;
+    }
+
+    if (g_strcmp0 (type, "wayland") != 0)
+      continue;
+
+    session = sessions[i];
+    break;
+  }
+
+  if (session != NULL)
+    *session_id = g_strdup (session);
+
+  return session != NULL;
 }
 
 /**

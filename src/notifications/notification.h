@@ -42,7 +42,23 @@ typedef enum {
 
 #define PHOSH_TYPE_NOTIFICATION (phosh_notification_get_type ())
 
-G_DECLARE_FINAL_TYPE (PhoshNotification, phosh_notification, PHOSH, NOTIFICATION, GObject)
+G_DECLARE_DERIVABLE_TYPE (PhoshNotification, phosh_notification, PHOSH, NOTIFICATION, GObject)
+
+/**
+ * PhoshNotificationClass:
+ * @parent_class: The object class structure needs to be the first
+ *   element in the widget class structure in order for the class mechanism
+ *   to work correctly. This allows a PhoshNotificationClass pointer to be cast to
+ *   a GObjectClass pointer.
+ * @do_action: This function allows the notification to implement their own
+ *   action behaviour instead of the default DBus interface.
+ */  
+struct _PhoshNotificationClass
+{
+  GObjectClass parent_class;
+
+  void (*do_action)(PhoshNotification *self, guint id, const char *action);
+};
 
 
 PhoshNotification        *phosh_notification_new           (guint                     id,
@@ -103,5 +119,8 @@ void                      phosh_notification_expires       (PhoshNotification   
                                                             int                       timeout);
 void                      phosh_notification_close         (PhoshNotification        *self,
                                                             PhoshNotificationReason   reason);
+void                     phosh_notification_do_action      (PhoshNotification        *notification,
+                                                            guint                     id,
+                                                            const char               *action);
 
 G_END_DECLS

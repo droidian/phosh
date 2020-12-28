@@ -25,6 +25,7 @@ src/main.c
 src/media-player.c
 src/monitor-manager.c
 src/network-auth-prompt.c
+src/notifications/mount-notification.c
 src/notifications/notification.c
 src/notifications/timestamp-label.c
 src/osk-manager.c
@@ -38,7 +39,6 @@ src/quick-setting.c
 src/rotateinfo.c
 src/screen-saver-manager.c
 src/sensor-proxy-manager.c
-src/session.c
 src/session-presence.c
 src/settings.c
 src/shell.c

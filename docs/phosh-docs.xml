@@ -50,12 +50,14 @@
       <xi:include href="xml/bt-manager.xml"/>
       <xi:include href="xml/bt-info.xml"/>
       <xi:include href="xml/connectivity-info.xml"/>
+      <xi:include href="xml/dbus-notification.xml"/>
       <xi:include href="xml/docked-info.xml"/>
       <xi:include href="xml/docked-manager.xml"/>
       <xi:include href="xml/fader.xml"/>
       <xi:include href="xml/favorite-list-model.xml"/>
       <xi:include href="xml/feedback-manager.xml"/>
       <xi:include href="xml/feedbackinfo.xml"/>
+      <xi:include href="xml/gnome-shell-manager.xml"/>
       <xi:include href="xml/head.xml"/>
       <xi:include href="xml/home.xml"/>
       <xi:include href="xml/idle-manager.xml"/>
@@ -68,6 +70,8 @@
       <xi:include href="xml/mode-manager.xml"/>
       <xi:include href="xml/monitor-manager.xml"/>
       <xi:include href="xml/monitor.xml"/>
+      <xi:include href="xml/mount-manager.xml"/>
+      <xi:include href="xml/mount-notification.xml"/>
       <xi:include href="xml/network-auth-prompt.xml"/>
       <xi:include href="xml/notification-banner.xml"/>
       <xi:include href="xml/notification-content.xml"/>
@@ -93,7 +97,7 @@
       <xi:include href="xml/rotateinfo.xml"/>
       <xi:include href="xml/screen-saver-manager.xml"/>
       <xi:include href="xml/sensor-proxy-manager.xml"/>
-      <xi:include href="xml/session.xml"/>
+      <xi:include href="xml/session-manager.xml"/>
       <xi:include href="xml/settings.xml"/>
       <xi:include href="xml/shell-network-agent.xml"/>
       <xi:include href="xml/shell.xml"/>
@@ -124,11 +128,14 @@
       <xi:include href="xml/phosh-screen-saver-dbus.xml"/>
       <xi:include href="xml/notify-dbus.xml"/>
       <xi:include href="xml/gnome-session-presence-dbus.xml"/>
+      <xi:include href="xml/phosh-gnome-shell-dbus.xml"/>
     </chapter>
 
     <chapter id="gen_dbus_clients">
       <title>Generated DBus Clients</title>
       <xi:include href="xml/phosh-idle-dbus.xml"/>
+      <xi:include href="xml/login1-manager-dbus.xml"/>
+      <xi:include href="xml/login1-session-dbus.xml"/>
       <xi:include href="xml/phosh-osk0-dbus.xml"/>
       <xi:include href="xml/phosh-screen-saver-dbus.xml"/>
       <xi:include href="xml/phosh-wwan-mm-dbus.xml"/>

@@ -15,6 +15,7 @@
 #include "monitor-manager.h"
 #include "monitor/monitor.h"
 #include "osk-manager.h"
+#include "session-manager.h"
 #include "toplevel-manager.h"
 #include "torch-manager.h"
 #include "wifimanager.h"
@@ -57,6 +58,7 @@ PhoshBtManager      *phosh_shell_get_bt_manager      (PhoshShell *self);
 PhoshWWan           *phosh_shell_get_wwan        (PhoshShell *self);
 PhoshTorchManager   *phosh_shell_get_torch_manager (PhoshShell *self);
 PhoshDockedManager  *phosh_shell_get_docked_manager (PhoshShell *self);
+PhoshSessionManager *phosh_shell_get_session_manager (PhoshShell *self);
 void                 phosh_shell_fade_out (PhoshShell *self, guint timeout);
 void                 phosh_shell_enable_power_save (PhoshShell *self, gboolean enable);
 gboolean             phosh_shell_started_by_display_manager(PhoshShell *self);
@@ -68,5 +70,7 @@ void                 phosh_shell_add_global_keyboard_action_entries (PhoshShell 
 void                 phosh_shell_remove_global_keyboard_action_entries (PhoshShell *self,
                                                                         const GActionEntry *actions,
                                                                         gint n_entries);
+gboolean             phosh_shell_is_session_active (PhoshShell *self);
+GdkAppLaunchContext *phosh_shell_get_app_launch_context (PhoshShell *self);
 
 G_END_DECLS

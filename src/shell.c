@@ -32,6 +32,7 @@
 #include "docked-manager.h"
 #include "fader.h"
 #include "feedback-manager.h"
+#include "gnome-shell-manager.h"
 #include "home.h"
 #include "idle-manager.h"
 #include "keyboard-events.h"
@@ -39,6 +40,7 @@
 #include "mode-manager.h"
 #include "monitor-manager.h"
 #include "monitor/monitor.h"
+#include "mount-manager.h"
 #include "notifications/notify-manager.h"
 #include "notifications/notification-banner.h"
 #include "osk-manager.h"
@@ -48,7 +50,7 @@
 #include "proximity.h"
 #include "sensor-proxy-manager.h"
 #include "screen-saver-manager.h"
-#include "session.h"
+#include "session-manager.h"
 #include "system-prompter.h"
 #include "torch-manager.h"
 #include "util.h"
@@ -86,6 +88,7 @@ typedef struct
 
   GtkWidget *notification_banner;
 
+  PhoshSessionManager *session_manager;
   PhoshBackgroundManager *background_manager;
   PhoshMonitor *primary_monitor;
   PhoshMonitor *builtin_monitor;
@@ -100,11 +103,13 @@ typedef struct
   PhoshNotifyManager *notify_manager;
   PhoshFeedbackManager *feedback_manager;
   PhoshBtManager *bt_manager;
+  PhoshMountManager *mount_manager;
   PhoshWWan *wwan;
   PhoshTorchManager *torch_manager;
   PhoshModeManager *mode_manager;
   PhoshDockedManager *docked_manager;
   PhoshKeyboardEvents *keyboard_events;
+  PhoshGnomeShellManager *gnome_shell_manager;
 
   /* sensors */
   PhoshSensorProxyManager *sensor_proxy_manager;
@@ -340,7 +345,9 @@ phosh_shell_dispose (GObject *object)
   g_clear_object (&priv->docked_manager);
   g_clear_object (&priv->mode_manager);
   g_clear_object (&priv->torch_manager);
+  g_clear_object (&priv->gnome_shell_manager);
   g_clear_object (&priv->wwan);
+  g_clear_object (&priv->mount_manager);
   g_clear_object (&priv->bt_manager);
   g_clear_object (&priv->feedback_manager);
   g_clear_object (&priv->notify_manager);
@@ -360,7 +367,7 @@ phosh_shell_dispose (GObject *object)
   g_clear_object (&priv->proximity);
   g_clear_object (&priv->sensor_proxy_manager);
   phosh_system_prompter_unregister ();
-  phosh_session_unregister ();
+  g_clear_object (&priv->session_manager);
 
   G_OBJECT_CLASS (phosh_shell_parent_class)->dispose (object);
 }
@@ -413,7 +420,7 @@ on_new_notification (PhoshShell         *self,
     gtk_widget_destroy (priv->notification_banner);
   }
 
-  if (phosh_notify_manager_get_show_banners (manager) &&
+  if (phosh_notify_manager_get_show_notification_banner (manager, notification) &&
       !phosh_lockscreen_manager_get_locked (priv->lockscreen_manager) &&
       phosh_panel_get_state (PHOSH_PANEL (priv->panel)) == PHOSH_PANEL_STATE_FOLDED) {
     g_set_weak_pointer (&priv->notification_banner,
@@ -445,6 +452,7 @@ setup_idle_cb (PhoshShell *self)
 {
   PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
 
+  priv->session_manager = phosh_session_manager_new ();
   priv->mode_manager = phosh_mode_manager_new ();
 
   panels_create (self);
@@ -481,8 +489,12 @@ setup_idle_cb (PhoshShell *self)
                                            priv->lockscreen_manager);
     /* TODO: accelerometer */
   }
+  priv->mount_manager = phosh_mount_manager_new ();
 
-  phosh_session_register (PHOSH_APP_ID);
+  phosh_session_manager_register (priv->session_manager,
+                                  PHOSH_APP_ID,
+                                  g_getenv ("DESKTOP_AUTOSTART_ID"));
+  g_unsetenv ("DESKTOP_AUTOSTART_ID");
 
   /* If we start rotated, fix this up */
   if (phosh_shell_get_transform (self) != PHOSH_MONITOR_TRANSFORM_NORMAL)
@@ -623,6 +635,7 @@ phosh_shell_constructed (GObject *object)
   priv->polkit_auth_agent = phosh_polkit_auth_agent_new ();
 
   priv->feedback_manager = phosh_feedback_manager_new ();
+  priv->gnome_shell_manager = phosh_gnome_shell_manager_get_default ();
 
   if (priv->builtin_monitor) {
     g_signal_connect_swapped (
@@ -979,6 +992,19 @@ phosh_shell_get_docked_manager (PhoshShell *self)
 }
 
 
+PhoshSessionManager *
+phosh_shell_get_session_manager (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
+  priv = phosh_shell_get_instance_private (self);
+  g_return_val_if_fail (PHOSH_IS_SESSION_MANAGER (priv->session_manager), NULL);
+
+  return priv->session_manager;
+}
+
+
 /**
  * Returns the usable area in pixels usable by a client on the phone
  * display
@@ -1163,3 +1189,38 @@ phosh_shell_remove_global_keyboard_action_entries (PhoshShell *self,
   }
 }
 
+
+/**
+ * phosh_shell_is_session_active
+ * @self: The shell
+ *
+ * Whether this shell is part of the active session
+ */
+gboolean
+phosh_shell_is_session_active (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), FALSE);
+  priv = phosh_shell_get_instance_private (self);
+
+  return phosh_session_manager_is_active (priv->session_manager);
+}
+
+
+/**
+ * phosh_get_app_launch_context:
+ * @self: The shell
+ *
+ * Returns: a an app launch context for the primary display
+ */
+GdkAppLaunchContext*
+phosh_shell_get_app_launch_context (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
+  priv = phosh_shell_get_instance_private (self);
+
+  return gdk_display_get_app_launch_context (gtk_widget_get_display (GTK_WIDGET (priv->panel)));
+}

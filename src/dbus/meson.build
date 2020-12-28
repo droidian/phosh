@@ -11,11 +11,31 @@ generated_dbus_sources += gnome.gdbus_codegen('hostname1-dbus',
 					      'org.freedesktop.hostname1.xml',
 					      interface_prefix: 'org.freedesktop',
 					      namespace: 'PhoshHostname1DBus')
+# org.freedesktop.login1.Session
+generated_dbus_sources += gnome.gdbus_codegen('login1-session-dbus',
+					      'org.freedesktop.login1.Session.xml',
+					      interface_prefix: 'org.freedesktop.login1',
+					      namespace: 'PhoshLogin1SessionDBus')
+# org.freedesktop.login1.Manager
+generated_dbus_sources += gnome.gdbus_codegen('login1-manager-dbus',
+					      'org.freedesktop.login1.Manager.xml',
+					      interface_prefix: 'org.freedesktop.login1',
+					      namespace: 'PhoshLogin1ManagerDBus')
 # org.freedesktop.UPower.Torch
 generated_dbus_sources += gnome.gdbus_codegen('upower-torch-dbus',
 					      'org.freedesktop.UPower.Torch.xml',
 					      interface_prefix: 'org.freedesktop.UPower',
 					      namespace: 'PhoshUPowerDBus')
+# org.gnome.SessionManager
+generated_dbus_sources += gnome.gdbus_codegen('gnome-session-dbus',
+					      'org.gnome.SessionManager.xml',
+					      interface_prefix: 'org.gnome',
+					      namespace: 'PhoshSessionDBus')
+# org.gnome.SessionManager.ClientPrivate
+generated_dbus_sources += gnome.gdbus_codegen('gnome-session-client-private-dbus',
+					      'org.gnome.SessionManager.ClientPrivate.xml',
+					      interface_prefix: 'org.gnome.SessionManager',
+					      namespace: 'PhoshSessionClientPrivateDBus')
 # org.gnome.SessionManager.Presence
 generated_dbus_sources += gnome.gdbus_codegen('gnome-session-presence-dbus',
 					      'org.gnome.SessionManager.Presence.xml',
@@ -37,6 +57,11 @@ generated_dbus_sources += gnome.gdbus_codegen('notify-dbus',
                                               'org.freedesktop.Notifications.xml',
 					      interface_prefix: 'org.freedesktop',
 					      namespace: 'PhoshNotifyDBus')
+
+generated_dbus_sources += gnome.gdbus_codegen('phosh-gnome-shell-dbus',
+					      'org.gnome.Shell.xml',
+					      interface_prefix: 'org.gnome',
+					      namespace: 'PhoshGnomeShellDBus')
 
 generated_dbus_sources += gnome.gdbus_codegen('phosh-idle-dbus',
 					     'org.gnome.Mutter.IdleMonitor.xml',

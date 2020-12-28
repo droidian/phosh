@@ -76,13 +76,15 @@ animation_done_cb (PhoshSwipeAwayBin *self)
 static void
 animate (PhoshSwipeAwayBin *self,
          gint64             duration,
-         double             to)
+         double             to,
+         PhoshAnimationType type)
 {
   self->animation =
     phosh_animation_new (GTK_WIDGET (self),
                          self->progress,
                          to,
                          duration,
+                         type,
                          (PhoshAnimationValueCallback) animation_value_cb,
                          (PhoshAnimationDoneCallback) animation_done_cb,
                          self);
@@ -112,7 +114,7 @@ end_swipe_cb (PhoshSwipeAwayBin *self,
               gint64             duration,
               double             to)
 {
-  animate (self, duration, to);
+  animate (self, duration, to, PHOSH_ANIMATION_TYPE_EASE_OUT_CUBIC);
 }
 
 
@@ -268,5 +270,17 @@ phosh_swipe_away_bin_remove (PhoshSwipeAwayBin *self)
   if (self->animation)
     phosh_animation_stop (self->animation);
 
-  animate (self, 200, 1);
+  animate (self, 200, 1, PHOSH_ANIMATION_TYPE_EASE_OUT_CUBIC);
+}
+
+
+void
+phosh_swipe_away_bin_undo (PhoshSwipeAwayBin *self)
+{
+  g_return_if_fail (PHOSH_IS_SWIPE_AWAY_BIN (self));
+
+  if (self->animation)
+    phosh_animation_stop (self->animation);
+
+  animate (self, 600, 0, PHOSH_ANIMATION_TYPE_EASE_OUT_BOUNCE);
 }

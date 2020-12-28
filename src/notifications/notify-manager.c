@@ -12,23 +12,33 @@
 
 #include <gio/gdesktopappinfo.h>
 
+#include "dbus-notification.h"
 #include "notification-banner.h"
 #include "notification-list.h"
 #include "notify-manager.h"
 #include "shell.h"
 #include "phosh-enums.h"
+#include "util.h"
 
 #define NOTIFICATION_DEFAULT_TIMEOUT 5000 /* ms */
 #define NOTIFICATIONS_SPEC_VERSION "1.2"
 
 #define NOTIFICATIONS_SCHEMA_ID "org.gnome.desktop.notifications"
 #define NOTIFICATIONS_KEY_SHOW_BANNERS "show-banners"
+#define NOTIFICATIONS_KEY_APP_CHILDREN "application-children"
+
+#define NOTIFICATIONS_APP_SCHEMA_ID NOTIFICATIONS_SCHEMA_ID ".application"
+#define NOTIFICATIONS_APP_PREFIX "/org/gnome/desktop/notifications/application"
+#define NOTIFICATIONS_APP_KEY_SHOW_BANNERS "show-banners"
+#define NOTIFICATIONS_APP_KEY_APP_ID "application-id"
 
 /**
  * SECTION:notify-manager
- * @short_description: Provides the org.freedesktop.Notification DBus interface
+ * @short_description: Manages notifications
  * @Title: PhoshNotifyManager
  *
+ * #PhoshNotifyManager manages notifications sent from the shell
+ * iself and via the org.freedesktop.Notification DBus interface.
  * See https://developer.gnome.org/notification-spec/
  */
 
@@ -45,6 +55,7 @@ typedef struct _PhoshNotifyManager
   guint next_id;
   guint unknown_source;
   gboolean show_banners;
+  GStrv app_children;
 
   GSettings *settings;
 
@@ -162,8 +173,7 @@ on_notification_actioned (PhoshNotifyManager *self,
 
   g_debug ("Emitting ActionInvoked: %d, %s", id, action);
 
-  phosh_notify_dbus_notifications_emit_action_invoked (
-    PHOSH_NOTIFY_DBUS_NOTIFICATIONS (self), id, action);
+  phosh_notification_do_action (notification, id, action);
 
   /* Resident notifications stay after being actioned */
   if (!phosh_notification_get_resident (notification)) {
@@ -270,6 +280,36 @@ parse_icon_string (const char *string)
 }
 
 
+static void
+phosh_notify_manager_add_application (PhoshNotifyManager *self, GAppInfo *info)
+{
+  g_autofree char *munged_id = NULL;
+  g_autofree char *path = NULL;
+  g_autoptr (GSettings) settings = NULL;
+  g_autoptr(GPtrArray) new_apps = NULL;
+  const gchar *id;
+
+  id = g_app_info_get_id(info);
+  munged_id = phosh_munge_app_id (id);
+  if (g_strv_contains ((const gchar * const *)self->app_children, munged_id))
+    return;
+
+  g_debug ("Adding new application: %s/%s", id, munged_id);
+  new_apps = g_ptr_array_sized_new (g_strv_length (self->app_children) + 1);
+  for (int i = 0; i < g_strv_length (self->app_children); i++)
+    g_ptr_array_add (new_apps, self->app_children[i]);
+
+  g_ptr_array_add (new_apps, munged_id);
+  g_ptr_array_add (new_apps, NULL);
+
+  path = g_strconcat (NOTIFICATIONS_APP_PREFIX, "/", munged_id, "/", NULL);
+  settings = g_settings_new_with_path (NOTIFICATIONS_APP_SCHEMA_ID, path);
+  g_settings_set_string (settings, NOTIFICATIONS_APP_KEY_APP_ID, id);
+  g_settings_set_strv (self->settings, NOTIFICATIONS_KEY_APP_CHILDREN,
+                       (const gchar * const *)new_apps->pdata);
+}
+
+
 static gboolean
 handle_notify (PhoshNotifyDBusNotifications *skeleton,
                GDBusMethodInvocation        *invocation,
@@ -301,10 +341,7 @@ handle_notify (PhoshNotifyDBusNotifications *skeleton,
   g_autofree char *category = NULL;
   GIcon *icon = NULL;
   GIcon *image = NULL;
-  g_autoptr (GDateTime) timestamp = g_date_time_new_now_local ();
 
-  if (timestamp == NULL)
-    g_warning ("Could not get local time");
   g_return_val_if_fail (PHOSH_IS_NOTIFY_MANAGER (self), FALSE);
 
   g_debug ("DBus call Notify: %s (%u): %s (%s), %s, %d", app_name, replaces_id, summary, body, app_icon, expire_timeout);
@@ -385,9 +422,6 @@ handle_notify (PhoshNotifyDBusNotifications *skeleton,
     source_id = g_strdup_printf ("unknown-app-%i", self->unknown_source++);
   }
 
-  if (expire_timeout == -1)
-    expire_timeout = NOTIFICATION_DEFAULT_TIMEOUT;
-
   if (replaces_id)
     notification = phosh_notification_list_get_by_id (self->list, replaces_id);
 
@@ -403,48 +437,33 @@ handle_notify (PhoshNotifyDBusNotifications *skeleton,
                   "image", image,
                   "urgency", urgency,
                   "actions", actions,
-                  "timestamp", timestamp,
+                  "timestamp", NULL,
                   NULL);
   } else {
-    id = self->next_id++;
+    PhoshDBusNotification *dbus_notification;
 
-    notification = phosh_notification_new (id,
-                                           app_name,
-                                           info,
-                                           summary,
-                                           body,
-                                           icon,
-                                           image,
-                                           urgency,
-                                           (GStrv) actions,
-                                           transient,
-                                           resident,
-                                           category,
-                                           timestamp);
+    if (info)
+      phosh_notify_manager_add_application (self, info);
 
-    phosh_notification_list_add (self->list, source_id, notification);
+    id = phosh_notify_manager_get_notification_id (self);
+    dbus_notification = phosh_dbus_notification_new (id,
+                                                     app_name,
+                                                     info,
+                                                     summary,
+                                                     body,
+                                                     icon,
+                                                     image,
+                                                     urgency,
+                                                     (GStrv) actions,
+                                                     transient,
+                                                     resident,
+                                                     category,
+                                                     NULL);
 
-    g_signal_connect_object (notification,
-                             "expired",
-                             G_CALLBACK (on_notification_expired),
-                             self,
-                             G_CONNECT_SWAPPED);
-    g_signal_connect_object (notification,
-                             "actioned",
-                             G_CALLBACK (on_notification_actioned),
-                             self,
-                             G_CONNECT_SWAPPED);
-    g_signal_connect_object (notification,
-                             "closed",
-                             G_CALLBACK (on_notification_closed),
-                             self,
-                             G_CONNECT_SWAPPED);
-
-    if (expire_timeout) {
-      phosh_notification_expires (notification, expire_timeout);
-    }
-
-    g_signal_emit (self, signals[SIGNAL_NEW_NOTIFICATION], 0, notification);
+    phosh_notify_manager_add_notification (self,
+                                           source_id,
+                                           expire_timeout,
+                                           PHOSH_NOTIFICATION (dbus_notification));
   }
 
   phosh_notify_dbus_notifications_complete_notify (
@@ -473,6 +492,19 @@ on_notifications_setting_changed (PhoshNotifyManager *self,
   g_return_if_fail (G_IS_SETTINGS (settings));
 
   self->show_banners = g_settings_get_boolean (settings, NOTIFICATIONS_KEY_SHOW_BANNERS);
+}
+
+
+static void
+on_notification_apps_setting_changed (PhoshNotifyManager *self,
+                                      const char         *key,
+                                      GSettings          *settings)
+{
+  g_return_if_fail (PHOSH_IS_NOTIFY_MANAGER (self));
+  g_return_if_fail (G_IS_SETTINGS (settings));
+
+  g_strfreev (self->app_children);
+  self->app_children = g_settings_get_strv (settings, NOTIFICATIONS_KEY_APP_CHILDREN);
 }
 
 
@@ -525,6 +557,18 @@ phosh_notify_manager_dispose (GObject *object)
 
 
 static void
+phosh_notify_manager_finalize (GObject *object)
+{
+  PhoshNotifyManager *self = PHOSH_NOTIFY_MANAGER (object);
+
+  g_strfreev (self->app_children);
+
+  G_OBJECT_CLASS (phosh_notify_manager_parent_class)->finalize (object);
+}
+
+
+
+static void
 phosh_notify_manager_constructed (GObject *object)
 {
   PhoshNotifyManager *self = PHOSH_NOTIFY_MANAGER (object);
@@ -544,6 +588,10 @@ phosh_notify_manager_constructed (GObject *object)
   g_signal_connect_swapped (self->settings, "changed::" NOTIFICATIONS_KEY_SHOW_BANNERS,
                             G_CALLBACK (on_notifications_setting_changed), self);
   on_notifications_setting_changed (self, NULL, self->settings);
+
+  g_signal_connect_swapped (self->settings, "changed::" NOTIFICATIONS_KEY_APP_CHILDREN,
+                            G_CALLBACK (on_notification_apps_setting_changed), self);
+  on_notification_apps_setting_changed (self, NULL, self->settings);
 }
 
 
@@ -554,7 +602,7 @@ phosh_notify_manager_class_init (PhoshNotifyManagerClass *klass)
 
   object_class->constructed = phosh_notify_manager_constructed;
   object_class->dispose = phosh_notify_manager_dispose;
-
+  object_class->finalize = phosh_notify_manager_finalize;
 
   /**
    * PhoshNotifyManager::new-notification:
@@ -631,4 +679,127 @@ phosh_notify_manager_get_show_banners (PhoshNotifyManager *self)
   g_return_val_if_fail (PHOSH_IS_NOTIFY_MANAGER (self), FALSE);
 
   return self->show_banners;
+}
+
+/**
+ * phosh_notify_manager_get_notification_id:
+ * @self: the #PhoshNotifyManager
+ *
+ * Get a notification id
+ *
+ * Returns: a notification id that can be used to create new
+ * notifications.
+ */
+guint
+phosh_notify_manager_get_notification_id (PhoshNotifyManager *self)
+{
+  g_return_val_if_fail (PHOSH_IS_NOTIFY_MANAGER (self), FALSE);
+
+  return self->next_id++;
+}
+
+/**
+ * phosh_notify_manager_add_notification
+ * @self: the #PhoshNotifyManager
+ * @source_id: The notification source's app_id
+ * @expire_timeout: When the notification should expire
+ * @notification: The notification
+ *
+ * Returns: Adds a notification
+ * notifications.
+ */
+void
+phosh_notify_manager_add_notification (PhoshNotifyManager *self,
+                                       const gchar *source_id,
+                                       int expire_timeout,
+                                       PhoshNotification *notification)
+{
+  g_return_if_fail (PHOSH_IS_NOTIFY_MANAGER (self));
+  g_return_if_fail (PHOSH_IS_NOTIFICATION (notification));
+  g_return_if_fail (source_id);
+
+  if (expire_timeout == -1)
+    expire_timeout = NOTIFICATION_DEFAULT_TIMEOUT;
+
+  phosh_notification_list_add (self->list, source_id, notification);
+
+  g_signal_connect_object (notification,
+                           "expired",
+                           G_CALLBACK (on_notification_expired),
+                           self,
+                           G_CONNECT_SWAPPED);
+  g_signal_connect_object (notification,
+                           "actioned",
+                           G_CALLBACK (on_notification_actioned),
+                           self,
+                           G_CONNECT_SWAPPED);
+  g_signal_connect_object (notification,
+                           "closed",
+                           G_CALLBACK (on_notification_closed),
+                           self,
+                           G_CONNECT_SWAPPED);
+
+  if (expire_timeout) {
+    phosh_notification_expires (notification, expire_timeout);
+  }
+
+  g_signal_emit (self, signals[SIGNAL_NEW_NOTIFICATION], 0, notification);
+}
+
+gboolean
+phosh_notify_manager_close_notification_by_id (PhoshNotifyManager *self,
+                                               int id,
+                                               PhoshNotificationReason reason)
+{
+  PhoshNotification *notification = NULL;
+
+  g_return_val_if_fail (PHOSH_IS_NOTIFY_MANAGER (self), FALSE);
+
+  notification = phosh_notification_list_get_by_id (self->list, id);
+  if (!notification)
+    return FALSE;
+
+  phosh_notification_close (notification, reason);
+  return TRUE;
+}
+
+/**
+ * phosh_notify_manager_get_show_notfication_banner:
+ * @self: the #PhoshNotifyManager
+ * @notification: the #PhoshNotification in question
+ *
+ * Checks whether a #PhoshNotificationBanner should be displayed
+ * for the given #PhoshNotification according to current policy.
+ *
+ * Returns: %TRUE if the banner should be shown, otherwise %FALSE
+ */
+gboolean
+phosh_notify_manager_get_show_notification_banner (PhoshNotifyManager *self,
+                                                   PhoshNotification  *notification)
+{
+  g_autoptr (GSettings) settings = NULL;
+  g_autofree char *path = NULL;
+  g_autofree char *munged_id = NULL;
+  GAppInfo *app_info;
+  gboolean show;
+
+  g_return_val_if_fail (PHOSH_IS_NOTIFY_MANAGER (self), FALSE);
+
+  if (!self->show_banners)
+    return FALSE;
+
+  if (phosh_notification_get_urgency (notification) == PHOSH_NOTIFICATION_URGENCY_CRITICAL)
+    return TRUE;
+
+  app_info = phosh_notification_get_app_info (notification);
+  if (!app_info)
+    return TRUE;
+
+  munged_id = phosh_munge_app_id (g_app_info_get_id(app_info));
+  path = g_strconcat (NOTIFICATIONS_APP_PREFIX, "/", munged_id, "/", NULL);
+  settings = g_settings_new_with_path (NOTIFICATIONS_APP_SCHEMA_ID, path);
+  show = g_settings_get_boolean (settings, NOTIFICATIONS_APP_KEY_SHOW_BANNERS);
+
+  g_debug ("Show banners for %s: %d", munged_id, show);
+  return show;
 }

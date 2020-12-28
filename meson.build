@@ -1,7 +1,7 @@
 project('phosh', 'c',
-          version: '0.6.0',
+          version: '0.7.1',
           license: 'GPLv3+',
-    meson_version: '>= 0.49.0',
+    meson_version: '>= 0.50.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
 )
 
@@ -32,7 +32,6 @@ glib_ver = 'GLIB_VERSION_2_58'
 add_project_arguments([
   '-DHAVE_CONFIG_H',
   '-DGLIB_VERSION_MIN_REQUIRED=@0@'.format(glib_ver),
-  '-DGLIB_VERSION_MAX_ALLOWED=@0@'.format(glib_ver),
   '-DG_LOG_USE_STRUCTURED',
   '-I' + meson.build_root(),
 ], language: 'c')
@@ -134,6 +133,8 @@ libhandy_dep = dependency('libhandy-1',
   )
 libnm_dep = dependency('libnm', version: '>= 1.14')
 libpolkit_agent_dep = dependency('polkit-agent-1', version: '>= 0.105')
+# TODO: make optional for elogind?
+libsystemd_dep = dependency('libsystemd', version: '>= 241')
 network_agent_dep = dependency('libsecret-1')
 upower_glib_dep = dependency('upower-glib', version: '>=0.99.1')
 wayland_client_dep = dependency('wayland-client', version: '>=1.14')
