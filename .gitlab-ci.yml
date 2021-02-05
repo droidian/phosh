@@ -5,7 +5,6 @@ stages:
  - build
  - test+docs
  - package
- - test-package
 
 variables:
   DEPS: build-essential git wget lcov
@@ -89,7 +88,7 @@ unit-test:native-debian-buster:
   <<: *tags
   stage: test+docs
   image: debian:buster
-  dependencies:
+  needs:
     - build:native-debian-buster
   <<: *buster_vars
   <<: *test_step
@@ -146,7 +145,7 @@ unit-test:native-debian-bullseye:
   <<: *tags
   stage: test+docs
   image: debian:bullseye
-  dependencies:
+  needs:
     - build:native-debian-bullseye
   <<: *bullseye_vars
   <<: *test_step
@@ -163,7 +162,7 @@ build-gtkdoc:
   <<: *tags
   image: debian:bullseye
   stage: test+docs
-  dependencies:
+  needs:
     - build:native-debian-bullseye
   <<: *bullseye_vars
   script:
@@ -180,7 +179,7 @@ check-po:
   <<: *tags
   stage: test+docs
   image: debian:bullseye
-  dependencies:
+  needs:
     - build:native-debian-bullseye
   before_script:
     - apt-get -y update
@@ -200,7 +199,7 @@ check-license-headers:
   <<: *tags
   stage: test+docs
   image: debian:bullseye
-  dependencies:
+  needs:
     - build:native-debian-bullseye
   <<: *bullseye_vars
   script:
@@ -235,7 +234,7 @@ unit-test:native-alpinelinux-edge:
   stage: test+docs
   image: alpine:edge
   allow_failure: true
-  dependencies:
+  needs:
     - build:native-alpinelinux-edge
   before_script:
     - echo "https://alpine.global.ssl.fastly.net/alpine/edge/testing" >> /etc/apk/repositories
@@ -256,7 +255,7 @@ test:smoke:one-output:
   stage: test+docs
   image: debian:buster
   variables: *smoketest_vars
-  dependencies:
+  needs:
     - build:native-debian-buster
   script:
     - export OUTDIR=output
@@ -278,7 +277,7 @@ test:smoke:two-outputs:
   stage: test+docs
   image: debian:buster
   variables: *smoketest_vars
-  dependencies:
+  needs:
     - build:native-debian-buster
   script:
     - export OUTDIR=output
@@ -297,6 +296,7 @@ test:smoke:two-outputs:
 
 package:deb-debian-buster:
   extends: .l5-build-debian-package
+  before_script: []
 
 package:deb-debian-bullseye:arm64:
   tags:
@@ -304,11 +304,13 @@ package:deb-debian-bullseye:arm64:
   variables:
     L5_DOCKER_IMAGE: debian:bullseye
     L5_ADD_SCRATCH_CI: 'false'
+  before_script: []
   extends: .l5-build-debian-package
 
 package:deb-debian-buster:arm64:
   tags:
     - librem5:arm64
+  before_script: []
   extends: .l5-build-debian-package
 
 package:deb-pureos-amber:
@@ -316,24 +318,7 @@ package:deb-pureos-amber:
     L5_DOCKER_IMAGE: pureos/amber
     L5_ADD_SCRATCH_CI: 'false'
   before_script:
-    - export DEBIAN_FRONTEND=noninteractive
-    - echo "man-db man-db/auto-update boolean false" | debconf-set-selections
     - echo "deb https://repo.pureos.net/pureos amber-phone-staging main" > /etc/apt/sources.list.d/staging.list
     - echo "deb https://repo.pureos.net/pureos amber-proposed-updates main" >> /etc/apt/sources.list.d/staging.list
-    - apt-get -y update
-    - apt-get -y build-dep .
-    - apt-get -y install build-essential git devscripts
-    - git submodule update --recursive
   extends: .l5-build-debian-package
   allow_failure: true
-
-autopkgtest-debian-buster-package:
-  dependencies:
-    - package:deb-debian-buster
-  extends: .l5-autopkgtest-debian-package
-
-lintian-debian-buster-package:
-  dependencies:
-    - package:deb-debian-buster
-  extends: .l5-lintian-debian-package
-

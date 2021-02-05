@@ -280,6 +280,7 @@ on_auth_session_request (PhoshPolkitAuthPrompt *self,
   gtk_label_set_text(GTK_LABEL (self->lbl_password), request);
   gtk_entry_set_visibility (GTK_ENTRY (self->entry_password), echo_on);
   gtk_entry_set_text (GTK_ENTRY (self->entry_password), "");
+  gtk_widget_grab_focus (self->entry_password);
 }
 
 static void
@@ -415,6 +416,7 @@ phosh_polkit_auth_prompt_dispose (GObject *obj)
   PhoshPolkitAuthPrompt *self = PHOSH_POLKIT_AUTH_PROMPT (obj);
 
   g_clear_object (&self->identity);
+  g_clear_object (&self->session);
 
   G_OBJECT_CLASS (phosh_polkit_auth_prompt_parent_class)->dispose (obj);
 }

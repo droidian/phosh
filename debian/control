@@ -38,23 +38,27 @@ Depends:
  ${misc:Depends},
  ${shlibs:Depends},
  fonts-lato,
- gsettings-desktop-schemas,
  gnome-shell-common,
- phoc (>= 0.4.4~),
+ gsettings-desktop-schemas,
+ phoc (>= 0.4.4),
 Recommends:
  feedbackd,
+ gnome-session-bin,
+ gnome-session-common,
+ gnome-settings-daemon,
  iio-sensor-proxy,
- gnome-session,
+ phosh-mobile-tweaks,
+ squeekboard | phosh-osk-stub,
 Provides:
  notification-daemon,
  polkit-1-auth-agent,
 Description: Pure Wayland shell for mobile devices
  Phosh is a graphical shell for Wayland compositors speaking the layer-surface
  protocol and aimed at mobile devices like smart phones and tablets using touch
- based inputs and and small screens.
+ based inputs and small screens.
  .
  It's part of the Phosh Mobile Environment based on GNOME/GTK. For the full
- stack see the phosh-full and phosh-core meta packages.
+ stack see the phosh-full and phosh-core metapackages.
 
 Package: phosh-osk-stub
 Architecture: any
@@ -63,19 +67,20 @@ Depends:
  ${shlibs:Depends},
 Conflicts:
  librem5-base
-Description: OSK stub to fulfil session dependencies
+Description: OSK stub to fulfill session dependencies
  Phosh's session wants a sm.puri.OSK0. For testing on non-phone's
  this stub fulfills the necessary dependencies.
 
 Package: phosh-doc
 Architecture: all
+Section: doc
 Build-Profiles: <!nodoc>
 Depends:
  ${misc:Depends},
 Description: Pure Wayland shell for mobile devices - development documentation
  Phosh is a graphical shell for Wayland compositors speaking the layer-surface
  protocol and aimed at mobile devices like smart phones and tablets using touch
- based inputs and and small screens.
+ based inputs and small screens.
  .
  This package contains the development documentation.
 
@@ -87,6 +92,6 @@ Depends:
 Description: Pure Wayland shell for mobile devices - GSettings tweaks
  Phosh is a graphical shell for Wayland compositors speaking the layer-surface
  protocol and aimed at mobile devices like smart phones and tablets using touch
- based inputs and and small screens.
+ based inputs and small screens.
  .
  This package contains settings to improve behaviour on mobile devices.

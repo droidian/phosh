@@ -7,6 +7,7 @@
 #define G_LOG_DOMAIN "phosh-timestamp-label"
 
 #include "timestamp-label.h"
+#include "timestamp-label-priv.h"
 #include "config.h"
 #include <glib/gi18n.h>
 
@@ -43,25 +44,27 @@ G_DEFINE_TYPE (PhoshTimestampLabel, phosh_timestamp_label, GTK_TYPE_LABEL)
 #define SECONDS_PER_DAY    86400.0
 #define SECONDS_PER_MONTH  2592000.0
 #define SECONDS_PER_YEAR   31536000.0
+#define MINUTES_PER_DAY    1440.0
+#define MINUTES_PER_YEAR   525600.0
+#define MINUTES_PER_QUARTER 131400.0
 
 /**
- * phosh_time_ago_in_words:
- * @time_stamp: the time to represent
+ * phosh_time_diff_in_words:
+ * @dt: The target time
+ * @dt_now: the current time
  *
- * Generate a string to represent a datetime
+ * Generate a string to represent a #GDateTime difference. Currently @dt must be in the past of @dt_now.
+ * Times in the future aren't supported.
  *
  * Based on [ChattyListRow](https://source.puri.sm/Librem5/chatty/blob/master/src/chatty-list-row.c#L47)
  * itself based on the ruby on rails method 'distance_of_time_in_words'
  *
  * Returns: (transfer full): the generated string
  */
-static char *
-phosh_time_ago_in_words (GDateTime *time_stamp)
+char *
+phosh_time_diff_in_words (GDateTime *dt, GDateTime *dt_now)
 {
-
-  g_autoptr (GDateTime) time_now = g_date_time_new_now_local ();
-
-  g_autofree char *fallback = NULL;
+  char *result = NULL;
 
   const char *unit;
   const char *prefix = NULL;
@@ -72,8 +75,6 @@ phosh_time_ago_in_words (GDateTime *time_stamp)
   const char *str_month, *str_months, *str_year, *str_years;
 
   int number, seconds, minutes, hours, days, months, years, offset, remainder;
-
-  gboolean show_date = FALSE;
 
   double dist_in_seconds;
 
@@ -102,10 +103,7 @@ phosh_time_ago_in_words (GDateTime *time_stamp)
   /* Translators: Timestamp years suffix */
   str_years     = C_("timestamp-suffix-years", "y");
 
-  /* Translators: this is the date in (short) number only format */
-  fallback = g_date_time_format (time_stamp, _("%d.%m.%y"));
-
-  dist_in_seconds = g_date_time_difference (time_now, time_stamp) / G_TIME_SPAN_SECOND;
+  dist_in_seconds = g_date_time_difference (dt_now, dt) / G_TIME_SPAN_SECOND;
 
   seconds = (int) dist_in_seconds;
   minutes = (int) (dist_in_seconds / SECONDS_PER_MINUTE);
@@ -117,11 +115,10 @@ phosh_time_ago_in_words (GDateTime *time_stamp)
   switch (minutes) {
   case 0 ... 1:
     unit = str_seconds;
-
     switch (seconds) {
     case 0 ... 14:
-      prefix = NULL;
       number = 0;
+      result = g_strdup(_("now"));
       break;
     case 15 ... 29:
       prefix = str_less_than;
@@ -159,25 +156,21 @@ phosh_time_ago_in_words (GDateTime *time_stamp)
     prefix = str_about;
     number = 1;
     unit = str_day;
-    show_date = TRUE;
     break;
   case 2530 ... 43199:
     prefix = "";
     number = days;
     unit = str_days;
-    show_date = TRUE;
     break;
   case 43200 ... 86399:
     prefix = str_about;
     number = 1;
     unit = str_month;
-    show_date = TRUE;
     break;
   case 86400 ... 525600:
     prefix = "";
     number = months;
     unit = str_months;
-    show_date = TRUE;
     break;
 
   default:
@@ -185,32 +178,49 @@ phosh_time_ago_in_words (GDateTime *time_stamp)
 
     unit = (number == 1) ? str_year : str_years;
 
-    offset = (int)((float)years / 4.0) * 1440.0;
+    offset = ((float)years / 4.0) * MINUTES_PER_DAY;
 
-    remainder = (minutes - offset) % 525600;
-    show_date = TRUE;
+    remainder = (minutes - offset) % (int)MINUTES_PER_YEAR;
 
-    if (remainder < 131400) {
+    if (remainder < MINUTES_PER_QUARTER) {
       prefix = str_about;
-    } else if (remainder < 394200) {
-      /* Translators: Timestamp prefix (e.g. Over 5h) */
-      prefix = _("Over");
+    } else if (remainder < (3 * MINUTES_PER_QUARTER)) {
+      /* Translators: time difference "Over 5 years" */
+      result = g_strdup_printf (_("Over %dy"), number);
     } else {
       ++number;
-      unit = str_years;
-      /* Translators: Timestamp prefix (e.g. Almost 5h) */
-      prefix = _("Almost");
+      /* Translators: time difference "almost 5 years" */
+      result = g_strdup_printf (_("Almost %dy"), number);
     }
     break;
   }
 
-  if (show_date) {
-    return g_strdup (fallback);
-  } else {
-    return prefix ? g_strdup_printf ("%s%d%s", prefix, number, unit) : g_strdup(_("now"));
+  if (!result) {
+    /* Translators: a time difference like '<5m', if in doubt leave untranslated */
+    result = g_strdup_printf (_("%s%d%s"), prefix, number, unit);
   }
+
+  return result;
 }
 
+/**
+ * phosh_time_ago_in_words:
+ * @dt: the #GDateTime to represent
+ *
+ * Generate a string to represent a #GDateTime. Note that @dt must be in the past.
+ *
+ * Based on [ChattyListRow](https://source.puri.sm/Librem5/chatty/blob/master/src/chatty-list-row.c#L47)
+ * itself based on the ruby on rails method 'distance_of_time_in_words'
+ *
+ * Returns: (transfer full): the generated string
+ */
+static char *
+phosh_time_ago_in_words (GDateTime *dt)
+{
+  g_autoptr (GDateTime) dt_now = g_date_time_new_now_local ();
+
+  return phosh_time_diff_in_words (dt, dt_now);
+}
 
 static GTimeSpan
 phosh_timestamp_label_calc_timeout (PhoshTimestampLabel *self)

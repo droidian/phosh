@@ -36,6 +36,10 @@ enum {
 };
 static GParamSpec *props[PHOSH_HEAD_PROP_LAST_PROP];
 
+#define MINIMUM_LOGICAL_AREA_LANDSCAPE (800 * 480)
+#define MINIMUM_LOGICAL_AREA_PORTRAIT (360 * 720)
+#define MINIMUM_SCALE_FACTOR 1
+#define MAXIMUM_SCALE_FACTOR 4
 
 G_DEFINE_TYPE (PhoshHead, phosh_head, G_TYPE_OBJECT);
 
@@ -46,7 +50,50 @@ phosh_head_mode_destroy (PhoshHeadMode *mode)
   g_return_if_fail (PHOSH_IS_HEAD (mode->head));
 
   g_clear_pointer (&mode->wlr_mode, zwlr_output_mode_v1_destroy);
+  g_free (mode->name);
   g_free (mode);
+}
+
+
+static void
+mode_name (PhoshHeadMode *mode)
+{
+  if (mode->name)
+    return;
+
+  if (!mode->refresh || !mode->width || !mode->height)
+    return;
+
+  mode->name = g_strdup_printf ("%dx%d@%.0f", mode->width, mode->height,
+                                mode->refresh / 1000.0);
+
+}
+
+
+static gboolean
+is_logical_size_large_enough (int width, int height)
+{
+  if (width > height)
+    return width * height >= MINIMUM_LOGICAL_AREA_LANDSCAPE;
+  else
+    return width * height >= MINIMUM_LOGICAL_AREA_PORTRAIT;
+}
+
+
+static gboolean
+is_valid_scale (int width, int height, int scale)
+{
+  int scaled_h = height / scale;
+  int scaled_w = width / scale;
+
+  if (scale < MINIMUM_SCALE_FACTOR || scale > MAXIMUM_SCALE_FACTOR ||
+      !is_logical_size_large_enough (scaled_w, scaled_h))
+    return FALSE;
+
+  if (width % scale == 0 && height % scale == 0)
+    return TRUE;
+
+  return FALSE;
 }
 
 
@@ -58,6 +105,7 @@ zwlr_output_mode_v1_handle_size (void *data, struct zwlr_output_mode_v1 *wlr_mod
 
   mode->width = width;
   mode->height = height;
+  mode_name (mode);
 }
 
 
@@ -69,6 +117,7 @@ zwlr_output_mode_v1_handle_refresh (void                       *data,
   PhoshHeadMode *mode = data;
 
   mode->refresh = refresh;
+  mode_name (mode);
 }
 
 
@@ -124,6 +173,10 @@ head_handle_name (void                       *data,
   g_debug ("Head %p is named %s", self, name);
 
   self->name = g_strdup (name);
+
+  /* wlroots uses the connector's name as output name so
+     try to derive the connector type from it */
+  self->conn_type = phosh_monitor_connector_type_from_name (name);
 }
 
 
@@ -165,8 +218,9 @@ head_handle_mode (void                       *data,
   PhoshHeadMode *mode;
 
   g_return_if_fail (PHOSH_IS_HEAD (self));
-  g_debug ("Head %p has mode %p", self, wlr_mode);
+
   mode = phosh_head_mode_new_from_wlr_mode (self, wlr_mode);
+  g_debug ("Head %p has mode %p", self, wlr_mode);
   g_ptr_array_add (self->modes, mode);
 }
 
@@ -179,7 +233,7 @@ head_handle_enabled (void                       *data,
   PhoshHead *self = PHOSH_HEAD (data);
 
   g_return_if_fail (PHOSH_IS_HEAD (self));
-  self->enabled = !!enabled;
+  self->enabled = self->pending.enabled = !!enabled;
   g_debug ("Head %p is %sabled", self, self->enabled ? "en" : "dis");
 }
 
@@ -260,6 +314,49 @@ head_handle_finished (void                       *data,
   g_signal_emit (self, signals[SIGNAL_HEAD_FINISHED], 0);
 }
 
+static void
+head_handle_make (void *data,
+                  struct zwlr_output_head_v1 *zwlr_output_head_v1,
+                  const char *make)
+{
+  PhoshHead *self = PHOSH_HEAD (data);
+
+  g_return_if_fail (PHOSH_IS_HEAD (self));
+
+  g_free (self->vendor);
+  self->vendor = g_strdup (make);
+  g_debug ("Head %p has vendor %s", self, self->vendor);
+}
+
+
+static void
+head_handle_model (void *data,
+                   struct zwlr_output_head_v1 *zwlr_output_head_v1,
+                   const char *model)
+{
+  PhoshHead *self = PHOSH_HEAD (data);
+
+  g_return_if_fail (PHOSH_IS_HEAD (self));
+
+  g_free (self->product);
+  self->product = g_strdup (model);
+  g_debug ("Head %p has product %s", self, self->product);
+}
+
+
+static void head_handle_serial_number (void *data,
+                                       struct zwlr_output_head_v1 *zwlr_output_head_v1,
+                                       const char *serial_number)
+{
+  PhoshHead *self = PHOSH_HEAD (data);
+
+  g_return_if_fail (PHOSH_IS_HEAD (self));
+
+  g_free (self->serial);
+  self->product = g_strdup (serial_number);
+  g_debug ("Head %p has serial %s", self, self->product);
+}
+
 
 static const struct zwlr_output_head_v1_listener zwlr_output_head_v1_listener =
 {
@@ -273,6 +370,9 @@ static const struct zwlr_output_head_v1_listener zwlr_output_head_v1_listener =
   .transform = head_handle_transform,
   .scale = head_handle_scale,
   .finished = head_handle_finished,
+  .make = head_handle_make,
+  .model = head_handle_model,
+  .serial_number = head_handle_serial_number,
 };
 
 
@@ -325,6 +425,9 @@ phosh_head_dispose (GObject *object)
   g_ptr_array_free (self->modes, TRUE);
   g_clear_pointer (&self->description, g_free);
   g_clear_pointer (&self->name, g_free);
+  g_clear_pointer (&self->vendor, g_free);
+  g_clear_pointer (&self->product, g_free);
+  g_clear_pointer (&self->serial, g_free);
   g_clear_pointer (&self->wlr_head, zwlr_output_head_v1_destroy);
 
   G_OBJECT_CLASS (phosh_head_parent_class)->dispose (object);
@@ -441,4 +544,87 @@ phosh_head_get_preferred_mode (PhoshHead *self)
   }
 
   return NULL;
+}
+
+
+/**
+ * phosh_head_is_builtin:
+ * @self: A #PhoshHead
+ *
+ * Returns: %TRUE if the head built in panel (e.g. laptop panel or
+ * phone LCD)
+ */
+gboolean
+phosh_head_is_builtin (PhoshHead *self)
+{
+  g_return_val_if_fail (PHOSH_IS_HEAD (self), FALSE);
+
+  return phosh_monitor_connector_is_builtin (self->conn_type);
+}
+
+
+/**
+ * phosh_head_find_mode_by_name:
+ * @self: A #PhoshHead
+ * @name: The name of a mode
+ *
+ * Returns: The #PhoshHeadMode if found, otherwise %NULL
+ */
+PhoshHeadMode *
+phosh_head_find_mode_by_name (PhoshHead *self, const char *name)
+{
+  g_return_val_if_fail (PHOSH_IS_HEAD (self), NULL);
+  g_return_val_if_fail (name != NULL, NULL);
+
+  for (int i = 0; i < self->modes->len; i++) {
+    PhoshHeadMode *mode = g_ptr_array_index (self->modes, i);
+
+    if (!g_strcmp0 (mode->name, name))
+        return mode;
+  }
+  return NULL;
+}
+
+
+int *
+phosh_head_calculate_supported_mode_scales (PhoshHead     *head,
+                                            PhoshHeadMode *mode,
+                                            int           *n_supported_scales)
+{
+  unsigned int i;
+  GArray *supported_scales;
+
+  supported_scales = g_array_new (FALSE, FALSE, sizeof (int));
+
+  for (i = MINIMUM_SCALE_FACTOR; i <= MAXIMUM_SCALE_FACTOR; i++) {
+    if (is_valid_scale (mode->width, mode->height, i))
+        g_array_append_val (supported_scales, i);
+  }
+
+  if (supported_scales->len == 0) {
+    int fallback_scale = 1;
+    g_array_append_val (supported_scales, fallback_scale);
+  }
+
+  *n_supported_scales = supported_scales->len;
+  return (int *) g_array_free (supported_scales, FALSE);
+}
+
+/**
+ * phosh_head_clear_pending:
+ * @self: A #PhoshHead
+ *
+ * Clear all pending state. This can be used if e.g.  pending state
+ * was set but the output configuration not submitted.
+ */
+void
+phosh_head_clear_pending (PhoshHead *self)
+{
+  self->pending.seen = FALSE;
+  self->pending.x = self->x;
+  self->pending.y = self->y;
+  self->pending.transform = self->transform;
+  self->pending.mode = self->mode;
+  self->pending.scale = self->scale;
+  self->pending.enabled = self->enabled;
 }

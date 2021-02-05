@@ -3,13 +3,13 @@
 # This file is distributed under the same license as the phosh package.
 #
 # Roman Riabenko <roman@riabenko.com>, 2020. #zanata.
-# Yuri Chornoivan <yurchor@ukr.net>, 2020.
+# Yuri Chornoivan <yurchor@ukr.net>, 2020, 2021.
 msgid ""
 msgstr ""
 "Project-Id-Version: phosh\n"
 "Report-Msgid-Bugs-To: https://source.puri.sm/Librem5/phosh/issues\n"
-"POT-Creation-Date: 2020-11-30 15:32+0000\n"
-"PO-Revision-Date: 2020-11-30 17:51+0200\n"
+"POT-Creation-Date: 2021-01-16 03:33+0000\n"
+"PO-Revision-Date: 2021-01-16 09:10+0200\n"
 "Last-Translator: Yuri Chornoivan <yurchor@ukr.net>\n"
 "Language-Team: Ukrainian <trans-uk@lists.fedoraproject.org>\n"
 "Language: uk\n"
@@ -78,7 +78,7 @@ msgstr "Звіряю…"
 #. Translators: This is a time format for a date in
 #. long format
 #: src/lockscreen.c:343
-msgid "%A, %B %d"
+msgid "%A, %B %-e"
 msgstr "%A, %-d %B"
 
 #. Translators: Used when the title of a song is unknown
@@ -91,21 +91,36 @@ msgstr "Невідома назва"
 msgid "Unknown Artist"
 msgstr "Невідомий виконавець"
 
-#: src/monitor-manager.c:71
+#: src/monitor-manager.c:108
 msgid "Built-in display"
 msgstr "Вбудований дисплей"
 
+#: src/monitor-manager.c:126
+#, c-format
+msgctxt ""
+"This is a monitor vendor name, followed by a size in inches, like 'Dell 15\"'"
+msgid "%s %s"
+msgstr "%s %s"
+
+#: src/monitor-manager.c:133
+#, c-format
+msgctxt ""
+"This is a monitor vendor name followed by product/model name where size in "
+"inches could not be calculated, e.g. Dell U2414H"
+msgid "%s %sn"
+msgstr "%s %sn"
+
 #. Translators: An unknown monitor type
-#: src/monitor-manager.c:75
+#: src/monitor-manager.c:142
 msgid "Unknown"
 msgstr "Нетиповий"
 
-#: src/network-auth-prompt.c:186
+#: src/network-auth-prompt.c:187
 #, c-format
 msgid "Authentication type of wifi network “%s” not supported"
 msgstr "Підтримки типу розпізнавання у мережі wifi «%s» не передбачено"
 
-#: src/network-auth-prompt.c:191
+#: src/network-auth-prompt.c:192
 #, c-format
 msgid "Enter password for the wifi network “%s”"
 msgstr "Введіть пароль до мережі wifi «%s»"
@@ -119,104 +134,109 @@ msgid "Notification"
 msgstr "Сповіщення"
 
 #. Translators: Timestamp seconds suffix
-#: src/notifications/timestamp-label.c:83
+#: src/notifications/timestamp-label.c:84
 msgctxt "timestamp-suffix-seconds"
 msgid "s"
 msgstr "с"
 
 #. Translators: Timestamp minute suffix
-#: src/notifications/timestamp-label.c:85
+#: src/notifications/timestamp-label.c:86
 msgctxt "timestamp-suffix-minute"
 msgid "m"
 msgstr "хв"
 
 #. Translators: Timestamp minutes suffix
-#: src/notifications/timestamp-label.c:87
+#: src/notifications/timestamp-label.c:88
 msgctxt "timestamp-suffix-minutes"
 msgid "m"
 msgstr "хв"
 
 #. Translators: Timestamp hour suffix
-#: src/notifications/timestamp-label.c:89
+#: src/notifications/timestamp-label.c:90
 msgctxt "timestamp-suffix-hour"
 msgid "h"
 msgstr "г"
 
 #. Translators: Timestamp hours suffix
-#: src/notifications/timestamp-label.c:91
+#: src/notifications/timestamp-label.c:92
 msgctxt "timestamp-suffix-hours"
 msgid "h"
 msgstr "г"
 
 #. Translators: Timestamp day suffix
-#: src/notifications/timestamp-label.c:93
+#: src/notifications/timestamp-label.c:94
 msgctxt "timestamp-suffix-day"
 msgid "d"
 msgstr "д"
 
 #. Translators: Timestamp days suffix
-#: src/notifications/timestamp-label.c:95
+#: src/notifications/timestamp-label.c:96
 msgctxt "timestamp-suffix-days"
 msgid "d"
 msgstr "д"
 
 #. Translators: Timestamp month suffix
-#: src/notifications/timestamp-label.c:97
+#: src/notifications/timestamp-label.c:98
 msgctxt "timestamp-suffix-month"
 msgid "mo"
 msgstr "м"
 
 #. Translators: Timestamp months suffix
-#: src/notifications/timestamp-label.c:99
+#: src/notifications/timestamp-label.c:100
 msgctxt "timestamp-suffix-months"
 msgid "mos"
 msgstr "міс"
 
 #. Translators: Timestamp year suffix
-#: src/notifications/timestamp-label.c:101
+#: src/notifications/timestamp-label.c:102
 msgctxt "timestamp-suffix-year"
 msgid "y"
 msgstr "р"
 
 #. Translators: Timestamp years suffix
-#: src/notifications/timestamp-label.c:103
+#: src/notifications/timestamp-label.c:104
 msgctxt "timestamp-suffix-years"
 msgid "y"
 msgstr "р"
 
-#. Translators: this is the date in (short) number only format
-#: src/notifications/timestamp-label.c:106
-msgid "%d.%m.%y"
-msgstr "%d.%m.%y"
-
-#. Translators: Timestamp prefix (e.g. Over 5h)
-#: src/notifications/timestamp-label.c:197
-msgid "Over"
-msgstr "Понад"
-
-#. Translators: Timestamp prefix (e.g. Almost 5h)
-#: src/notifications/timestamp-label.c:202
-msgid "Almost"
-msgstr "Майже"
-
-#: src/notifications/timestamp-label.c:210
+#: src/notifications/timestamp-label.c:121
 msgid "now"
 msgstr "зараз"
 
-#: src/polkit-auth-agent.c:231
+#. Translators: time difference "Over 5 years"
+#: src/notifications/timestamp-label.c:189
+#, c-format
+#| msgid "Over"
+msgid "Over %dy"
+msgstr "Понад %dр."
+
+#. Translators: time difference "almost 5 years"
+#: src/notifications/timestamp-label.c:193
+#, c-format
+#| msgid "Almost"
+msgid "Almost %dy"
+msgstr "Майже %dр."
+
+#. Translators: a time difference like '<5m', if in doubt leave untranslated
+#: src/notifications/timestamp-label.c:200
+#, c-format
+msgid "%s%d%s"
+msgstr "%s%d%s"
+
+#: src/polkit-auth-agent.c:232
 msgid "Authentication dialog was dismissed by the user"
 msgstr "Користувач перервав діалог автентифікації"
 
-#: src/polkit-auth-prompt.c:278 src/ui/network-auth-prompt.ui:128
+#: src/polkit-auth-prompt.c:278 src/ui/network-auth-prompt.ui:130
 #: src/ui/polkit-auth-prompt.ui:41 src/ui/system-prompt.ui:39
 msgid "Password:"
 msgstr "Пароль:"
 
-#: src/polkit-auth-prompt.c:324
+#: src/polkit-auth-prompt.c:325
 msgid "Sorry, that didn’t work. Please try again."
 msgstr "На жаль, це не спрацювало. Будь ласка, спробуйте ще."
 
-#: src/polkit-auth-prompt.c:490
+#: src/polkit-auth-prompt.c:470
 msgid "Authenticate"
 msgstr "Автентифікуватися"
 
@@ -228,11 +248,11 @@ msgstr "Книжкова"
 msgid "Landscape"
 msgstr "Альбомна"
 
-#: src/system-prompt.c:373
+#: src/system-prompt.c:375
 msgid "Passwords do not match."
 msgstr "Паролі не збігаються."
 
-#: src/system-prompt.c:380
+#: src/system-prompt.c:382
 msgid "Password cannot be blank"
 msgstr "Пароль не може бути порожнім"
 
@@ -268,11 +288,11 @@ msgstr "Екстрений виклик"
 msgid "Unlock"
 msgstr "Розблокувати"
 
-#: src/ui/network-auth-prompt.ui:90
+#: src/ui/network-auth-prompt.ui:89
 msgid "_Cancel"
 msgstr "_Скасувати"
 
-#: src/ui/network-auth-prompt.ui:106
+#: src/ui/network-auth-prompt.ui:105
 msgid "C_onnect"
 msgstr "З'_єднатися"
 
