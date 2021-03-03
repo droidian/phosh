@@ -10,22 +10,16 @@
 
 #include <glib/gi18n.h>
 
-#include "bt-info.h"
-#include "docked-info.h"
 #include "mode-manager.h"
 #include "shell.h"
 #include "settings.h"
 #include "quick-setting.h"
 #include "settings/brightness.h"
 #include "settings/gvc-channel-bar.h"
-#include "torch-info.h"
 #include "wwan/phosh-wwan-mm.h"
-#include "rotateinfo.h"
-#include "feedbackinfo.h"
 #include "feedback-manager.h"
 #include "notifications/notify-manager.h"
 #include "notifications/notification-frame.h"
-#include "media-player.h"
 
 #include <pulse/pulseaudio.h>
 #include "gvc-mixer-control.h"
@@ -176,6 +170,13 @@ docked_setting_clicked_cb (PhoshSettings *self)
 
   enabled = phosh_docked_manager_get_enabled (manager);
   phosh_docked_manager_set_enabled (manager, !enabled);
+}
+
+static void
+docked_setting_long_pressed_cb (PhoshSettings *self)
+{
+  phosh_quick_setting_open_settings_panel ("display");
+  g_signal_emit (self, signals[SETTING_DONE], 0);
 }
 
 
@@ -462,14 +463,6 @@ phosh_settings_class_init (PhoshSettingsClass *klass)
       G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
       NULL, G_TYPE_NONE, 0);
 
-  g_type_ensure (PHOSH_TYPE_BT_INFO);
-  g_type_ensure (PHOSH_TYPE_DOCKED_INFO);
-  g_type_ensure (PHOSH_TYPE_FEEDBACK_INFO);
-  g_type_ensure (PHOSH_TYPE_MEDIA_PLAYER);
-  g_type_ensure (PHOSH_TYPE_QUICK_SETTING);
-  g_type_ensure (PHOSH_TYPE_ROTATE_INFO);
-  g_type_ensure (PHOSH_TYPE_TORCH_INFO);
-
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, box_settings);
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, list_notifications);
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, quick_settings);
@@ -479,6 +472,7 @@ phosh_settings_class_init (PhoshSettingsClass *klass)
   gtk_widget_class_bind_template_callback (widget_class, battery_setting_clicked_cb);
   gtk_widget_class_bind_template_callback (widget_class, bt_setting_clicked_cb);
   gtk_widget_class_bind_template_callback (widget_class, docked_setting_clicked_cb);
+  gtk_widget_class_bind_template_callback (widget_class, docked_setting_long_pressed_cb);
   gtk_widget_class_bind_template_callback (widget_class, feedback_setting_clicked_cb);
   gtk_widget_class_bind_template_callback (widget_class, feedback_setting_long_pressed_cb);
   gtk_widget_class_bind_template_callback (widget_class, on_media_player_raised);

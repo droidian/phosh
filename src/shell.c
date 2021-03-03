@@ -25,22 +25,27 @@
 
 #include "config.h"
 #include "shell.h"
-
 #include "batteryinfo.h"
 #include "background-manager.h"
+#include "bt-info.h"
 #include "bt-manager.h"
+#include "connectivity-info.h"
+#include "docked-info.h"
 #include "docked-manager.h"
 #include "fader.h"
+#include "feedbackinfo.h"
 #include "feedback-manager.h"
 #include "gnome-shell-manager.h"
 #include "home.h"
 #include "idle-manager.h"
 #include "keyboard-events.h"
 #include "lockscreen-manager.h"
+#include "media-player.h"
 #include "mode-manager.h"
 #include "monitor-manager.h"
 #include "monitor/monitor.h"
 #include "mount-manager.h"
+#include "settings.h"
 #include "notifications/notify-manager.h"
 #include "notifications/notification-banner.h"
 #include "osk-manager.h"
@@ -48,11 +53,14 @@
 #include "phosh-wayland.h"
 #include "polkit-auth-agent.h"
 #include "proximity.h"
+#include "quick-setting.h"
+#include "rotateinfo.h"
 #include "sensor-proxy-manager.h"
 #include "screen-saver-manager.h"
 #include "session-manager.h"
 #include "system-prompter.h"
 #include "torch-manager.h"
+#include "torch-info.h"
 #include "util.h"
 #include "wifiinfo.h"
 #include "wwaninfo.h"
@@ -254,22 +262,12 @@ panels_dispose (PhoshShell *self)
 static void
 css_setup (PhoshShell *self)
 {
-  GtkCssProvider *provider;
-  GFile *file;
-  GError *error = NULL;
+  g_autoptr (GtkCssProvider) provider = gtk_css_provider_new ();
 
-  provider = gtk_css_provider_new ();
-  file = g_file_new_for_uri ("resource:///sm/puri/phosh/style.css");
-
-  if (!gtk_css_provider_load_from_file (provider, file, &error)) {
-    g_warning ("Failed to load CSS file: %s", error->message);
-    g_clear_error (&error);
-    g_object_unref (file);
-    return;
-  }
+  gtk_css_provider_load_from_resource (provider, "/sm/puri/phosh/style.css");
   gtk_style_context_add_provider_for_screen (gdk_screen_get_default (),
-                                             GTK_STYLE_PROVIDER (provider), 600);
-  g_object_unref (file);
+                                             GTK_STYLE_PROVIDER (provider),
+                                             GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
 
 
@@ -510,9 +508,18 @@ setup_idle_cb (PhoshShell *self)
 static void
 type_setup (void)
 {
-  phosh_battery_info_get_type();
-  phosh_wifi_info_get_type();
-  phosh_wwan_info_get_type();
+  g_type_ensure (PHOSH_TYPE_BATTERY_INFO);
+  g_type_ensure (PHOSH_TYPE_BT_INFO);
+  g_type_ensure (PHOSH_TYPE_CONNECTIVITY_INFO);
+  g_type_ensure (PHOSH_TYPE_DOCKED_INFO);
+  g_type_ensure (PHOSH_TYPE_FEEDBACK_INFO);
+  g_type_ensure (PHOSH_TYPE_MEDIA_PLAYER);
+  g_type_ensure (PHOSH_TYPE_QUICK_SETTING);
+  g_type_ensure (PHOSH_TYPE_ROTATE_INFO);
+  g_type_ensure (PHOSH_TYPE_SETTINGS);
+  g_type_ensure (PHOSH_TYPE_TORCH_INFO);
+  g_type_ensure (PHOSH_TYPE_WIFI_INFO);
+  g_type_ensure (PHOSH_TYPE_WWAN_INFO);
 }
 
 
@@ -624,7 +631,6 @@ phosh_shell_constructed (GObject *object)
   gtk_icon_theme_add_resource_path (gtk_icon_theme_get_default (),
                                     "/sm/puri/phosh/icons");
   css_setup (self);
-  type_setup ();
 
   priv->lockscreen_manager = phosh_lockscreen_manager_new ();
   g_object_bind_property (priv->lockscreen_manager, "locked",
@@ -665,6 +671,8 @@ phosh_shell_class_init (PhoshShellClass *klass)
 
   object_class->set_property = phosh_shell_set_property;
   object_class->get_property = phosh_shell_get_property;
+
+  type_setup ();
 
   props[PHOSH_SHELL_PROP_TRANSFORM] =
     g_param_spec_enum ("transform",

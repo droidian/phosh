@@ -140,6 +140,7 @@
                     <property name="sensitive" bind-source="dockedinfo" bind-property="present" bind-flags="sync-create"/>
                     <property name="can_focus">False</property>
                     <signal name="clicked" handler="docked_setting_clicked_cb" object="PhoshSettings" swapped="yes"/>
+                    <signal name="long-pressed" handler="docked_setting_long_pressed_cb" object="PhoshSettings" swapped="yes"/>
                     <child>
                       <object class="PhoshDockedInfo" id="dockedinfo">
                         <property name="visible">True</property>
@@ -213,14 +214,14 @@
                 </style>
               </object>
             </child>
-	    <child>
+            <child>
               <object class="PhoshMediaPlayer" id="media_player">
                 <property name="visible" bind-source="media_player" bind-property="playable" bind-flags="sync-create"/>
                 <property name="valign">center</property>
                 <property name="can_focus">False</property>
-		<signal name="player-raised" handler="on_media_player_raised" object="PhoshSettings" swapped="yes"/>
-	      </object>
-	    </child>
+                <signal name="player-raised" handler="on_media_player_raised" object="PhoshSettings" swapped="yes"/>
+              </object>
+            </child>
           </object>
         </child>
       </object>

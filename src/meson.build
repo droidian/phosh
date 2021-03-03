@@ -82,6 +82,8 @@ libphosh_tool_sources = [
   'overview.h',
   'status-icon.c',
   'status-icon.h',
+  'system-modal.c',
+  'system-modal.h',
   'thumbnail.c',
   'thumbnail.h',
   'quick-setting.c',
@@ -93,6 +95,7 @@ libphosh_tool_sources = [
   'util.c',
   'util.h',
   phosh_gtk_list_models_sources,
+  phosh_monitor_sources,
   phosh_notifications_sources,
   libphosh_generated_sources,
 ]
@@ -174,7 +177,6 @@ libphosh_sources = [
   'wwaninfo.h',
   phosh_settings_sources,
   phosh_wwan_sources,
-  phosh_monitor_sources,
   phosh_osk_sources,
 ]
 

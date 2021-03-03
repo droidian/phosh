@@ -2,7 +2,7 @@
 <!-- Generated with glade 3.22.1 -->
 <interface>
   <requires lib="gtk+" version="3.20"/>
-  <template class="PhoshSystemPrompt" parent="PhoshLayerSurface">
+  <template class="PhoshSystemPrompt" parent="PhoshSystemModal">
     <property name="can_focus">False</property>
     <child>
       <placeholder/>
@@ -206,13 +206,10 @@
           <placeholder/>
         </child>
         <style>
-	  <class name="phosh-system-modal-dialog"/>
-	  <class name="phosh-system-prompt"/>
+          <class name="phosh-system-modal-dialog"/>
+          <class name="phosh-system-prompt"/>
         </style>
       </object>
     </child>
-    <style>
-      <class name="phosh-system-modal"/>
-    </style>
   </template>
 </interface>
