@@ -36,6 +36,7 @@
 #include "feedbackinfo.h"
 #include "feedback-manager.h"
 #include "gnome-shell-manager.h"
+#include "hks-info.h"
 #include "home.h"
 #include "idle-manager.h"
 #include "keyboard-events.h"
@@ -116,6 +117,7 @@ typedef struct
   PhoshTorchManager *torch_manager;
   PhoshModeManager *mode_manager;
   PhoshDockedManager *docked_manager;
+  PhoshHksManager *hks_manager;
   PhoshKeyboardEvents *keyboard_events;
   PhoshGnomeShellManager *gnome_shell_manager;
 
@@ -128,6 +130,8 @@ typedef struct
 
   /* Mirrors PhoshLockscreenManager's locked property */
   gboolean locked;
+
+  PhoshShellStateFlags shell_state;
 
 } PhoshShellPrivate;
 
@@ -214,6 +218,7 @@ on_home_state_changed (PhoshShell *self, GParamSpec *pspec, PhoshHome *home)
     phosh_panel_fold (PHOSH_PANEL (priv->panel));
     phosh_osk_manager_set_visible (priv->osk_manager, FALSE);
   }
+  phosh_shell_set_state (self, PHOSH_STATE_OVERVIEW, state == PHOSH_HOME_STATE_UNFOLDED);
 }
 
 
@@ -283,6 +288,7 @@ phosh_shell_set_property (GObject *object,
   switch (property_id) {
   case PHOSH_SHELL_PROP_LOCKED:
     priv->locked = g_value_get_boolean (value);
+    phosh_shell_set_state (self, PHOSH_STATE_LOCKED, priv->locked);
     break;
   case PHOSH_SHELL_PROP_PRIMARY_MONITOR:
     phosh_shell_set_primary_monitor (self, g_value_get_object (value));
@@ -340,6 +346,7 @@ phosh_shell_dispose (GObject *object)
 
   g_clear_object (&priv->keyboard_events);
   /* dispose managers in opposite order of declaration */
+  g_clear_object (&priv->hks_manager);
   g_clear_object (&priv->docked_manager);
   g_clear_object (&priv->mode_manager);
   g_clear_object (&priv->torch_manager);
@@ -513,6 +520,7 @@ type_setup (void)
   g_type_ensure (PHOSH_TYPE_CONNECTIVITY_INFO);
   g_type_ensure (PHOSH_TYPE_DOCKED_INFO);
   g_type_ensure (PHOSH_TYPE_FEEDBACK_INFO);
+  g_type_ensure (PHOSH_TYPE_HKS_INFO);
   g_type_ensure (PHOSH_TYPE_MEDIA_PLAYER);
   g_type_ensure (PHOSH_TYPE_QUICK_SETTING);
   g_type_ensure (PHOSH_TYPE_ROTATE_INFO);
@@ -534,6 +542,8 @@ on_builtin_monitor_power_mode_changed (PhoshShell *self, GParamSpec *pspec, Phos
   g_object_get (monitor, "power-mode", &mode, NULL);
   if (mode == PHOSH_MONITOR_POWER_SAVE_MODE_OFF)
     phosh_shell_lock (self);
+
+  phosh_shell_set_state (self, PHOSH_STATE_BLANKED, mode == PHOSH_MONITOR_POWER_SAVE_MODE_OFF);
 }
 
 
@@ -703,10 +713,13 @@ phosh_shell_class_init (PhoshShellClass *klass)
 static void
 phosh_shell_init (PhoshShell *self)
 {
+  PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
   GtkSettings *gtk_settings;
 
   gtk_settings = gtk_settings_get_default ();
   g_object_set (G_OBJECT (gtk_settings), "gtk-application-prefer-dark-theme", TRUE, NULL);
+
+  priv->shell_state = PHOSH_STATE_NONE;
 }
 
 
@@ -1004,6 +1017,22 @@ phosh_shell_get_docked_manager (PhoshShell *self)
 }
 
 
+PhoshHksManager *
+phosh_shell_get_hks_manager (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
+  priv = phosh_shell_get_instance_private (self);
+
+  if (!priv->hks_manager)
+    priv->hks_manager = phosh_hks_manager_new ();
+
+  g_return_val_if_fail (PHOSH_IS_HKS_MANAGER (priv->hks_manager), NULL);
+  return priv->hks_manager;
+}
+
+
 PhoshSessionManager *
 phosh_shell_get_session_manager (PhoshShell *self)
 {
@@ -1224,7 +1253,7 @@ phosh_shell_is_session_active (PhoshShell *self)
  * phosh_get_app_launch_context:
  * @self: The shell
  *
- * Returns: a an app launch context for the primary display
+ * Returns: an app launch context for the primary display
  */
 GdkAppLaunchContext*
 phosh_shell_get_app_launch_context (PhoshShell *self)
@@ -1235,4 +1264,55 @@ phosh_shell_get_app_launch_context (PhoshShell *self)
   priv = phosh_shell_get_instance_private (self);
 
   return gdk_display_get_app_launch_context (gtk_widget_get_display (GTK_WIDGET (priv->panel)));
+}
+
+/**
+ * phosh_shell_get_state
+ * @self: The shell
+ *
+ * Returns: The current #PhoshShellStateFlags
+ */
+PhoshShellStateFlags
+phosh_shell_get_state (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), 0);
+  priv = phosh_shell_get_instance_private (self);
+
+  return priv->shell_state;
+}
+
+/**
+ * phosh_shell_set_state:
+ * @self: The shell
+ * @state: The #PhoshShellStateFlags to set
+ * @enabled: %TRUE to set a shell state, %FALSE to reset
+ *
+ * Set the shells state.
+ */
+void
+phosh_shell_set_state (PhoshShell          *self,
+                       PhoshShellStateFlags state,
+                       gboolean             enabled)
+{
+  PhoshShellPrivate *priv;
+  g_autofree gchar *str_state = g_flags_to_string (PHOSH_TYPE_SHELL_STATE_FLAGS,
+                                                  state);
+  g_autofree gchar *str_new_flags = NULL;
+
+  g_return_if_fail (PHOSH_IS_SHELL (self));
+  priv = phosh_shell_get_instance_private (self);
+
+  if (enabled)
+    priv->shell_state = priv->shell_state | state;
+  else
+    priv->shell_state = priv->shell_state & ~state;
+
+  str_new_flags = g_flags_to_string (PHOSH_TYPE_SHELL_STATE_FLAGS,
+                                     priv->shell_state);
+
+  g_debug ("%s %s to shells state. New state: %s",
+           enabled ? "Adding" : "Removing",
+           str_state, str_new_flags);
 }

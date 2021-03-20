@@ -12,7 +12,10 @@
 #include "../config.h"
 
 #include "gnome-shell-manager.h"
+#include "osd-window.h"
 #include "shell.h"
+#include "util.h"
+#include "lockscreen-manager.h"
 
 /**
  * SECTION:gnome-shell-manager
@@ -22,7 +25,7 @@
  */
 
 #define NOTIFY_DBUS_NAME "org.gnome.Shell"
-
+#define OSD_HIDE_TIMEOUT 1 /* seconds */
 
 static void phosh_gnome_shell_manager_shell_iface_init (PhoshGnomeShellDBusShellIface *iface);
 
@@ -32,6 +35,10 @@ typedef struct _PhoshGnomeShellManager {
   GHashTable                      *info_by_action;
   guint                            last_action_id;
   int                              dbus_name_id;
+
+  PhoshOsdWindow                  *osd;
+  gint                             osd_timeoutid;
+  gboolean                         osd_continue;
 } PhoshGnomeShellManager;
 
 G_DEFINE_TYPE_WITH_CODE (PhoshGnomeShellManager,
@@ -47,6 +54,8 @@ typedef struct _AcceleratorInfo {
   guint                            action_id;
   gchar                           *accelerator;
   gchar                           *sender;
+  guint                            mode_flags;
+  guint                            grab_flags;
 } AcceleratorInfo;
 
 static void
@@ -107,6 +116,80 @@ handle_hide_monitor_labels (PhoshGnomeShellDBusShell *skeleton,
 
 
 static gboolean
+on_osd_timeout (PhoshGnomeShellManager *self)
+{
+  gboolean ret;
+  ret = self->osd_continue ? G_SOURCE_CONTINUE : G_SOURCE_REMOVE;
+  if (!self->osd_continue) {
+      g_debug ("Closing osd");
+      self->osd_timeoutid = 0;
+      if (self->osd)
+        gtk_widget_destroy (GTK_WIDGET (self->osd));
+  }
+  self->osd_continue = FALSE;
+  return ret;
+}
+
+static void
+on_osd_destroyed (PhoshGnomeShellManager *self)
+{
+  self->osd = NULL;
+  g_clear_handle_id (&self->osd_timeoutid, g_source_remove);
+}
+
+
+static gboolean
+handle_show_osd (PhoshGnomeShellDBusShell *skeleton,
+                 GDBusMethodInvocation    *invocation,
+                 GVariant                 *arg_params)
+{
+  PhoshGnomeShellManager *self = PHOSH_GNOME_SHELL_MANAGER (skeleton);
+  GVariantDict dict;
+  g_autofree char *connector = NULL, *icon = NULL, *label = NULL;
+  gdouble level = 0.0, maxlevel = 1.0;
+
+  g_return_val_if_fail (PHOSH_IS_GNOME_SHELL_MANAGER (self), FALSE);
+
+  g_variant_dict_init (&dict, arg_params);
+  g_variant_dict_lookup (&dict, "connector", "s", &connector);
+  g_variant_dict_lookup (&dict, "icon", "s", &icon);
+  g_variant_dict_lookup (&dict, "label", "s", &label);
+  g_variant_dict_lookup (&dict, "level", "d", &level);
+  g_variant_dict_lookup (&dict, "max_level", "d", &maxlevel);
+
+  g_debug ("DBus show osd: connector: %s icon: %s, label: %s, level %f/%f",
+           connector, icon, label, level, maxlevel);
+
+  if (self->osd) {
+    self->osd_continue = TRUE;
+    g_object_set (self->osd,
+                  "connector", connector,
+                  "label", label,
+                  "icon-name", icon,
+                  "level", level,
+                  "max-level", maxlevel,
+                  NULL);
+  } else {
+    self->osd = PHOSH_OSD_WINDOW (phosh_osd_window_new (connector, label, icon, level, maxlevel));
+    g_signal_connect_swapped (self->osd, "destroy", G_CALLBACK (on_osd_destroyed), self);
+    gtk_widget_show (GTK_WIDGET (self->osd));
+  }
+
+  if (!self->osd_timeoutid) {
+    self->osd_timeoutid = g_timeout_add_seconds (OSD_HIDE_TIMEOUT,
+                                                 (GSourceFunc)on_osd_timeout,
+                                                 self);
+    g_source_set_name_by_id (self->osd_timeoutid, "[phosh] osd-timeout");
+  }
+
+  phosh_gnome_shell_dbus_shell_complete_show_osd (
+    skeleton, invocation);
+
+  return TRUE;
+}
+
+
+static gboolean
 grab_single_accelerator (PhoshGnomeShellManager *self,
                          const gchar            *accelerator,
                          guint                   mode_flags,
@@ -129,6 +212,8 @@ grab_single_accelerator (PhoshGnomeShellManager *self,
   info->accelerator = g_strdup (accelerator);
   info->action_id = ++(self->last_action_id);
   info->sender = g_strdup (sender);
+  info->mode_flags = mode_flags;
+  info->grab_flags = grab_flags;
 
   g_debug ("Using action id %d for accelerator %s", info->action_id, info->accelerator);
 
@@ -349,10 +434,36 @@ phosh_gnome_shell_manager_shell_iface_init (PhoshGnomeShellDBusShellIface *iface
 {
   iface->handle_show_monitor_labels = handle_show_monitor_labels;
   iface->handle_hide_monitor_labels = handle_hide_monitor_labels;
+  iface->handle_show_osd = handle_show_osd;
   iface->handle_grab_accelerator = handle_grab_accelerator;
   iface->handle_grab_accelerators = handle_grab_accelerators;
   iface->handle_ungrab_accelerator = handle_ungrab_accelerator;
   iface->handle_ungrab_accelerators = handle_ungrab_accelerators;
+}
+
+static ShellActionMode
+get_action_mode (void)
+{
+  PhoshShell *shell = phosh_shell_get_default ();
+  PhoshShellStateFlags state = phosh_shell_get_state (shell);
+
+  if (state & PHOSH_STATE_LOCKED) {
+    PhoshLockscreenManager *lockscreen_manager = phosh_shell_get_lockscreen_manager (shell);
+    PhoshLockscreenPage page = phosh_lockscreen_manager_get_page (lockscreen_manager);
+
+    if (page == PHOSH_LOCKSCREEN_PAGE_UNLOCK)
+      return SHELL_ACTION_MODE_UNLOCK_SCREEN;
+    else
+      return SHELL_ACTION_MODE_LOCK_SCREEN;
+  }
+
+  if (state & PHOSH_STATE_MODAL_SYSTEM_PROMPT)
+    return SHELL_ACTION_MODE_SYSTEM_MODAL;
+
+  if (state & PHOSH_STATE_OVERVIEW)
+    return SHELL_ACTION_MODE_OVERVIEW;
+
+  return SHELL_ACTION_MODE_NORMAL;
 }
 
 static void
@@ -362,12 +473,23 @@ accelerator_activated_action (GSimpleAction *action,
 {
   AcceleratorInfo *info = (AcceleratorInfo *) data;
   PhoshGnomeShellManager *self = phosh_gnome_shell_manager_get_default ();
-  g_autoptr (GVariantBuilder) builder;
+  g_autoptr (GVariantBuilder) builder = NULL;
   GVariant *parameters;
   uint32_t action_id;
+  uint32_t action_mode;
 
   action_id = info->action_id;
+  action_mode = get_action_mode ();
   g_debug ("accelerator action activated for id %u", action_id);
+
+  if ((info->mode_flags & action_mode) == 0) {
+    g_autofree gchar *str_shell_mode = g_flags_to_string (SHELL_TYPE_ACTION_MODE, action_mode);
+    g_autofree gchar *str_grabbed_mode = g_flags_to_string (SHELL_TYPE_ACTION_MODE, info->mode_flags);
+    g_debug ("Accelerator registered for mode %s, but shell is currently in %s",
+             str_grabbed_mode,
+             str_shell_mode);
+    return;
+  }
 
   builder = g_variant_builder_new (G_VARIANT_TYPE ("a{sv}"));
   /*

@@ -3,12 +3,15 @@
 #include "config.h"
 
 #include "app-grid-button.h"
+#include "gnome-shell-manager.h"
 #include "home.h"
+#include "lockscreen.h"
 #include "mode-manager.h"
 #include "monitor/monitor.h"
 #include "notifications/notification.h"
 #include "notifications/notify-manager.h"
 #include "phosh-wayland.h"
+#include "shell.h"
 #include "wwan/phosh-wwan-backend.h"
 
 #include "phosh-enums.h"

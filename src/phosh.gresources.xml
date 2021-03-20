@@ -12,6 +12,7 @@
     <file preprocess="xml-stripblanks">ui/notification-frame.ui</file>
     <file preprocess="xml-stripblanks">ui/polkit-auth-prompt.ui</file>
     <file preprocess="xml-stripblanks">ui/network-auth-prompt.ui</file>
+    <file preprocess="xml-stripblanks">ui/osd-window.ui</file>
     <file preprocess="xml-stripblanks">ui/settings-menu.ui</file>
     <file preprocess="xml-stripblanks">ui/system-prompt.ui</file>
     <file preprocess="xml-stripblanks">ui/top-panel.ui</file>
@@ -37,5 +38,7 @@
     <file alias="swipe-arrow-symbolic.svg">../data/swipe-arrow-symbolic.svg</file>
     <file alias="torch-disabled-symbolic.svg">../data/torch-disabled-symbolic.svg</file>
     <file alias="torch-enabled-symbolic.svg">../data/torch-enabled-symbolic.svg</file>
+    <file alias="camera-hardware-disabled-symbolic.svg">../data/camera-hardware-disabled-symbolic.svg</file>
+    <file alias="microphone-hardware-disabled-symbolic.svg">../data/microphone-hardware-disabled-symbolic.svg</file>
   </gresource>
 </gresources>
