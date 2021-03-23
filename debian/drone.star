@@ -1,7 +1,7 @@
 # cloud.drone.io doesn't support templates, so you must copy
 # the build snippet contents after the variables definitions.
 # You can find an up-to-date snippet here:
-# https://github.com/hybris-mobian-releng/build-snippets/blob/master/drone/debian-package.star
+# https://github.com/droidian-releng/build-snippets/blob/master/drone/debian-package.star
 
 # Architectures to build. The first one will always be used for 'full'
 # builds, i.e. arch-dep, arch-indep and source.
@@ -81,9 +81,9 @@ DRONE_ARCH_MAPPING = {
 	"armhf" : "arm",
 }
 
-DOCKER_IMAGE = "hybrismobian/build-essential"
+DOCKER_IMAGE = "droidian/build-essential"
 
-TAG_PREFIX = "hybris-mobian/"
+TAG_PREFIX = "droidian/"
 
 FEATURE_BRANCH_PREFIX = "feature/"
 
@@ -170,8 +170,8 @@ def debian_package_build(suite, architecture, full_build=True, extra_repos=[], h
 				"commands" : [
 					"ln -s /buildd /tmp/buildd-results",
 					"cd /tmp/buildd-results",
-					"repo-hybris-mobian-sign.sh",
-					"repo-hybris-mobian-deploy.sh",
+					"repo-droidian-sign.sh",
+					"repo-droidian-deploy.sh",
 				],
 				"environment" : build_environment_from_secrets(
 					[
