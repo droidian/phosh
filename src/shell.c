@@ -40,6 +40,8 @@
 #include "home.h"
 #include "idle-manager.h"
 #include "keyboard-events.h"
+#include "location-info.h"
+#include "location-manager.h"
 #include "lockscreen-manager.h"
 #include "media-player.h"
 #include "mode-manager.h"
@@ -47,6 +49,7 @@
 #include "monitor/monitor.h"
 #include "mount-manager.h"
 #include "settings.h"
+#include "system-modal-dialog.h"
 #include "notifications/notify-manager.h"
 #include "notifications/notification-banner.h"
 #include "osk-manager.h"
@@ -85,6 +88,7 @@ enum {
   PHOSH_SHELL_PROP_TRANSFORM,
   PHOSH_SHELL_PROP_LOCKED,
   PHOSH_SHELL_PROP_PRIMARY_MONITOR,
+  PHOSH_SHELL_PROP_SHELL_STATE,
   PHOSH_SHELL_PROP_LAST_PROP
 };
 static GParamSpec *props[PHOSH_SHELL_PROP_LAST_PROP];
@@ -119,6 +123,7 @@ typedef struct
   PhoshDockedManager *docked_manager;
   PhoshHksManager *hks_manager;
   PhoshKeyboardEvents *keyboard_events;
+  PhoshLocationManager *location_manager;
   PhoshGnomeShellManager *gnome_shell_manager;
 
   /* sensors */
@@ -319,6 +324,9 @@ phosh_shell_get_property (GObject *object,
   case PHOSH_SHELL_PROP_PRIMARY_MONITOR:
     g_value_set_object (value, phosh_shell_get_primary_monitor (self));
     break;
+  case PHOSH_SHELL_PROP_SHELL_STATE:
+    g_value_set_flags (value, priv->shell_state);
+    break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     break;
@@ -346,6 +354,7 @@ phosh_shell_dispose (GObject *object)
 
   g_clear_object (&priv->keyboard_events);
   /* dispose managers in opposite order of declaration */
+  g_clear_object (&priv->location_manager);
   g_clear_object (&priv->hks_manager);
   g_clear_object (&priv->docked_manager);
   g_clear_object (&priv->mode_manager);
@@ -488,6 +497,7 @@ setup_idle_cb (PhoshShell *self)
                            self,
                            G_CONNECT_SWAPPED);
 
+  priv->location_manager = phosh_location_manager_new ();
   priv->sensor_proxy_manager = phosh_sensor_proxy_manager_get_default_failable ();
   if (priv->sensor_proxy_manager) {
     priv->proximity = phosh_proximity_new (priv->sensor_proxy_manager,
@@ -505,6 +515,8 @@ setup_idle_cb (PhoshShell *self)
   if (phosh_shell_get_transform (self) != PHOSH_MONITOR_TRANSFORM_NORMAL)
     phosh_shell_set_transform (self, PHOSH_MONITOR_TRANSFORM_NORMAL);
 
+  priv->gnome_shell_manager = phosh_gnome_shell_manager_get_default ();
+
   priv->startup_finished = TRUE;
 
   return FALSE;
@@ -521,10 +533,13 @@ type_setup (void)
   g_type_ensure (PHOSH_TYPE_DOCKED_INFO);
   g_type_ensure (PHOSH_TYPE_FEEDBACK_INFO);
   g_type_ensure (PHOSH_TYPE_HKS_INFO);
+  g_type_ensure (PHOSH_TYPE_LOCATION_INFO);
   g_type_ensure (PHOSH_TYPE_MEDIA_PLAYER);
   g_type_ensure (PHOSH_TYPE_QUICK_SETTING);
   g_type_ensure (PHOSH_TYPE_ROTATE_INFO);
   g_type_ensure (PHOSH_TYPE_SETTINGS);
+  g_type_ensure (PHOSH_TYPE_SYSTEM_MODAL);
+  g_type_ensure (PHOSH_TYPE_SYSTEM_MODAL_DIALOG);
   g_type_ensure (PHOSH_TYPE_TORCH_INFO);
   g_type_ensure (PHOSH_TYPE_WIFI_INFO);
   g_type_ensure (PHOSH_TYPE_WWAN_INFO);
@@ -655,7 +670,6 @@ phosh_shell_constructed (GObject *object)
   priv->polkit_auth_agent = phosh_polkit_auth_agent_new ();
 
   priv->feedback_manager = phosh_feedback_manager_new ();
-  priv->gnome_shell_manager = phosh_gnome_shell_manager_get_default ();
 
   if (priv->builtin_monitor) {
     g_signal_connect_swapped (
@@ -690,21 +704,29 @@ phosh_shell_class_init (PhoshShellClass *klass)
                        "Monitor transform of the primary monitor",
                        PHOSH_TYPE_MONITOR_TRANSFORM,
                        PHOSH_MONITOR_TRANSFORM_NORMAL,
-                       G_PARAM_READABLE | G_PARAM_EXPLICIT_NOTIFY);
+                       G_PARAM_READABLE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
   props[PHOSH_SHELL_PROP_LOCKED] =
     g_param_spec_boolean ("locked",
                           "Locked",
                           "Whether the screen is locked",
                           FALSE,
-                          G_PARAM_READWRITE);
+                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   props[PHOSH_SHELL_PROP_PRIMARY_MONITOR] =
     g_param_spec_object ("primary-monitor",
                          "Primary monitor",
                          "The primary monitor",
                          PHOSH_TYPE_MONITOR,
-                         G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY);
+                         G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
+
+  props[PHOSH_SHELL_PROP_SHELL_STATE] =
+    g_param_spec_flags ("shell-state",
+                        "Shell state",
+                        "The state of the shell",
+                        PHOSH_TYPE_SHELL_STATE_FLAGS,
+                        PHOSH_STATE_NONE,
+                        G_PARAM_READABLE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
   g_object_class_install_properties (object_class, PHOSH_SHELL_PROP_LAST_PROP, props);
 }
@@ -1033,6 +1055,22 @@ phosh_shell_get_hks_manager (PhoshShell *self)
 }
 
 
+PhoshLocationManager *
+phosh_shell_get_location_manager (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
+  priv = phosh_shell_get_instance_private (self);
+
+  if (!priv->torch_manager)
+    priv->location_manager = phosh_location_manager_new ();
+
+  g_return_val_if_fail (PHOSH_IS_LOCATION_MANAGER (priv->location_manager), NULL);
+  return priv->location_manager;
+}
+
+
 PhoshSessionManager *
 phosh_shell_get_session_manager (PhoshShell *self)
 {
@@ -1277,7 +1315,7 @@ phosh_shell_get_state (PhoshShell *self)
 {
   PhoshShellPrivate *priv;
 
-  g_return_val_if_fail (PHOSH_IS_SHELL (self), 0);
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), PHOSH_STATE_NONE);
   priv = phosh_shell_get_instance_private (self);
 
   return priv->shell_state;
@@ -1297,22 +1335,31 @@ phosh_shell_set_state (PhoshShell          *self,
                        gboolean             enabled)
 {
   PhoshShellPrivate *priv;
-  g_autofree gchar *str_state = g_flags_to_string (PHOSH_TYPE_SHELL_STATE_FLAGS,
-                                                  state);
+  PhoshShellStateFlags old_state;
+  g_autofree gchar *str_state = NULL;
   g_autofree gchar *str_new_flags = NULL;
 
   g_return_if_fail (PHOSH_IS_SHELL (self));
   priv = phosh_shell_get_instance_private (self);
+
+  old_state = priv->shell_state;
 
   if (enabled)
     priv->shell_state = priv->shell_state | state;
   else
     priv->shell_state = priv->shell_state & ~state;
 
+  if (old_state == priv->shell_state)
+    return;
+
+  str_state = g_flags_to_string (PHOSH_TYPE_SHELL_STATE_FLAGS,
+                                 state);
   str_new_flags = g_flags_to_string (PHOSH_TYPE_SHELL_STATE_FLAGS,
                                      priv->shell_state);
 
-  g_debug ("%s %s to shells state. New state: %s",
-           enabled ? "Adding" : "Removing",
+  g_debug ("%s %s shells state. New state: %s",
+           enabled ? "Adding to" : "Removing from",
            str_state, str_new_flags);
+
+  g_object_notify_by_pspec (G_OBJECT (self), props[PHOSH_SHELL_PROP_SHELL_STATE]);
 }

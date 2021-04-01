@@ -59,6 +59,8 @@ libphosh_tool_sources = [
   'background.h',
   'connectivity-info.c',
   'connectivity-info.h',
+  'end-session-dialog.c',
+  'end-session-dialog.h',
   'hks-info.c',
   'hks-info.h',
   'hks-manager.c',
@@ -93,6 +95,8 @@ libphosh_tool_sources = [
   'status-icon.h',
   'system-modal.c',
   'system-modal.h',
+  'system-modal-dialog.c',
+  'system-modal-dialog.h',
   'thumbnail.c',
   'thumbnail.h',
   'quick-setting.c',
@@ -110,6 +114,8 @@ libphosh_tool_sources = [
 ]
 
 libphosh_sources = [
+  'app-auth-prompt.c',
+  'app-auth-prompt.h',
   'arrow.c',
   'arrow.h',
   'auth.c',
@@ -134,6 +140,10 @@ libphosh_sources = [
   'keyboard-events.h',
   'idle-manager.c',
   'idle-manager.h',
+  'location-info.c',
+  'location-info.h',
+  'location-manager.c',
+  'location-manager.h',
   'lockscreen-manager.c',
   'lockscreen-manager.h',
   'lockscreen.c',
