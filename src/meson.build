@@ -23,6 +23,7 @@ phosh_enum_headers = [
   'notifications/notification.h',
   'notifications/notify-manager.h',
   'phosh-wayland.h',
+  'rotation-manager.h',
   'shell.h',
 ] + schema_enum_headers
 
@@ -162,6 +163,8 @@ libphosh_sources = [
   'polkit-auth-prompt.h',
   'proximity.h',
   'proximity.c',
+  'rotation-manager.h',
+  'rotation-manager.c',
   'sensor-proxy-manager.c',
   'sensor-proxy-manager.h',
   'rotateinfo.c',
@@ -206,6 +209,7 @@ phosh_deps = [
   glib_dep,
   gnome_desktop_dep,
   gobject_dep,
+  gsettings_desktop_schemas_dep,
   gtk_dep,
   gtk_wayland_dep,
   libfeedback_dep,

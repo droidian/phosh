@@ -15,29 +15,45 @@
 
 /**
  * SECTION:rotateinfo
- * @short_description: A widget to display the rotate status
+ * @short_description: A widget to display the rotate lock status
  * @Title: PhoshRotateInfo
  *
- * Rotate Info widget
+ * A #PhoshStatusIcon to display the rotation lock status.
+ * It can either display whether a rotation lock is currently active or
+ * if the output is in portrait/landscape mode.
  */
 
+enum {
+  PROP_0,
+  PROP_PRESENT,
+  PROP_LAST_PROP
+};
+static GParamSpec *props[PROP_LAST_PROP];
+
 typedef struct _PhoshRotateInfo {
-  PhoshStatusIcon parent;
+  PhoshStatusIcon       parent;
+
+  PhoshRotationManager *manager;
+  gboolean              present;
 } PhoshRotateInfo;
 
 
 G_DEFINE_TYPE (PhoshRotateInfo, phosh_rotate_info, PHOSH_TYPE_STATUS_ICON)
 
-
 static void
-set_state (PhoshRotateInfo *self)
+on_transform_changed (PhoshRotateInfo *self)
 {
-  PhoshShell *shell = phosh_shell_get_default ();
-  PhoshMonitor *monitor = phosh_shell_get_primary_monitor (shell);
+  PhoshMonitor *monitor = phosh_rotation_manager_get_monitor (self->manager);
   gboolean monitor_is_landscape;
   gboolean portrait;
 
-  switch (phosh_shell_get_transform (shell)) {
+  if (phosh_rotation_manager_get_mode (self->manager) != PHOSH_ROTATION_MANAGER_MODE_OFF)
+    return;
+
+  if (!monitor)
+    return;
+
+  switch (phosh_rotation_manager_get_transform (self->manager)) {
   case PHOSH_MONITOR_TRANSFORM_NORMAL:
   case PHOSH_MONITOR_TRANSFORM_FLIPPED:
   case PHOSH_MONITOR_TRANSFORM_180:
@@ -59,7 +75,7 @@ set_state (PhoshRotateInfo *self)
   monitor_is_landscape = ((double)monitor->width / (double)monitor->height) > 1.0;
   portrait = monitor_is_landscape ? !portrait : portrait;
 
-  g_debug ("Potrait: %d, width: %d, height: %d", portrait, monitor->width , monitor->height);
+  g_debug ("Potrait: %d, width: %d, height: %d", portrait, monitor->width, monitor->height);
   if (portrait) {
     phosh_status_icon_set_icon_name (PHOSH_STATUS_ICON (self), "screen-rotation-portrait-symbolic");
     phosh_status_icon_set_info (PHOSH_STATUS_ICON (self), _("Portrait"));
@@ -71,13 +87,69 @@ set_state (PhoshRotateInfo *self)
 
 
 static void
-phosh_rotate_info_finalize (GObject *object)
+on_orientation_lock_changed (PhoshRotateInfo *self)
 {
-  PhoshRotateInfo *self = PHOSH_ROTATE_INFO(object);
+  gboolean locked = phosh_rotation_manager_get_orientation_locked (self->manager);
+  const char *icon_name;
 
-  g_signal_handlers_disconnect_by_data (phosh_shell_get_default (), self);
+  if (phosh_rotation_manager_get_mode (self->manager) != PHOSH_ROTATION_MANAGER_MODE_SENSOR)
+    return;
 
-  G_OBJECT_CLASS (phosh_rotate_info_parent_class)->finalize (object);
+  g_debug ("Orientation locked: %d", locked);
+
+  icon_name = locked ? "rotation-locked-symbolic" : "rotation-allowed-symbolic";
+  phosh_status_icon_set_icon_name (PHOSH_STATUS_ICON (self), icon_name);
+  /* Translators: Automatic screen orientation is either on (enabled) or off (locked/disabled) */
+  phosh_status_icon_set_info (PHOSH_STATUS_ICON (self), locked ? _("Off") : _("On"));
+
+  return;
+}
+
+
+static void
+on_mode_or_monitor_changed (PhoshRotateInfo *self)
+{
+  PhoshRotationManagerMode mode = phosh_rotation_manager_get_mode (self->manager);
+  gboolean present = !!phosh_rotation_manager_get_monitor (self->manager);
+
+  g_debug ("Rotation manager mode: %d, has-builtin: %d", mode, present);
+  switch (mode) {
+  case PHOSH_ROTATION_MANAGER_MODE_OFF:
+    on_transform_changed (self);
+    break;
+  case PHOSH_ROTATION_MANAGER_MODE_SENSOR:
+    on_orientation_lock_changed (self);
+    break;
+  default:
+    g_assert_not_reached ();
+  }
+
+  if (self->present == present)
+    return;
+
+  self->present = present;
+  g_debug ("Built-in monitor present: %d", present);
+
+  g_object_notify_by_pspec (G_OBJECT (self), props[PROP_PRESENT]);
+}
+
+
+static void
+phosh_rotate_info_get_property (GObject    *object,
+                                guint       property_id,
+                                GValue     *value,
+                                GParamSpec *pspec)
+{
+  PhoshRotateInfo *self = PHOSH_ROTATE_INFO (object);
+
+  switch (property_id) {
+  case PROP_PRESENT:
+    g_value_set_boolean (value, self->present);
+    break;
+  default:
+    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+    break;
+  }
 }
 
 
@@ -85,23 +157,52 @@ static void
 phosh_rotate_info_class_init (PhoshRotateInfoClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
-  object_class->finalize = phosh_rotate_info_finalize;
+
+  object_class->get_property = phosh_rotate_info_get_property;
+
+  props[PROP_PRESENT] =
+    g_param_spec_boolean ("present",
+                          "Present",
+                          "Whether a builtin display to rotate is present",
+                          FALSE,
+                          G_PARAM_READABLE |
+                          G_PARAM_STATIC_STRINGS |
+                          G_PARAM_EXPLICIT_NOTIFY);
+
+  g_object_class_install_properties (object_class, PROP_LAST_PROP, props);
 }
 
 
 static void
 phosh_rotate_info_init (PhoshRotateInfo *self)
 {
-  g_signal_connect_swapped (phosh_shell_get_default (),
-                            "notify::transform",
-                            G_CALLBACK (set_state),
-                            self);
-  set_state (self);
-}
+  self->manager = phosh_shell_get_rotation_manager (phosh_shell_get_default());
 
+  phosh_status_icon_set_icon_name (PHOSH_STATUS_ICON (self), "rotation-locked-symbolic");
+  /* Translators: Automatic screen orientation is off (locked/disabled) */
+  phosh_status_icon_set_info (PHOSH_STATUS_ICON (self), _("Off"));
 
-GtkWidget *
-phosh_rotate_info_new (void)
-{
-  return g_object_new (PHOSH_TYPE_ROTATE_INFO, NULL);
+  /* We don't use property bindings since we flip info/icon based on rotation and lock */
+  g_signal_connect_object (self->manager,
+                           "notify::transform",
+                           G_CALLBACK (on_transform_changed),
+                           self,
+                           G_CONNECT_SWAPPED);
+  g_signal_connect_object (self->manager,
+                           "notify::orientation-locked",
+                           G_CALLBACK (on_orientation_lock_changed),
+                           self,
+                           G_CONNECT_SWAPPED);
+  g_signal_connect_object (self->manager,
+                           "notify::mode",
+                           G_CALLBACK (on_mode_or_monitor_changed),
+                           self,
+                           G_CONNECT_SWAPPED);
+  g_signal_connect_object (self->manager,
+                           "notify::monitor",
+                           G_CALLBACK (on_mode_or_monitor_changed),
+                           self,
+                           G_CONNECT_SWAPPED);
+
+  on_mode_or_monitor_changed (self);
 }
