@@ -44,7 +44,6 @@ static guint signals[N_SIGNALS] = { 0 };
 enum {
   PHOSH_LOCKSCREEN_MANAGER_PROP_0,
   PHOSH_LOCKSCREEN_MANAGER_PROP_LOCKED,
-  PHOSH_LOCKSCREEN_MANAGER_PROP_TIMEOUT,
   PHOSH_LOCKSCREEN_MANAGER_PROP_LAST_PROP
 };
 static GParamSpec *props[PHOSH_LOCKSCREEN_MANAGER_PROP_LAST_PROP];
@@ -56,9 +55,7 @@ struct _PhoshLockscreenManager {
   PhoshLockscreen *lockscreen;     /* phone display lock screen */
   PhoshSessionPresence *presence;  /* gnome-session's presence interface */
   GPtrArray *shields;              /* other outputs */
-  GSettings *settings;
 
-  int timeout;                     /* timeout in seconds before screen locks */
   gboolean locked;
   gint64 active_time;              /* when lock was activated (in us) */
   int transform;                   /* the shell transform before locking */
@@ -76,10 +73,6 @@ lockscreen_unlock_cb (PhoshLockscreenManager *self, PhoshLockscreen *lockscreen)
 
   g_return_if_fail (PHOSH_IS_LOCKSCREEN (lockscreen));
   g_return_if_fail (lockscreen == PHOSH_LOCKSCREEN (self->lockscreen));
-
-  /* Fixup transform in case the lockscreen needed to rotate to unlock */
-  g_debug ("Restoring transform %d", self->transform);
-  phosh_shell_set_transform (shell, self->transform);
 
   g_signal_handlers_disconnect_by_data (monitor_manager, self);
   g_signal_handlers_disconnect_by_data (primary_monitor, self);
@@ -171,35 +164,6 @@ on_monitor_added (PhoshLockscreenManager *self,
   lock_monitor (self, monitor);
 }
 
-static void
-on_primary_monitor_power_mode_changed (PhoshLockscreenManager *self,
-                                       GParamSpec             *pspec,
-                                       PhoshMonitor           *monitor)
-{
-  PhoshShell *shell = phosh_shell_get_default ();
-  PhoshModeManager *mode_manager = phosh_shell_get_mode_manager(shell);
-
-  /*
-   * Only phones need to switch orientation so that the lock screen fits
-   * https://source.puri.sm/Librem5/phosh/-/issues/388
-   */
-  if (phosh_mode_manager_get_device_type(mode_manager) != PHOSH_MODE_DEVICE_TYPE_PHONE)
-    return;
-
-  /* Don't mess with transforms on external screens either */
-  if (!phosh_monitor_is_builtin (monitor))
-    return;
-
-  switch (phosh_monitor_get_power_save_mode (monitor)) {
-  case PHOSH_MONITOR_POWER_SAVE_MODE_ON:
-    phosh_shell_set_transform (shell, PHOSH_MONITOR_TRANSFORM_NORMAL);
-    break;
-  case PHOSH_MONITOR_POWER_SAVE_MODE_OFF:
-    break;
-  default:
-    g_warn_if_reached ();
-  }
-}
 
 static void
 lock_primary_monitor (PhoshLockscreenManager *self)
@@ -209,7 +173,6 @@ lock_primary_monitor (PhoshLockscreenManager *self)
   PhoshShell *shell = phosh_shell_get_default ();
 
   primary_monitor = phosh_shell_get_primary_monitor (shell);
-  self->transform = phosh_shell_get_transform (shell);
 
   /* The primary output gets the clock, keypad, ... */
   self->lockscreen = PHOSH_LOCKSCREEN (phosh_lockscreen_new (
@@ -221,10 +184,6 @@ lock_primary_monitor (PhoshLockscreenManager *self)
     "swapped-object-signal::lockscreen-unlock", G_CALLBACK (lockscreen_unlock_cb), self,
     "swapped-object-signal::wakeup-output", G_CALLBACK (lockscreen_wakeup_output_cb), self,
     NULL);
-
-  g_signal_connect_swapped (primary_monitor, "notify::power-mode",
-                            G_CALLBACK(on_primary_monitor_power_mode_changed),
-                            self);
 
   gtk_widget_show (GTK_WIDGET (self->lockscreen));
   /* Old lockscreen gets remove due to `layer_surface_closed` */
@@ -316,9 +275,6 @@ phosh_lockscreen_manager_set_property (GObject      *object,
   case PHOSH_LOCKSCREEN_MANAGER_PROP_LOCKED:
     phosh_lockscreen_manager_set_locked (self, g_value_get_boolean (value));
     break;
-  case PHOSH_LOCKSCREEN_MANAGER_PROP_TIMEOUT:
-    phosh_lockscreen_manager_set_timeout (self, g_value_get_int (value));
-    break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     break;
@@ -338,9 +294,6 @@ phosh_lockscreen_manager_get_property (GObject    *object,
   case PHOSH_LOCKSCREEN_MANAGER_PROP_LOCKED:
     g_value_set_boolean (value, self->locked);
     break;
-  case PHOSH_LOCKSCREEN_MANAGER_PROP_TIMEOUT:
-    g_value_set_uint (value, self->timeout);
-    break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
     break;
@@ -355,7 +308,6 @@ phosh_lockscreen_manager_dispose (GObject *object)
 
   g_clear_pointer (&self->shields, g_ptr_array_unref);
   g_clear_pointer (&self->lockscreen, phosh_cp_widget_destroy);
-  g_clear_object (&self->settings);
 
   G_OBJECT_CLASS (phosh_lockscreen_manager_parent_class)->dispose (object);
 }
@@ -367,9 +319,6 @@ phosh_lockscreen_manager_constructed (GObject *object)
   PhoshLockscreenManager *self = PHOSH_LOCKSCREEN_MANAGER (object);
 
   G_OBJECT_CLASS (phosh_lockscreen_manager_parent_class)->constructed (object);
-
-  self->settings = g_settings_new ("org.gnome.desktop.session");
-  g_settings_bind (self->settings, "idle-delay", self, "timeout", G_SETTINGS_BIND_GET);
 
   self->presence = phosh_session_presence_get_default_failable ();
   if (self->presence) {
@@ -398,14 +347,6 @@ phosh_lockscreen_manager_class_init (PhoshLockscreenManagerClass *klass)
                           "Whether the screen is locked",
                           FALSE,
                           G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
-  props[PHOSH_LOCKSCREEN_MANAGER_PROP_TIMEOUT] =
-    g_param_spec_int ("timeout",
-                      "Timeout",
-                      "Idle timeout in seconds until screen locks",
-                      0,
-                      G_MAXINT,
-                      300,
-                      G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
   g_object_class_install_properties (object_class, PHOSH_LOCKSCREEN_MANAGER_PROP_LAST_PROP, props);
 
   /**
@@ -433,15 +374,21 @@ phosh_lockscreen_manager_new (void)
   return g_object_new (PHOSH_TYPE_LOCKSCREEN_MANAGER, NULL);
 }
 
-
+/**
+ * phosh_lockscreen_set_locked:
+ * @self: The #PhoshLockscreenManager
+ * @lock: %TRUE to lock %FALSE to unlock
+ *
+ * Lock or unlock the screen.
+ */
 void
-phosh_lockscreen_manager_set_locked (PhoshLockscreenManager *self, gboolean state)
+phosh_lockscreen_manager_set_locked (PhoshLockscreenManager *self, gboolean lock)
 {
   g_return_if_fail (PHOSH_IS_LOCKSCREEN_MANAGER (self));
-  if (state == self->locked)
+  if (lock == self->locked)
     return;
 
-  if (state)
+  if (lock)
     lockscreen_lock (self);
   else
     lockscreen_unlock_cb (self, PHOSH_LOCKSCREEN (self->lockscreen));
@@ -468,30 +415,6 @@ phosh_lockscreen_manager_get_page (PhoshLockscreenManager *self)
   g_return_val_if_fail (PHOSH_IS_LOCKSCREEN_MANAGER (self), FALSE);
 
   return phosh_lockscreen_get_page (self->lockscreen);
-}
-
-
-void
-phosh_lockscreen_manager_set_timeout (PhoshLockscreenManager *self, int timeout)
-{
-  g_return_if_fail (PHOSH_IS_LOCKSCREEN_MANAGER (self));
-
-  if (timeout == self->timeout)
-    return;
-
-  g_debug ("Setting lock screen idle timeout to %d seconds", timeout);
-  self->timeout = timeout;
-
-  g_object_notify_by_pspec (G_OBJECT (self), props[PHOSH_LOCKSCREEN_MANAGER_PROP_TIMEOUT]);
-}
-
-
-int
-phosh_lockscreen_manager_get_timeout (PhoshLockscreenManager *self)
-{
-  g_return_val_if_fail (PHOSH_IS_LOCKSCREEN_MANAGER (self), 0);
-
-  return self->timeout;
 }
 
 

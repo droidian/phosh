@@ -12,10 +12,12 @@
 #include "docked-manager.h"
 #include "feedback-manager.h"
 #include "hks-manager.h"
+#include "location-manager.h"
 #include "lockscreen-manager.h"
 #include "monitor-manager.h"
 #include "monitor/monitor.h"
 #include "osk-manager.h"
+#include "rotation-manager.h"
 #include "session-manager.h"
 #include "toplevel-manager.h"
 #include "torch-manager.h"
@@ -55,8 +57,6 @@ G_BEGIN_DECLS
 G_DECLARE_FINAL_TYPE (PhoshShell, phosh_shell, PHOSH, SHELL, GObject)
 
 PhoshShell          *phosh_shell_get_default     (void);
-void                 phosh_shell_set_transform   (PhoshShell *self, PhoshMonitorTransform transform);
-PhoshMonitorTransform phosh_shell_get_transform   (PhoshShell *self);
 void                 phosh_shell_get_usable_area (PhoshShell *self,
                                                   int        *x,
                                                   int        *y,
@@ -78,9 +78,11 @@ PhoshWifiManager    *phosh_shell_get_wifi_manager    (PhoshShell *self);
 PhoshFeedbackManager *phosh_shell_get_feedback_manager (PhoshShell *self);
 PhoshBtManager      *phosh_shell_get_bt_manager      (PhoshShell *self);
 PhoshWWan           *phosh_shell_get_wwan        (PhoshShell *self);
+PhoshRotationManager *phosh_shell_get_rotation_manager (PhoshShell *self);
 PhoshTorchManager   *phosh_shell_get_torch_manager (PhoshShell *self);
 PhoshDockedManager  *phosh_shell_get_docked_manager (PhoshShell *self);
 PhoshHksManager *    phosh_shell_get_hks_manager     (PhoshShell *self);
+PhoshLocationManager *phosh_shell_get_location_manager (PhoshShell *self);
 PhoshSessionManager *phosh_shell_get_session_manager (PhoshShell *self);
 void                 phosh_shell_fade_out (PhoshShell *self, guint timeout);
 void                 phosh_shell_enable_power_save (PhoshShell *self, gboolean enable);

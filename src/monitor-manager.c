@@ -25,8 +25,10 @@
  * @short_description: The singleton that manages available monitors
  * @Title: PhoshMonitorManager
  *
- * #PhoshMonitorManager keeps tracks of and configure available monitors
- * and handles the "org.gnome.Mutter.DisplayConfig" DBus protocol.
+ * This keeps track of all monitors and handles the
+ * org.gnome.Mutter.DisplayConfig DBus interface via
+ * #PhoshDisplayDbusDisplayConfig. This includes individual monitor
+ * configuration as well as blanking/power saving.
  */
 
 /* Equivalent to the 'layout-mode' enum in org.gnome.Mutter.DisplayConfig */
@@ -37,6 +39,7 @@ typedef enum PhoshMonitorMAnagerLayoutMode {
 
 enum {
   PROP_0,
+  PROP_SENSOR_PROXY_MANAGER,
   PROP_N_MONITORS,
   PROP_LAST_PROP
 };
@@ -55,6 +58,9 @@ static void phosh_monitor_manager_display_config_init (
 typedef struct _PhoshMonitorManager
 {
   PhoshDisplayDbusDisplayConfigSkeleton parent;
+
+  PhoshSensorProxyManager *sensor_proxy_manager;
+  GBinding                *sensor_proxy_binding;
 
   GPtrArray *monitors;   /* Currently known monitors */
   GPtrArray *heads;      /* Currently known heads */
@@ -657,9 +663,6 @@ phosh_monitor_manager_handle_get_current_state (
   }
 
   g_variant_builder_init (&properties_builder, G_VARIANT_TYPE ("a{sv}"));
-  g_variant_builder_add (&properties_builder, "{sv}",
-                         "supports-mirroring",
-                         g_variant_new_boolean (FALSE));
 
   g_variant_builder_add (&properties_builder, "{sv}",
                          "layout-mode",
@@ -1037,6 +1040,19 @@ find_monitor_by_wl_output (PhoshMonitorManager *self, struct wl_output *output)
 
 
 static void
+on_monitor_configured (PhoshMonitorManager *self, PhoshMonitor *monitor)
+{
+  g_return_if_fail (PHOSH_IS_MONITOR_MANAGER (self));
+  g_return_if_fail (PHOSH_IS_MONITOR (monitor));
+
+  g_signal_emit (self, signals[SIGNAL_MONITOR_ADDED], 0, monitor);
+  g_object_notify_by_pspec (G_OBJECT (self), props[PROP_N_MONITORS]);
+
+  g_signal_handlers_disconnect_by_data (monitor, self);
+}
+
+
+static void
 on_monitor_removed (PhoshMonitorManager *self,
                     PhoshMonitor        *monitor,
                     gpointer            *data)
@@ -1047,6 +1063,18 @@ on_monitor_removed (PhoshMonitorManager *self,
   g_debug("Monitor %p (%s) removed", monitor, monitor->name);
   g_ptr_array_remove (self->monitors, monitor);
   g_object_notify_by_pspec (G_OBJECT (self), props[PROP_N_MONITORS]);
+}
+
+
+static void
+phosh_monitor_manager_add_monitor (PhoshMonitorManager *self, PhoshMonitor *monitor)
+{
+  g_ptr_array_add (self->monitors, monitor);
+  /* Delay emmission of 'monitor-added' until it's configured */
+  g_signal_connect_swapped (monitor,
+                            "configured",
+                            G_CALLBACK (on_monitor_configured),
+                            self);
 }
 
 
@@ -1179,6 +1207,18 @@ static const struct zwlr_output_configuration_v1_listener config_listener = {
 
 
 static void
+phosh_monitor_manager_dispose (GObject *object)
+{
+  PhoshMonitorManager *self = PHOSH_MONITOR_MANAGER (object);
+
+  g_clear_object (&self->sensor_proxy_manager);
+  g_clear_pointer (&self->sensor_proxy_binding, g_binding_unbind);
+
+  G_OBJECT_CLASS (phosh_monitor_manager_parent_class)->dispose (object);
+}
+
+
+static void
 phosh_monitor_manager_finalize (GObject *object)
 {
   PhoshMonitorManager *self = PHOSH_MONITOR_MANAGER (object);
@@ -1194,6 +1234,25 @@ phosh_monitor_manager_finalize (GObject *object)
  */
 
 static void
+phosh_monitor_manager_set_property (GObject      *object,
+                                    guint         property_id,
+                                    const GValue *value,
+                                    GParamSpec   *pspec)
+{
+  PhoshMonitorManager *self = PHOSH_MONITOR_MANAGER (object);
+
+  switch (property_id) {
+  case PROP_SENSOR_PROXY_MANAGER:
+    phosh_monitor_manager_set_sensor_proxy_manager (self, g_value_get_object (value));
+    break;
+  default:
+    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+    break;
+  }
+}
+
+
+static void
 phosh_monitor_manager_get_property (GObject    *object,
                                     guint       property_id,
                                     GValue     *value,
@@ -1202,6 +1261,9 @@ phosh_monitor_manager_get_property (GObject    *object,
   PhoshMonitorManager *self = PHOSH_MONITOR_MANAGER (object);
 
   switch (property_id) {
+  case PROP_SENSOR_PROXY_MANAGER:
+    g_value_set_object (value, self->sensor_proxy_manager);
+    break;
   case PROP_N_MONITORS:
     g_value_set_int (value, self->monitors->len);
     break;
@@ -1268,8 +1330,18 @@ phosh_monitor_manager_class_init (PhoshMonitorManagerClass *klass)
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
   object_class->constructed = phosh_monitor_manager_constructed;
+  object_class->dispose = phosh_monitor_manager_dispose;
   object_class->finalize = phosh_monitor_manager_finalize;
   object_class->get_property = phosh_monitor_manager_get_property;
+  object_class->set_property = phosh_monitor_manager_set_property;
+
+  props[PROP_SENSOR_PROXY_MANAGER] =
+    g_param_spec_object ("sensor-proxy-manager",
+                         "Sensor Proxy Manager",
+                         "Sensor Proxy Manager",
+                         PHOSH_TYPE_SENSOR_PROXY_MANAGER,
+                         G_PARAM_READWRITE |
+                         G_PARAM_STATIC_STRINGS);
 
   props[PROP_N_MONITORS] =
     g_param_spec_int ("n-monitors",
@@ -1289,10 +1361,7 @@ phosh_monitor_manager_class_init (PhoshMonitorManagerClass *klass)
    * @manager: The #PhoshMonitorManager emitting the signal.
    * @monitor: The #PhoshMonitor being added.
    *
-   * Emitted whenever a monitor is about to be added. Note
-   * that the monitor might not yet be fully initialized. Use
-   * phosh_monitor_is_configured() to check or listen for
-   * the #PhoshMonitor::configured signal.
+   * Emitted whenever a monitor was added.
    */
   signals[SIGNAL_MONITOR_ADDED] = g_signal_new (
     "monitor-added",
@@ -1325,18 +1394,11 @@ phosh_monitor_manager_init (PhoshMonitorManager *self)
 
 
 PhoshMonitorManager *
-phosh_monitor_manager_new (void)
+phosh_monitor_manager_new (PhoshSensorProxyManager *proxy)
 {
-  return g_object_new (PHOSH_TYPE_MONITOR_MANAGER, NULL);
-}
-
-
-void
-phosh_monitor_manager_add_monitor (PhoshMonitorManager *self, PhoshMonitor *monitor)
-{
-  g_ptr_array_add (self->monitors, monitor);
-  g_signal_emit (self, signals[SIGNAL_MONITOR_ADDED], 0, monitor);
-  g_object_notify_by_pspec (G_OBJECT (self), props[PROP_N_MONITORS]);
+  return g_object_new (PHOSH_TYPE_MONITOR_MANAGER,
+                       "sensor-proxy-manager", proxy,
+                       NULL);
 }
 
 
@@ -1369,9 +1431,10 @@ phosh_monitor_manager_get_num_monitors (PhoshMonitorManager *self)
 }
 
 /**
- * phosh_monitor_set_transform:
+ * phosh_monitor_manager_set_monitor_transform:
  * @self: A #PhoshMonitor
- * @mode: The #PhoshMonitorPowerSaveMode
+ * @monitor: The #PhoshMonitor to set the tansform on
+ * @transform: The #PhoshMonitorTransform to set
  *
  * Sets monitor's transform. This will become active after the next
  * call to #phosh_monitor_manager_apply_monitor_config().
@@ -1445,4 +1508,25 @@ phosh_monitor_manager_apply_monitor_config (PhoshMonitorManager *self)
   }
 
   zwlr_output_configuration_v1_apply (config);
+}
+
+void
+phosh_monitor_manager_set_sensor_proxy_manager (PhoshMonitorManager     *self,
+                                                PhoshSensorProxyManager *manager)
+{
+  g_return_if_fail (PHOSH_IS_MONITOR_MANAGER (self));
+  g_return_if_fail (PHOSH_IS_SENSOR_PROXY_MANAGER (manager) || manager == NULL);
+
+  g_clear_object (&self->sensor_proxy_manager);
+  g_clear_pointer (&self->sensor_proxy_binding, g_binding_unbind);
+
+  if (manager == NULL)
+    return;
+
+  self->sensor_proxy_manager = g_object_ref (manager);
+  self->sensor_proxy_binding = g_object_bind_property (manager, "has-accelerometer",
+                                                       self, "panel-orientation-managed",
+                                                       G_BINDING_SYNC_CREATE);
+
+
 }

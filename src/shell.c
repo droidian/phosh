@@ -40,6 +40,8 @@
 #include "home.h"
 #include "idle-manager.h"
 #include "keyboard-events.h"
+#include "location-info.h"
+#include "location-manager.h"
 #include "lockscreen-manager.h"
 #include "media-player.h"
 #include "mode-manager.h"
@@ -47,6 +49,7 @@
 #include "monitor/monitor.h"
 #include "mount-manager.h"
 #include "settings.h"
+#include "system-modal-dialog.h"
 #include "notifications/notify-manager.h"
 #include "notifications/notification-banner.h"
 #include "osk-manager.h"
@@ -56,6 +59,7 @@
 #include "proximity.h"
 #include "quick-setting.h"
 #include "rotateinfo.h"
+#include "rotation-manager.h"
 #include "sensor-proxy-manager.h"
 #include "screen-saver-manager.h"
 #include "session-manager.h"
@@ -82,9 +86,10 @@
 
 enum {
   PHOSH_SHELL_PROP_0,
-  PHOSH_SHELL_PROP_TRANSFORM,
   PHOSH_SHELL_PROP_LOCKED,
+  PHOSH_SHELL_PROP_BUILTIN_MONITOR,
   PHOSH_SHELL_PROP_PRIMARY_MONITOR,
+  PHOSH_SHELL_PROP_SHELL_STATE,
   PHOSH_SHELL_PROP_LAST_PROP
 };
 static GParamSpec *props[PHOSH_SHELL_PROP_LAST_PROP];
@@ -119,14 +124,15 @@ typedef struct
   PhoshDockedManager *docked_manager;
   PhoshHksManager *hks_manager;
   PhoshKeyboardEvents *keyboard_events;
+  PhoshLocationManager *location_manager;
   PhoshGnomeShellManager *gnome_shell_manager;
 
   /* sensors */
   PhoshSensorProxyManager *sensor_proxy_manager;
   PhoshProximity *proximity;
+  PhoshRotationManager *rotation_manager;
 
   gboolean startup_finished;
-  PhoshMonitorTransform transform; /* current rotation of primary monitor */
 
   /* Mirrors PhoshLockscreenManager's locked property */
   gboolean locked;
@@ -310,14 +316,17 @@ phosh_shell_get_property (GObject *object,
   PhoshShellPrivate *priv = phosh_shell_get_instance_private(self);
 
   switch (property_id) {
-  case PHOSH_SHELL_PROP_TRANSFORM:
-    g_value_set_enum (value, phosh_monitor_get_transform(priv->primary_monitor));
-    break;
   case PHOSH_SHELL_PROP_LOCKED:
     g_value_set_boolean (value, priv->locked);
     break;
+  case PHOSH_SHELL_PROP_BUILTIN_MONITOR:
+    g_value_set_object (value, phosh_shell_get_builtin_monitor (self));
+    break;
   case PHOSH_SHELL_PROP_PRIMARY_MONITOR:
     g_value_set_object (value, phosh_shell_get_primary_monitor (self));
+    break;
+  case PHOSH_SHELL_PROP_SHELL_STATE:
+    g_value_set_flags (value, priv->shell_state);
     break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -332,13 +341,6 @@ phosh_shell_dispose (GObject *object)
   PhoshShell *self = PHOSH_SHELL (object);
   PhoshShellPrivate *priv = phosh_shell_get_instance_private(self);
 
-  if (priv->sensor_proxy_manager) {
-    phosh_dbus_sensor_proxy_call_release_accelerometer_sync (
-      PHOSH_DBUS_SENSOR_PROXY(priv->sensor_proxy_manager),
-      NULL, NULL);
-      g_clear_object (&priv->sensor_proxy_manager);
-  }
-
   panels_dispose (self);
   g_clear_pointer (&priv->faders, g_ptr_array_unref);
 
@@ -346,6 +348,7 @@ phosh_shell_dispose (GObject *object)
 
   g_clear_object (&priv->keyboard_events);
   /* dispose managers in opposite order of declaration */
+  g_clear_object (&priv->location_manager);
   g_clear_object (&priv->hks_manager);
   g_clear_object (&priv->docked_manager);
   g_clear_object (&priv->mode_manager);
@@ -370,7 +373,9 @@ phosh_shell_dispose (GObject *object)
 
   /* sensors */
   g_clear_object (&priv->proximity);
+  g_clear_object (&priv->rotation_manager);
   g_clear_object (&priv->sensor_proxy_manager);
+
   phosh_system_prompter_unregister ();
   g_clear_object (&priv->session_manager);
 
@@ -455,10 +460,15 @@ on_fade_out_timeout (PhoshShell *self)
 static gboolean
 setup_idle_cb (PhoshShell *self)
 {
+  g_autoptr (GError) err = NULL;
   PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
 
   priv->session_manager = phosh_session_manager_new ();
   priv->mode_manager = phosh_mode_manager_new ();
+
+  priv->sensor_proxy_manager = phosh_sensor_proxy_manager_new (&err);
+  if (!priv->sensor_proxy_manager)
+    g_warning ("Failed to connect to sensor-proxy: %s", err->message);
 
   panels_create (self);
   /* Create background after panel since it needs the panel's size */
@@ -488,12 +498,14 @@ setup_idle_cb (PhoshShell *self)
                            self,
                            G_CONNECT_SWAPPED);
 
-  priv->sensor_proxy_manager = phosh_sensor_proxy_manager_get_default_failable ();
+  phosh_shell_get_location_manager (self);
   if (priv->sensor_proxy_manager) {
     priv->proximity = phosh_proximity_new (priv->sensor_proxy_manager,
                                            priv->lockscreen_manager);
-    /* TODO: accelerometer */
+    phosh_monitor_manager_set_sensor_proxy_manager (priv->monitor_manager,
+                                                    priv->sensor_proxy_manager);
   }
+
   priv->mount_manager = phosh_mount_manager_new ();
 
   phosh_session_manager_register (priv->session_manager,
@@ -501,9 +513,7 @@ setup_idle_cb (PhoshShell *self)
                                   g_getenv ("DESKTOP_AUTOSTART_ID"));
   g_unsetenv ("DESKTOP_AUTOSTART_ID");
 
-  /* If we start rotated, fix this up */
-  if (phosh_shell_get_transform (self) != PHOSH_MONITOR_TRANSFORM_NORMAL)
-    phosh_shell_set_transform (self, PHOSH_MONITOR_TRANSFORM_NORMAL);
+  priv->gnome_shell_manager = phosh_gnome_shell_manager_get_default ();
 
   priv->startup_finished = TRUE;
 
@@ -521,10 +531,13 @@ type_setup (void)
   g_type_ensure (PHOSH_TYPE_DOCKED_INFO);
   g_type_ensure (PHOSH_TYPE_FEEDBACK_INFO);
   g_type_ensure (PHOSH_TYPE_HKS_INFO);
+  g_type_ensure (PHOSH_TYPE_LOCATION_INFO);
   g_type_ensure (PHOSH_TYPE_MEDIA_PLAYER);
   g_type_ensure (PHOSH_TYPE_QUICK_SETTING);
   g_type_ensure (PHOSH_TYPE_ROTATE_INFO);
   g_type_ensure (PHOSH_TYPE_SETTINGS);
+  g_type_ensure (PHOSH_TYPE_SYSTEM_MODAL);
+  g_type_ensure (PHOSH_TYPE_SYSTEM_MODAL_DIALOG);
   g_type_ensure (PHOSH_TYPE_TORCH_INFO);
   g_type_ensure (PHOSH_TYPE_WIFI_INFO);
   g_type_ensure (PHOSH_TYPE_WWAN_INFO);
@@ -546,25 +559,34 @@ on_builtin_monitor_power_mode_changed (PhoshShell *self, GParamSpec *pspec, Phos
   phosh_shell_set_state (self, PHOSH_STATE_BLANKED, mode == PHOSH_MONITOR_POWER_SAVE_MODE_OFF);
 }
 
-
 static void
-on_primary_monitor_configured (PhoshShell   *self,
-                               PhoshMonitor *monitor)
+on_monitor_added (PhoshShell *self, PhoshMonitor *monitor)
 {
   PhoshShellPrivate *priv;
-  PhoshMonitorTransform transform;
 
   g_return_if_fail (PHOSH_IS_SHELL (self));
   g_return_if_fail (PHOSH_IS_MONITOR (monitor));
-
   priv = phosh_shell_get_instance_private (self);
-  transform = phosh_monitor_get_transform (monitor);
-  if (transform == priv->transform)
+
+  g_debug ("Monitor %p (%s)", monitor, monitor->name);
+
+  if (priv->builtin_monitor)
     return;
 
-  priv->transform = transform;
-  g_debug ("Primary monitor transform %d", transform);
-  g_object_notify_by_pspec (G_OBJECT (self), props[PHOSH_SHELL_PROP_TRANSFORM]);
+  if (!phosh_monitor_is_builtin (monitor))
+    return;
+
+  priv->builtin_monitor = g_object_ref (monitor);
+  g_signal_connect_swapped (priv->builtin_monitor,
+                            "notify::power-mode",
+                            G_CALLBACK(on_builtin_monitor_power_mode_changed),
+                            self);
+
+  g_debug ("Updating builtin monitor to %s", monitor->name);
+  if (priv->rotation_manager)
+    phosh_rotation_manager_set_monitor (priv->rotation_manager, monitor);
+
+  g_object_notify_by_pspec (G_OBJECT (self), props[PHOSH_SHELL_PROP_BUILTIN_MONITOR]);
 }
 
 
@@ -577,27 +599,64 @@ on_monitor_removed (PhoshShell *self, PhoshMonitor *monitor)
   g_return_if_fail (PHOSH_IS_MONITOR (monitor));
   priv = phosh_shell_get_instance_private (self);
 
-  if (priv->primary_monitor != monitor)
-    return;
+  if (priv->builtin_monitor == monitor) {
+    g_debug ("Builtin monitor %p (%s) removed", monitor, monitor->name);
 
-  g_debug ("Primary monitor removed %p", monitor);
+    if (priv->builtin_monitor) {
+      /* Power mode listener */
+      g_signal_handlers_disconnect_by_data (priv->builtin_monitor, self);
+      g_clear_object (&priv->builtin_monitor);
+    }
 
-  /* Prefer built in monitor when primary is gone... */
-  if (priv->builtin_monitor && monitor != priv->builtin_monitor) {
-    phosh_shell_set_primary_monitor (self, priv->builtin_monitor);
-    return;
+    if (priv->rotation_manager)
+      phosh_rotation_manager_set_monitor (priv->rotation_manager, NULL);
+
+    g_object_notify_by_pspec (G_OBJECT (self), props[PHOSH_SHELL_PROP_BUILTIN_MONITOR]);
   }
 
-  /* ...just pick the first one available otherwise */
+  if (priv->primary_monitor == monitor) {
+    g_debug ("Primary monitor %p (%s) removed", monitor, monitor->name);
+
+    /* Prefer built in monitor when primary is gone... */
+    if (priv->builtin_monitor) {
+      phosh_shell_set_primary_monitor (self, priv->builtin_monitor);
+      return;
+    }
+
+    /* ...just pick the first one available otherwise */
+    for (int i = 0; i < phosh_monitor_manager_get_num_monitors (priv->monitor_manager); i++) {
+      PhoshMonitor *new_primary = phosh_monitor_manager_get_monitor (priv->monitor_manager, i);
+      if (new_primary != monitor) {
+        phosh_shell_set_primary_monitor (self, new_primary);
+        break;
+      }
+    }
+    g_assert (priv->primary_monitor && priv->primary_monitor != monitor);
+  }
+}
+
+
+static PhoshMonitor *
+find_builtin_monitor (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+  PhoshMonitor *monitor = NULL;
+
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
+  priv = phosh_shell_get_instance_private (self);
+
+  if (priv->builtin_monitor)
+    return priv->builtin_monitor;
+
   for (int i = 0; i < phosh_monitor_manager_get_num_monitors (priv->monitor_manager); i++) {
-    PhoshMonitor *new_primary = phosh_monitor_manager_get_monitor (priv->monitor_manager, i);
-    if (new_primary != monitor) {
-      phosh_shell_set_primary_monitor (self, new_primary);
+    PhoshMonitor *tmp = phosh_monitor_manager_get_monitor (priv->monitor_manager, i);
+    if (phosh_monitor_is_builtin (tmp)) {
+      monitor = tmp;
       break;
     }
   }
 
-  g_assert (priv->primary_monitor && priv->primary_monitor != monitor);
+  return monitor;
 }
 
 
@@ -610,11 +669,14 @@ phosh_shell_constructed (GObject *object)
   G_OBJECT_CLASS (phosh_shell_parent_class)->constructed (object);
 
   /* We bind this early since a wl_display_roundtrip () would make us miss
-     exising toplevels */
+     existing toplevels */
   priv->toplevel_manager = phosh_toplevel_manager_new ();
 
-  priv->transform = -1; /* force initial update */
-  priv->monitor_manager = phosh_monitor_manager_new ();
+  priv->monitor_manager = phosh_monitor_manager_new (NULL);
+  g_signal_connect_swapped (priv->monitor_manager,
+                            "monitor-added",
+                            G_CALLBACK (on_monitor_added),
+                            self);
   g_signal_connect_swapped (priv->monitor_manager,
                             "monitor-removed",
                             G_CALLBACK (on_monitor_removed),
@@ -623,19 +685,27 @@ phosh_shell_constructed (GObject *object)
   /* Make sure all outputs are up to date */
   phosh_wayland_roundtrip (phosh_wayland_get_default ());
 
-  if (phosh_monitor_manager_get_num_monitors(priv->monitor_manager)) {
-    priv->builtin_monitor = phosh_shell_get_builtin_monitor (self);
+  if (phosh_monitor_manager_get_num_monitors (priv->monitor_manager)) {
+    PhoshMonitor *monitor = find_builtin_monitor (self);
 
-    g_debug ("Builtin monitor is %s, %d", priv->builtin_monitor->name,
-             phosh_monitor_is_configured (priv->builtin_monitor));
+    /* Setup builtin monitor */
+    if (monitor) {
+      on_monitor_added (self, monitor);
+      g_debug ("Builtin monitor %p, configured: %d",
+               priv->builtin_monitor,
+               phosh_monitor_is_configured (priv->builtin_monitor));
+    }
+
+    /* Setup primary monitor, prefer builtin */
     /* Can't invoke phosh_shell_set_primary_monitor () since the shell
        object does not really exist yet but we need the primary monitor
        early for the panels */
-    priv->primary_monitor = g_object_ref (priv->builtin_monitor);
-    g_signal_connect_swapped (priv->primary_monitor,
-                              "configured",
-                              G_CALLBACK (on_primary_monitor_configured),
-                              self);
+    if (priv->builtin_monitor)
+      priv->primary_monitor = g_object_ref (priv->builtin_monitor);
+    else
+      priv->primary_monitor = g_object_ref (phosh_monitor_manager_get_monitor (priv->monitor_manager, 0));
+  } else {
+    g_error ("Need at least one monitor");
   }
 
   gtk_icon_theme_add_resource_path (gtk_icon_theme_get_default (),
@@ -655,16 +725,6 @@ phosh_shell_constructed (GObject *object)
   priv->polkit_auth_agent = phosh_polkit_auth_agent_new ();
 
   priv->feedback_manager = phosh_feedback_manager_new ();
-  priv->gnome_shell_manager = phosh_gnome_shell_manager_get_default ();
-
-  if (priv->builtin_monitor) {
-    g_signal_connect_swapped (
-      priv->builtin_monitor,
-      "notify::power-mode",
-      G_CALLBACK(on_builtin_monitor_power_mode_changed),
-      self);
-  }
-
   priv->keyboard_events = phosh_keyboard_events_new ();
 
   g_idle_add ((GSourceFunc) setup_idle_cb, self);
@@ -684,27 +744,44 @@ phosh_shell_class_init (PhoshShellClass *klass)
 
   type_setup ();
 
-  props[PHOSH_SHELL_PROP_TRANSFORM] =
-    g_param_spec_enum ("transform",
-                       "Transform",
-                       "Monitor transform of the primary monitor",
-                       PHOSH_TYPE_MONITOR_TRANSFORM,
-                       PHOSH_MONITOR_TRANSFORM_NORMAL,
-                       G_PARAM_READABLE | G_PARAM_EXPLICIT_NOTIFY);
-
   props[PHOSH_SHELL_PROP_LOCKED] =
     g_param_spec_boolean ("locked",
                           "Locked",
                           "Whether the screen is locked",
                           FALSE,
-                          G_PARAM_READWRITE);
+                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
+  /**
+   * PhoshShell:builtin-monitor:
+   *
+   * The built in monitor. This is a hardware property and hence can
+   * only be read. It can be %NULL when not present or disabled.
+   */
+  props[PHOSH_SHELL_PROP_BUILTIN_MONITOR] =
+    g_param_spec_object ("builtin-monitor",
+                         "Built in monitor",
+                         "The builtin monitor",
+                         PHOSH_TYPE_MONITOR,
+                         G_PARAM_READABLE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
+  /**
+   * PhoshShell:primary-monitor:
+   *
+   * The primary monitor that has the panels, lock screen etc. This can't be %NULL.
+   */
   props[PHOSH_SHELL_PROP_PRIMARY_MONITOR] =
     g_param_spec_object ("primary-monitor",
                          "Primary monitor",
                          "The primary monitor",
                          PHOSH_TYPE_MONITOR,
-                         G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY);
+                         G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
+
+  props[PHOSH_SHELL_PROP_SHELL_STATE] =
+    g_param_spec_flags ("shell-state",
+                        "Shell state",
+                        "The state of the shell",
+                        PHOSH_TYPE_SHELL_STATE_FLAGS,
+                        PHOSH_STATE_NONE,
+                        G_PARAM_READABLE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
   g_object_class_install_properties (object_class, PHOSH_SHELL_PROP_LAST_PROP, props);
 }
@@ -723,44 +800,11 @@ phosh_shell_init (PhoshShell *self)
 }
 
 
-PhoshMonitorTransform
-phosh_shell_get_transform (PhoshShell *self)
-{
-  PhoshShellPrivate *priv;
-
-  g_return_val_if_fail (PHOSH_IS_SHELL (self), PHOSH_MONITOR_TRANSFORM_NORMAL);
-  priv = phosh_shell_get_instance_private (self);
-  g_return_val_if_fail (priv->primary_monitor, PHOSH_MONITOR_TRANSFORM_NORMAL);
-  return phosh_monitor_get_transform (priv->primary_monitor);
-}
-
-
-void
-phosh_shell_set_transform (PhoshShell *self,
-                           PhoshMonitorTransform transform)
-{
-  PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
-  PhoshMonitorTransform current;
-
-  g_return_if_fail (priv->primary_monitor);
-  current = phosh_monitor_get_transform (priv->primary_monitor);
-  if (current == transform)
-    return;
-
-  phosh_monitor_manager_set_monitor_transform (priv->monitor_manager,
-                                               priv->primary_monitor,
-                                               transform);
-  phosh_monitor_manager_apply_monitor_config (priv->monitor_manager);
-  /* Notification change signalled in on_primary_monitor_configured */
-}
-
-
 void
 phosh_shell_set_primary_monitor (PhoshShell *self, PhoshMonitor *monitor)
 {
   PhoshShellPrivate *priv;
   PhoshMonitor *m = NULL;
-  PhoshMonitorTransform transform;
 
   g_return_if_fail (monitor);
   g_return_if_fail (PHOSH_IS_SHELL (self));
@@ -776,19 +820,9 @@ phosh_shell_set_primary_monitor (PhoshShell *self, PhoshMonitor *monitor)
   }
   g_return_if_fail (monitor == m);
 
-  if (priv->primary_monitor)
-    g_signal_handlers_disconnect_by_data (priv->primary_monitor, self);
   g_clear_object (&priv->primary_monitor);
   priv->primary_monitor = g_object_ref (monitor);
   g_debug ("New primary monitor is %s", monitor->name);
-  g_signal_connect_swapped (priv->primary_monitor,
-                            "configured",
-                            G_CALLBACK (on_primary_monitor_configured),
-                            self);
-  /* Catch up if old and new primary monitor's rotation are different */
-  transform = phosh_monitor_get_transform (priv->primary_monitor);
-  if (transform != priv->transform)
-    on_primary_monitor_configured (self, priv->primary_monitor);
 
   /* Move panels to the new monitor by recreating the layer shell surfaces */
   panels_dispose (self);
@@ -802,25 +836,12 @@ PhoshMonitor *
 phosh_shell_get_builtin_monitor (PhoshShell *self)
 {
   PhoshShellPrivate *priv;
-  PhoshMonitor *monitor = NULL;
 
   g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
   priv = phosh_shell_get_instance_private (self);
+  g_return_val_if_fail (PHOSH_IS_MONITOR (priv->builtin_monitor) || priv->builtin_monitor == NULL, NULL);
 
-  if (priv->builtin_monitor)
-    return priv->builtin_monitor;
-
-  for (int i = 0; i < phosh_monitor_manager_get_num_monitors (priv->monitor_manager); i++) {
-    monitor = phosh_monitor_manager_get_monitor (priv->monitor_manager, i);
-    if (phosh_monitor_is_builtin (monitor))
-      break;
-  }
-
-  if (!monitor)
-    monitor = phosh_monitor_manager_get_monitor (priv->monitor_manager, 0);
-  g_return_val_if_fail (monitor, NULL);
-
-  return monitor;
+  return priv->builtin_monitor;
 }
 
 
@@ -1033,6 +1054,22 @@ phosh_shell_get_hks_manager (PhoshShell *self)
 }
 
 
+PhoshLocationManager *
+phosh_shell_get_location_manager (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
+  priv = phosh_shell_get_instance_private (self);
+
+  if (!priv->location_manager)
+    priv->location_manager = phosh_location_manager_new ();
+
+  g_return_val_if_fail (PHOSH_IS_LOCATION_MANAGER (priv->location_manager), NULL);
+  return priv->location_manager;
+}
+
+
 PhoshSessionManager *
 phosh_shell_get_session_manager (PhoshShell *self)
 {
@@ -1045,6 +1082,24 @@ phosh_shell_get_session_manager (PhoshShell *self)
   return priv->session_manager;
 }
 
+
+PhoshRotationManager *
+phosh_shell_get_rotation_manager (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
+  priv = phosh_shell_get_instance_private (self);
+
+  if (!priv->rotation_manager)
+    priv->rotation_manager = phosh_rotation_manager_new (priv->sensor_proxy_manager,
+                                                         priv->lockscreen_manager,
+                                                         priv->builtin_monitor);
+
+  g_return_val_if_fail (PHOSH_IS_ROTATION_MANAGER (priv->rotation_manager), NULL);
+
+  return priv->rotation_manager;
+}
 
 /**
  * Returns the usable area in pixels usable by a client on the phone
@@ -1277,7 +1332,7 @@ phosh_shell_get_state (PhoshShell *self)
 {
   PhoshShellPrivate *priv;
 
-  g_return_val_if_fail (PHOSH_IS_SHELL (self), 0);
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), PHOSH_STATE_NONE);
   priv = phosh_shell_get_instance_private (self);
 
   return priv->shell_state;
@@ -1297,22 +1352,31 @@ phosh_shell_set_state (PhoshShell          *self,
                        gboolean             enabled)
 {
   PhoshShellPrivate *priv;
-  g_autofree gchar *str_state = g_flags_to_string (PHOSH_TYPE_SHELL_STATE_FLAGS,
-                                                  state);
+  PhoshShellStateFlags old_state;
+  g_autofree gchar *str_state = NULL;
   g_autofree gchar *str_new_flags = NULL;
 
   g_return_if_fail (PHOSH_IS_SHELL (self));
   priv = phosh_shell_get_instance_private (self);
+
+  old_state = priv->shell_state;
 
   if (enabled)
     priv->shell_state = priv->shell_state | state;
   else
     priv->shell_state = priv->shell_state & ~state;
 
+  if (old_state == priv->shell_state)
+    return;
+
+  str_state = g_flags_to_string (PHOSH_TYPE_SHELL_STATE_FLAGS,
+                                 state);
   str_new_flags = g_flags_to_string (PHOSH_TYPE_SHELL_STATE_FLAGS,
                                      priv->shell_state);
 
-  g_debug ("%s %s to shells state. New state: %s",
-           enabled ? "Adding" : "Removing",
+  g_debug ("%s %s shells state. New state: %s",
+           enabled ? "Adding to" : "Removing from",
            str_state, str_new_flags);
+
+  g_object_notify_by_pspec (G_OBJECT (self), props[PHOSH_SHELL_PROP_SHELL_STATE]);
 }
