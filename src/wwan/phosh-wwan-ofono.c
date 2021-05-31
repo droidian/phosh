@@ -36,7 +36,7 @@ enum {
 };
 
 typedef struct _PhoshWWanOfono {
-  GObject                            parent;
+  PhoshWWanManager                   parent;
 
   PhoshOfonoDBusNetworkRegistration *proxy_netreg;
   PhoshOfonoDBusSimManager          *proxy_sim;
@@ -59,7 +59,7 @@ typedef struct _PhoshWWanOfono {
 
 
 static void phosh_wwan_ofono_interface_init (PhoshWWanInterface *iface);
-G_DEFINE_TYPE_WITH_CODE (PhoshWWanOfono, phosh_wwan_ofono, G_TYPE_OBJECT,
+G_DEFINE_TYPE_WITH_CODE (PhoshWWanOfono, phosh_wwan_ofono, PHOSH_TYPE_WWAN_MANAGER,
                          G_IMPLEMENT_INTERFACE (PHOSH_TYPE_WWAN,
                                                 phosh_wwan_ofono_interface_init))
 
@@ -276,13 +276,13 @@ phosh_wwan_ofono_destroy_modem (PhoshWWanOfono *self)
   g_debug ("destroying modem '%p'", self);
 
   if (self->proxy_netreg) {
-    phosh_clear_handler (&self->proxy_netreg_props_signal_id,
-                         self->proxy_netreg);
+    g_clear_signal_handler (&self->proxy_netreg_props_signal_id,
+                            self->proxy_netreg);
     g_clear_object (&self->proxy_netreg);
   }
 
   if (self->proxy_sim) {
-    phosh_clear_handler (&self->proxy_sim_props_signal_id, self->proxy_sim);
+    g_clear_signal_handler (&self->proxy_sim_props_signal_id, self->proxy_sim);
     g_clear_object (&self->proxy_sim);
   }
 
@@ -585,10 +585,10 @@ phosh_wwan_ofono_dispose (GObject *object)
 
   phosh_wwan_ofono_destroy_modem (self);
   if (self->proxy_manager) {
-    phosh_clear_handler (&self->manager_object_added_signal_id,
-                         self->proxy_manager);
-    phosh_clear_handler (&self->manager_object_removed_signal_id,
-                         self->proxy_manager);
+    g_clear_signal_handler (&self->manager_object_added_signal_id,
+                            self->proxy_manager);
+    g_clear_signal_handler (&self->manager_object_removed_signal_id,
+                            self->proxy_manager);
 
     g_clear_object (&self->proxy_manager);
   }

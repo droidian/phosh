@@ -1,3 +1,5 @@
+run_phoc_tests = false
+
 if get_option('tests')
 
 subdir('system')
@@ -27,6 +29,7 @@ test_env.prepend('XDG_DATA_DIRS', '@0@/system/share/'.format(meson.current_sourc
 
 test_cflags = [
   '-DTEST_DATA_DIR="@0@/data"'.format(meson.current_source_dir()),
+  '-DTEST_OUTPUT_DIR="@0@"'.format(meson.current_build_dir()),
 ]
 
 test_link_args = [
@@ -82,6 +85,14 @@ tests_phoc = [
   'timestamp-label',
 ]
 
+tests_manager = [
+  'idle-manager',
+  'monitor-manager',
+  'notify-manager',
+  'screenshot-manager',
+]
+
+
 # Unit tests
 foreach test : tests
   t = executable('test-@0@'.format(test),
@@ -98,7 +109,7 @@ if run_phoc_tests
   # Make sure this is valid when running the compositor
   test_env_phoc.set('XDG_RUNTIME_DIR', meson.current_build_dir())
 
-# Unit tests
+  # Unit tests
   foreach test : tests_phoc
     t = executable('test-@0@'.format(test),
                    test_stub_deps + ['test-@0@.c'.format(test)],
@@ -108,15 +119,25 @@ if run_phoc_tests
                    dependencies: testlib_dep)
     test(test, t, env: test_env_phoc)
   endforeach
-endif
 
-# Integration tests
-t = executable('test-idle-manager',
-		 ['test-idle-manager.c', generated_dbus_sources],
-		 c_args: test_cflags,
-		 link_args: test_link_args,
-		 dependencies: phosh_deps,
-		 )
-test('test-idle', t, env: test_env)
+  # Integration tests using the full libphosh
+  t = executable('test-shell',
+	         'test-shell.c',
+                 c_args: test_cflags,
+                 pie: true,
+                 link_args: test_link_args,
+                 dependencies: [phosh_tool_dep, phosh_dep, testlib_dep])
+  test('shell', t, env: test_env_phoc, is_parallel : false)
+  foreach test : tests_manager
+    t = executable('test-@0@'.format(test),
+		   ['test-@0@.c'.format(test), generated_dbus_sources],
+                   c_args: test_cflags,
+                   pie: true,
+                   link_args: test_link_args,
+		   dependencies: [phosh_tool_dep, phosh_dep, testlib_dep])
+    test(test, t, env: test_env_phoc, is_parallel : false)
+  endforeach
+
+endif
 
 endif # tests

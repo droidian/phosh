@@ -16,6 +16,8 @@
 #include "quick-setting.h"
 #include "settings/brightness.h"
 #include "settings/gvc-channel-bar.h"
+#include "torch-info.h"
+#include "torch-manager.h"
 #include "wwan/phosh-wwan-mm.h"
 #include "feedback-manager.h"
 #include "notifications/notify-manager.h"
@@ -64,11 +66,23 @@ typedef struct _PhoshSettings
   GtkWidget *list_notifications;
   GtkWidget *sw_notifications;
   LfbEvent  *notify_event;
+
+  /* Torch */
+  PhoshTorchManager *torch_manager;
+  GtkWidget *scale_torch;
+  gboolean setting_torch;
 } PhoshSettings;
 
 
 G_DEFINE_TYPE (PhoshSettings, phosh_settings, GTK_TYPE_BIN)
 
+
+static void
+close_settings_menu (PhoshSettings *self)
+{
+  g_signal_emit (self, signals[SETTING_DONE], 0);
+  phosh_trigger_feedback ("button-pressed");
+}
 
 static void
 brightness_value_changed_cb (GtkScale *scale_brightness, gpointer *unused)
@@ -145,43 +159,90 @@ feedback_setting_clicked_cb (PhoshSettings *self)
   g_return_if_fail (PHOSH_IS_SHELL (shell));
   manager = phosh_shell_get_feedback_manager (shell);
   g_return_if_fail (PHOSH_IS_FEEDBACK_MANAGER (manager));
-  manager = phosh_shell_get_feedback_manager (shell);
   phosh_feedback_manager_toggle (manager);
 }
 
 static void
 wifi_setting_clicked_cb (PhoshSettings *self)
 {
+  PhoshShell *shell = phosh_shell_get_default ();
+  PhoshWifiManager *manager;
+  gboolean enabled;
+
+  g_return_if_fail (PHOSH_IS_SETTINGS (self));
+
+  manager = phosh_shell_get_wifi_manager (shell);
+  g_return_if_fail (PHOSH_IS_WIFI_MANAGER (manager));
+
+  enabled = phosh_wifi_manager_get_enabled (manager);
+  phosh_wifi_manager_set_enabled (manager, !enabled);
+}
+
+static void
+wifi_setting_long_pressed_cb (PhoshSettings *self)
+{
   phosh_quick_setting_open_settings_panel ("wifi");
-  g_signal_emit (self, signals[SETTING_DONE], 0);
+  close_settings_menu (self);
 }
 
 static void
 wwan_setting_clicked_cb (PhoshSettings *self)
 {
+  PhoshShell *shell = phosh_shell_get_default ();
+  PhoshWWan *wwan;
+  gboolean enabled;
+
+  g_return_if_fail (PHOSH_IS_SETTINGS (self));
+
+  wwan = phosh_shell_get_wwan (shell);
+  g_return_if_fail (PHOSH_IS_WWAN (wwan));
+
+  enabled = phosh_wwan_is_enabled (wwan);
+  phosh_wwan_set_enabled (wwan, !enabled);
+}
+
+static void
+wwan_setting_long_pressed_cb (PhoshSettings *self)
+{
   phosh_quick_setting_open_settings_panel ("wwan");
-  g_signal_emit (self, signals[SETTING_DONE], 0);
+  close_settings_menu (self);
 }
 
 static void
 bt_setting_clicked_cb (PhoshSettings *self)
 {
+  PhoshShell *shell = phosh_shell_get_default ();
+  PhoshBtManager *manager;
+  gboolean enabled;
+
+  g_return_if_fail (PHOSH_IS_SETTINGS (self));
+
+  manager = phosh_shell_get_bt_manager (shell);
+  g_return_if_fail (PHOSH_IS_BT_MANAGER (manager));
+
+  enabled = phosh_bt_manager_get_enabled (manager);
+  phosh_bt_manager_set_enabled (manager, !enabled);
+}
+
+static void
+bt_setting_long_pressed_cb (PhoshSettings *self)
+{
   phosh_quick_setting_open_settings_panel ("bluetooth");
-  g_signal_emit (self, signals[SETTING_DONE], 0);
+  close_settings_menu (self);
 }
 
 static void
 feedback_setting_long_pressed_cb (PhoshSettings *self)
 {
   phosh_quick_setting_open_settings_panel ("notifications");
-  g_signal_emit (self, signals[SETTING_DONE], 0);
+  close_settings_menu (self);
 }
 
 static void
 battery_setting_clicked_cb (PhoshSettings *self)
 {
   phosh_quick_setting_open_settings_panel ("power");
-  g_signal_emit (self, signals[SETTING_DONE], 0);
+  close_settings_menu (self);
 }
 
 
@@ -219,7 +280,7 @@ static void
 docked_setting_long_pressed_cb (PhoshSettings *self)
 {
   phosh_quick_setting_open_settings_panel ("display");
-  g_signal_emit (self, signals[SETTING_DONE], 0);
+  close_settings_menu (self);
 }
 
 
@@ -364,6 +425,41 @@ end_notify_feedback (PhoshSettings *self)
 
 
 static void
+on_torch_scale_value_changed (PhoshSettings *self, GtkScale *scale_torch)
+{
+  double value;
+
+  g_return_if_fail (PHOSH_IS_SETTINGS (self));
+  g_return_if_fail (PHOSH_IS_TORCH_MANAGER (self->torch_manager));
+
+  /* Only react to scale changes when torch is enabled */
+  if (!phosh_torch_manager_get_enabled (self->torch_manager))
+      return;
+  
+  self->setting_torch = TRUE;
+  value = gtk_range_get_value (GTK_RANGE (self->scale_torch));
+  g_debug ("Setting torch brightness to %.2f", value);
+  phosh_torch_manager_set_scaled_brightness (self->torch_manager, value / 100.0);
+}
+
+
+static void
+on_torch_brightness_changed (PhoshSettings *self, GParamSpec *pspec, PhoshTorchManager *manager)
+{
+  g_return_if_fail (PHOSH_IS_SETTINGS (self));
+  g_return_if_fail (PHOSH_IS_TORCH_MANAGER (manager));
+
+  if (self->setting_torch) {
+    self->setting_torch = FALSE;
+    return;
+  }
+
+  gtk_range_set_value (GTK_RANGE (self->scale_torch),
+                       100.0 * phosh_torch_manager_get_scaled_brightness (self->torch_manager));
+}
+
+
+static void
 on_notifcation_items_changed (PhoshSettings *self,
                               guint          position,
                               guint          removed,
@@ -404,6 +500,24 @@ setup_brightness_range (PhoshSettings *self)
 
 
 static void
+setup_torch (PhoshSettings *self)
+{
+  PhoshShell *shell = phosh_shell_get_default ();
+
+  self->torch_manager = g_object_ref(phosh_shell_get_torch_manager (shell));
+
+  gtk_range_set_range (GTK_RANGE (self->scale_torch), 40, 100);
+  gtk_range_set_value (GTK_RANGE (self->scale_torch),
+                       phosh_torch_manager_get_scaled_brightness (self->torch_manager) * 100.0);
+  g_signal_connect_object (self->torch_manager,
+                           "notify::brightness",
+                           G_CALLBACK(on_torch_brightness_changed),
+                           self,
+                           G_CONNECT_SWAPPED);
+}
+
+
+static void
 setup_volume_bar (PhoshSettings *self)
 {
   GtkAdjustment *adj;
@@ -439,6 +553,7 @@ phosh_settings_constructed (GObject *object)
 
   setup_brightness_range (self);
   setup_volume_bar (self);
+  setup_torch (self);
 
   g_signal_connect (self->quick_settings,
                     "child-activated",
@@ -477,6 +592,8 @@ phosh_settings_dispose (GObject *object)
     g_clear_object (&self->notify_event);
   }
 
+  g_clear_object (&self->torch_manager);
+
   G_OBJECT_CLASS (phosh_settings_parent_class)->dispose (object);
 }
 
@@ -514,10 +631,12 @@ phosh_settings_class_init (PhoshSettingsClass *klass)
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, list_notifications);
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, quick_settings);
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, scale_brightness);
+  gtk_widget_class_bind_template_child (widget_class, PhoshSettings, scale_torch);
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, sw_notifications);
 
   gtk_widget_class_bind_template_callback (widget_class, battery_setting_clicked_cb);
   gtk_widget_class_bind_template_callback (widget_class, bt_setting_clicked_cb);
+  gtk_widget_class_bind_template_callback (widget_class, bt_setting_long_pressed_cb);
   gtk_widget_class_bind_template_callback (widget_class, docked_setting_clicked_cb);
   gtk_widget_class_bind_template_callback (widget_class, docked_setting_long_pressed_cb);
   gtk_widget_class_bind_template_callback (widget_class, feedback_setting_clicked_cb);
@@ -527,7 +646,10 @@ phosh_settings_class_init (PhoshSettingsClass *klass)
   gtk_widget_class_bind_template_callback (widget_class, rotation_setting_long_pressed_cb);
   gtk_widget_class_bind_template_callback (widget_class, torch_setting_clicked_cb);
   gtk_widget_class_bind_template_callback (widget_class, wifi_setting_clicked_cb);
+  gtk_widget_class_bind_template_callback (widget_class, wifi_setting_long_pressed_cb);
   gtk_widget_class_bind_template_callback (widget_class, wwan_setting_clicked_cb);
+  gtk_widget_class_bind_template_callback (widget_class, wwan_setting_long_pressed_cb);
+  gtk_widget_class_bind_template_callback (widget_class, on_torch_scale_value_changed);
 }
 
 

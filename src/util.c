@@ -40,28 +40,6 @@ phosh_fix_app_id (const char *app_id)
   return g_strdup (app_id);
 }
 
-
-/**
- * phosh_clear_handler:
- * @handler: the signal handler to disconnect
- * @object: the #GObject to remove the handler from
- *
- * Emulates g_clear_signal_handler for pre-2.62 GLib
- *
- * @handler is zerod when removed, can be called on a zerod @handler
- */
-void
-phosh_clear_handler (gulong *handler, gpointer object)
-{
-  g_return_if_fail (handler);
-  g_return_if_fail (G_IS_OBJECT (object));
-
-  if (*handler > 0) {
-    g_signal_handler_disconnect (object, *handler);
-    *handler = 0;
-  }
-}
-
 /**
  * phosh_munge_app_id:
  * @app_id: the app_id
@@ -184,4 +162,59 @@ phosh_convert_buffer (void *data, enum wl_shm_format format, guint width, guint 
   default:
     break;
   }
+}
+
+/**
+ * phosh_async_error_warn:
+ * @err: (nullable): The error to check and print
+ * @...: Format string followed by parameters to insert
+ *       into the format string (as with printf())
+ *
+ * Prints a warning when @err is 'real' error. If it merely represents
+ * a canceled operation it just logs a debug message. This is useful
+ * to avoid this common pattern in async callbacks.
+ *
+ * Returns: TRUE if #err is cancellation.
+ */
+
+/**
+ * phosh_dbus_service_error_warn
+ * @err: (nullable): The error to check and print
+ * @...: Format string followed by parameters to insert
+ *       into the format string (as with printf())
+ *
+ * Prints a warning when @err is 'real' error. If it merely indicates
+ * that the DBus service is not present at all it just logs a debug
+ * message.
+ *
+ * Returns: TRUE if #err is cancellation.
+ */
+
+/* Helper since phosh_async_error_warn needs to be a macro to capture log_domain */
+gboolean
+phosh_error_warnv (const char *log_domain,
+                   GError     *err,
+                   GQuark      domain,
+                   gint        code,
+                   const gchar *fmt, ...)
+{
+  g_autofree char *msg = NULL;
+  gboolean matched = FALSE;
+  va_list args;
+
+  if (err == NULL)
+    return FALSE;
+
+  va_start (args, fmt);
+  msg = g_strdup_vprintf(fmt, args);
+  va_end (args);
+
+  if (g_error_matches (err, domain, code))
+    matched = TRUE;
+
+  g_log (log_domain,
+         matched ? G_LOG_LEVEL_DEBUG : G_LOG_LEVEL_WARNING,
+         "%s: %s", msg, err->message);
+
+  return matched;
 }

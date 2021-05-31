@@ -40,6 +40,8 @@
  * #PhoshNotifyManager manages notifications sent from the shell
  * iself and via the org.freedesktop.Notification DBus interface.
  * See https://developer.gnome.org/notification-spec/
+ *
+ * It maintains a list of notifications via a #PhoshNotificationList.
  */
 
 #define NOTIFY_DBUS_NAME "org.freedesktop.Notifications"
@@ -548,6 +550,11 @@ phosh_notify_manager_dispose (GObject *object)
 {
   PhoshNotifyManager *self = PHOSH_NOTIFY_MANAGER (object);
 
+  g_clear_handle_id (&self->dbus_name_id, g_bus_unown_name);
+
+  if (g_dbus_interface_skeleton_get_object_path (G_DBUS_INTERFACE_SKELETON (self)))
+    g_dbus_interface_skeleton_unexport (G_DBUS_INTERFACE_SKELETON (self));
+
   g_clear_object (&self->settings);
 
   g_clear_object (&self->list);
@@ -581,8 +588,8 @@ phosh_notify_manager_constructed (GObject *object)
                                        on_bus_acquired,
                                        on_name_acquired,
                                        on_name_lost,
-                                       g_object_ref (self),
-                                       g_object_unref);
+                                       self,
+                                       NULL);
 
   self->settings = g_settings_new (NOTIFICATIONS_SCHEMA_ID);
   g_signal_connect_swapped (self->settings, "changed::" NOTIFICATIONS_KEY_SHOW_BANNERS,
@@ -705,8 +712,7 @@ phosh_notify_manager_get_notification_id (PhoshNotifyManager *self)
  * @expire_timeout: When the notification should expire
  * @notification: The notification
  *
- * Returns: Adds a notification
- * notifications.
+ * Adds @notification to the current list of notifications.
  */
 void
 phosh_notify_manager_add_notification (PhoshNotifyManager *self,

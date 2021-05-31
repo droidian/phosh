@@ -67,15 +67,12 @@ typedef struct _AcceleratorInfo {
 } AcceleratorInfo;
 
 static void
-remove_action_entries (const gchar *accelerator)
+remove_action_entries (gchar *accelerator)
 {
-  const GActionEntry action_entries[] = {
-    { accelerator, accelerator_activated_action, },
-  };
+  GStrv action_names = (char*[]){ accelerator, NULL };
 
   phosh_shell_remove_global_keyboard_action_entries (phosh_shell_get_default (),
-                                                     action_entries,
-                                                     G_N_ELEMENTS (action_entries));
+                                                     action_names);
 }
 
 static void
@@ -539,13 +536,19 @@ on_bus_acquired (GDBusConnection *connection,
                  const char      *name,
                  gpointer         user_data)
 {
-  PhoshGnomeShellManager *self = user_data;
+  g_autoptr (GError) err = NULL;
+  PhoshGnomeShellManager *self = PHOSH_GNOME_SHELL_MANAGER (user_data);
   PhoshSessionManager *sm;
+  gboolean success;
 
-  g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (self),
-                                    connection,
-                                    "/org/gnome/Shell",
-                                    NULL);
+  success = g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (self),
+                                              connection,
+                                              "/org/gnome/Shell",
+                                              NULL);
+  if (!success) {
+    g_warning ("Failed to export shell interface: %s", err->message);
+    return;
+  }
 
   sm = phosh_shell_get_session_manager (phosh_shell_get_default ());
   phosh_session_manager_export_end_session (sm, connection);
@@ -606,18 +609,13 @@ static void
 phosh_gnome_shell_manager_dispose (GObject *object)
 {
   PhoshGnomeShellManager *self = PHOSH_GNOME_SHELL_MANAGER (object);
-  GList *grabbed;
-  guint n = 0;
 
-  for (grabbed = g_hash_table_get_keys (self->info_by_action); grabbed != NULL; grabbed = grabbed->next) {
-    AcceleratorInfo *info = grabbed->data;
+  g_clear_handle_id (&self->dbus_name_id, g_bus_unown_name);
 
-    g_hash_table_remove (self->info_by_action, GUINT_TO_POINTER (info->action_id));
-    ++n;
-  }
-  g_hash_table_unref (self->info_by_action);
+  if (g_dbus_interface_skeleton_get_object_path (G_DBUS_INTERFACE_SKELETON (self)))
+    g_dbus_interface_skeleton_unexport (G_DBUS_INTERFACE_SKELETON (self));
 
-  g_debug ("%d accelerators needed to be cleaned up!", n);
+  g_clear_pointer (&self->info_by_action, g_hash_table_unref);
 
   G_OBJECT_CLASS (phosh_gnome_shell_manager_parent_class)->dispose (object);
 }
@@ -629,14 +627,14 @@ phosh_gnome_shell_manager_constructed (GObject *object)
   PhoshGnomeShellManager *self = PHOSH_GNOME_SHELL_MANAGER (object);
   PhoshShell *shell = phosh_shell_get_default ();
 
+  G_OBJECT_CLASS (phosh_gnome_shell_manager_parent_class)->constructed (object);
+
   g_object_bind_property_full (shell, "shell-state",
                                object, "shell-action-mode",
                                G_BINDING_SYNC_CREATE,
                                (GBindingTransformFunc) transform_state_to_action_mode,
                                NULL, NULL, NULL);
 
-
-  G_OBJECT_CLASS (phosh_gnome_shell_manager_parent_class)->constructed (object);
   self->dbus_name_id = g_bus_own_name (G_BUS_TYPE_SESSION,
                                        GNOME_SHELL_DBUS_NAME,
                                        G_BUS_NAME_OWNER_FLAGS_ALLOW_REPLACEMENT |
@@ -644,8 +642,8 @@ phosh_gnome_shell_manager_constructed (GObject *object)
                                        on_bus_acquired,
                                        on_name_acquired,
                                        on_name_lost,
-                                       g_object_ref (self),
-                                       g_object_unref);
+                                       self,
+                                       NULL);
 }
 
 

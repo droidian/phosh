@@ -1,7 +1,6 @@
 subdir('dbus')
 subdir('monitor')
 subdir('notifications')
-subdir('osk')
 subdir('wwan')
 subdir('settings')
 subdir('gtk-list-models')
@@ -13,7 +12,7 @@ phosh_resources = gnome.compile_resources(
   c_name: 'phosh',
 )
 
-phosh_enum_headers = [
+phosh_enum_headers = files(
   'app-grid-button.h',
   'gnome-shell-manager.h',
   'home.h',
@@ -25,7 +24,7 @@ phosh_enum_headers = [
   'phosh-wayland.h',
   'rotation-manager.h',
   'shell.h',
-] + schema_enum_headers
+) + schema_enum_headers
 
 phosh_enums = gnome.mkenums('phosh-enums',
   h_template: 'phosh-enums.h.in',
@@ -33,8 +32,8 @@ phosh_enums = gnome.mkenums('phosh-enums',
   sources: phosh_enum_headers,
 )
 
-phosh_settings_sources = [
-  'settings.c',
+phosh_settings_sources = files(
+  'settings.c') + [
   phosh_settings_widgets_sources,
 ]
 
@@ -45,7 +44,7 @@ libphosh_generated_sources = [
   generated_dbus_sources,
 ]
 
-libphosh_tool_sources = [
+libphosh_tool_sources = files(
   'activity.c',
   'activity.h',
   'animation.c',
@@ -82,6 +81,8 @@ libphosh_tool_sources = [
   'lockshield.h',
   'log.h',
   'log.c',
+  'manager.h',
+  'manager.c',
   'media-player.c',
   'media-player.h',
   'mode-manager.c',
@@ -108,13 +109,16 @@ libphosh_tool_sources = [
   'swipe-away-bin.h',
   'util.c',
   'util.h',
+  'wl-buffer.c',
+  'wl-buffer.h',
+) + [
+  libphosh_generated_sources,
   phosh_gtk_list_models_sources,
   phosh_monitor_sources,
   phosh_notifications_sources,
-  libphosh_generated_sources,
 ]
 
-libphosh_sources = [
+libphosh_sources = files(
   'app-auth-prompt.c',
   'app-auth-prompt.h',
   'arrow.c',
@@ -153,6 +157,8 @@ libphosh_sources = [
   'monitor-manager.h',
   'network-auth-prompt.c',
   'network-auth-prompt.h',
+  'osk-button.c',
+  'osk-button.h',
   'osk-manager.c',
   'osk-manager.h',
   'panel.c',
@@ -171,6 +177,8 @@ libphosh_sources = [
   'rotateinfo.h',
   'screen-saver-manager.c',
   'screen-saver-manager.h',
+  'screenshot-manager.c',
+  'screenshot-manager.h',
   'session-presence.c',
   'session-presence.h',
   'session-manager.c',
@@ -197,9 +205,9 @@ libphosh_sources = [
   'wifimanager.h',
   'wwaninfo.c',
   'wwaninfo.h',
+) + [
   phosh_settings_sources,
   phosh_wwan_sources,
-  phosh_osk_sources,
 ]
 
 phosh_deps = [
@@ -239,16 +247,23 @@ phosh_tool_dep = declare_dependency(sources: libphosh_generated_sources,
   link_with: phosh_tool_lib,
   dependencies: phosh_deps)
 
-if get_option('gtk_doc')
-# We only build the shared lib for gtk-doc:
-phosh_doc_lib = library('phosh-doc', [libphosh_sources, libphosh_tool_sources], dependencies: phosh_deps)
+phosh_lib = both_libraries('phosh',
+  libphosh_sources,
+  dependencies: [phosh_tool_dep, phosh_deps])
+
+# Shared lib used by docs
 phosh_doc_dep = declare_dependency(sources: libphosh_generated_sources,
   include_directories: [root_inc, phosh_inc],
-  link_with: phosh_doc_lib,
+  link_with: phosh_lib,
   dependencies: phosh_deps)
-endif
 
-phosh = executable('phosh', ['main.c', libphosh_sources],
-  dependencies: phosh_tool_dep,
+# Static library used by shell and integration tests
+phosh_dep = declare_dependency(
+  include_directories: [root_inc, phosh_inc],
+  link_with: phosh_lib.get_static_lib(),
+  dependencies: [phosh_deps, phosh_tool_dep])
+
+phosh = executable('phosh', 'main.c',
+  dependencies: phosh_dep,
   install: true,
   install_dir: libexecdir)

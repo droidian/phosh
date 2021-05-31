@@ -82,7 +82,7 @@
                         </child>
                         <child>
                           <object class="PhoshWifiInfo" id="wifiinfo">
-                            <property name="visible" bind-source="wifiinfo" bind-property="enabled" bind-flags="sync-create"/>
+                            <property name="visible" bind-source="wifiinfo" bind-property="present" bind-flags="sync-create"/>
                             <property name="can_focus">False</property>
                             <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
                             <property name="margin_right">8</property>
@@ -95,7 +95,7 @@
                         </child>
                         <child>
                           <object class="PhoshBtInfo" id="btinfo">
-                            <property name="visible" bind-source="btinfo" bind-property="enabled" bind-flags="sync-create"/>
+                            <property name="visible" bind-source="btinfo" bind-property="present" bind-flags="sync-create"/>
                             <property name="can_focus">False</property>
                             <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
                             <property name="margin_right">8</property>
@@ -161,6 +161,9 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="halign">end</property>
+                        <style>
+                          <class name="indicators"/>
+                        </style>
                         <child>
                           <object class="GtkLabel" id="lbl_lang">
                             <property name="visible">True</property>
@@ -168,9 +171,6 @@
                             <property name="margin_right">8</property>
                             <property name="margin_top">2</property>
                             <property name="justify">center</property>
-                            <attributes>
-                              <attribute name="weight" value="bold"/>
-                            </attributes>
                           </object>
                           <packing>
                             <property name="expand">False</property>
@@ -260,8 +260,11 @@
                     <property name="can_focus">True</property>
                     <property name="receives_default">True</property>
                     <property name="popover">menu_power</property>
+                    <property name="width-request">32</property>
+                    <property name="height-request">32</property>
                     <style>
                       <class name="phosh-power-button"/>
+                      <class name="circular"/>
                     </style>
                     <child>
                       <object class="GtkImage">

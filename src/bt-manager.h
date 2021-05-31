@@ -6,17 +6,20 @@
 
 #pragma once
 
+#include <manager.h>
+
 #include <glib-object.h>
 
 G_BEGIN_DECLS
 
 #define PHOSH_TYPE_BT_MANAGER (phosh_bt_manager_get_type ())
 
-G_DECLARE_FINAL_TYPE (PhoshBtManager, phosh_bt_manager, PHOSH, BT_MANAGER, GObject)
+G_DECLARE_FINAL_TYPE (PhoshBtManager, phosh_bt_manager, PHOSH, BT_MANAGER, PhoshManager)
 
 PhoshBtManager    *phosh_bt_manager_new (void);
 const char  *phosh_bt_manager_get_icon_name (PhoshBtManager *self);
 gboolean     phosh_bt_manager_get_enabled (PhoshBtManager *self);
+void         phosh_bt_manager_set_enabled (PhoshBtManager *self, gboolean enabled);
 gboolean     phosh_bt_manager_get_present (PhoshBtManager *self);
 
 G_END_DECLS

@@ -16,6 +16,8 @@
 
 #include <stdint.h>
 
+#define STARTUP_TIMEOUT 10
+
 typedef struct _PhocOutputWatch {
   char      *socket;
   GMainLoop *loop;
@@ -131,12 +133,11 @@ phosh_test_compositor_new (void)
   g_autoptr (GMainLoop) mainloop = NULL;
   PhoshTestCompositorState *state;
   GSpawnFlags flags = G_SPAWN_DO_NOT_REAP_CHILD;
-  GHashTable *outputs;
-  GHashTableIter iter;
   const char *comp;
   gboolean ret;
   int outfd;
   PhocOutputWatch watch;
+  gint id;
 
   comp = g_getenv ("PHOSH_PHOC_BINARY");
   if (!comp) {
@@ -179,8 +180,9 @@ phosh_test_compositor_new (void)
                   &watch);
   g_child_watch_add (state->pid, on_phoc_exit, NULL);
 
-  g_timeout_add_seconds (10, on_phoc_startup_timeout, NULL);
+  id = g_timeout_add_seconds (STARTUP_TIMEOUT, on_phoc_startup_timeout, NULL);
   g_main_loop_run (mainloop);
+  g_source_remove (id);
 
   /* I/O watch in main should have gotten the socket name */
   g_assert (watch.socket);
@@ -195,13 +197,8 @@ phosh_test_compositor_new (void)
    */
   state->gdk_display = gdk_display_open (watch.socket);
   g_free (watch.socket);
-  state->wl = phosh_wayland_get_default ();
 
-  /* Get us the first output just so it's simpler to use */
-  outputs = phosh_wayland_get_wl_outputs (state->wl);
-  g_hash_table_iter_init (&iter, outputs);
-  g_hash_table_iter_next (&iter, NULL, (gpointer*)&state->output);
-  g_assert_nonnull (state->output);
+  state->wl = phosh_wayland_get_default ();
 
   return state;
 }
@@ -216,11 +213,7 @@ phosh_test_compositor_free (PhoshTestCompositorState *state)
   kill (state->pid, SIGTERM);
   g_spawn_close_pid (state->pid);
 
-#if GLIB_CHECK_VERSION(2,62,0)
   g_assert_finalize_object (state->wl);
-#else
-  g_object_unref (state->wl);
-#endif
 
   g_clear_pointer (&state, g_free);
 }

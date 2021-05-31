@@ -1,5 +1,5 @@
 project('phosh', 'c',
-          version: '0.10.1',
+          version: '0.11.0',
           license: 'GPLv3+',
     meson_version: '>= 0.50.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
@@ -15,6 +15,8 @@ desktopdir = join_paths(datadir, 'applications')
 sessiondir = join_paths(datadir, 'gnome-session')
 pkgdatadir = join_paths(datadir, meson.project_name())
 pkglibdir = join_paths(libdir, meson.project_name())
+systemddir = join_paths(prefix, 'lib/systemd')
+systemduserdir = join_paths(systemddir, 'user')
 
 config_h = configuration_data()
 config_h.set_quoted('GETTEXT_PACKAGE', 'phosh')
@@ -27,11 +29,12 @@ configure_file(
   configuration: config_h,
 )
 
-glib_ver = 'GLIB_VERSION_2_58'
+glib_ver = 'GLIB_VERSION_2_62'
 
 add_project_arguments([
   '-DHAVE_CONFIG_H',
   '-DGLIB_VERSION_MIN_REQUIRED=@0@'.format(glib_ver),
+  '-DGLIB_VERSION_MAX_REQUIRED=@0@'.format(glib_ver),
   '-DG_LOG_USE_STRUCTURED',
   '-I' + meson.build_root(),
 ], language: 'c')
@@ -104,11 +107,11 @@ gnome = import('gnome')
 i18n  = import('i18n')
 
 gcr_dep = dependency('gcr-3', version: '>= 3.7.5')
-gio_dep = dependency('gio-2.0', version: '>=2.58')
-gio_unix_dep =  dependency('gio-unix-2.0', version: '>=2.58')
-glib_dep = dependency('glib-2.0', version: '>=2.58')
+gio_dep = dependency('gio-2.0', version: '>=2.62')
+gio_unix_dep =  dependency('gio-unix-2.0', version: '>=2.62')
+glib_dep = dependency('glib-2.0', version: '>=2.62')
 gnome_desktop_dep = dependency('gnome-desktop-3.0', version: '>=3.26')
-gobject_dep =  dependency('gobject-2.0', version: '>=2.50.0')
+gobject_dep =  dependency('gobject-2.0', version: '>=2.62')
 gsettings_desktop_schemas_dep = dependency('gsettings-desktop-schemas')
 gtk_dep = dependency('gtk+-3.0', version: '>=3.22')
 gtk_wayland_dep = dependency('gtk+-wayland-3.0', version: '>=3.22')
@@ -161,6 +164,8 @@ summary = [
   '',
   '        Tests: @0@'.format(get_option('tests')),
   '   Phoc Tests: @0@'.format(run_phoc_tests),
+  '   Compositor: @0@'.format(get_option('compositor')),
+  '      Systemd: @0@'.format(get_option('systemd')),
   'Documentation: @0@'.format(get_option('gtk_doc')),
   '-----------',
 ]

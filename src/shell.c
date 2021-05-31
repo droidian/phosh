@@ -62,6 +62,7 @@
 #include "rotation-manager.h"
 #include "sensor-proxy-manager.h"
 #include "screen-saver-manager.h"
+#include "screenshot-manager.h"
 #include "session-manager.h"
 #include "system-prompter.h"
 #include "torch-manager.h"
@@ -94,6 +95,12 @@ enum {
 };
 static GParamSpec *props[PHOSH_SHELL_PROP_LAST_PROP];
 
+enum {
+  READY,
+  N_SIGNALS
+};
+static guint signals[N_SIGNALS] = { 0 };
+
 typedef struct
 {
   PhoshLayerSurface *panel;
@@ -114,6 +121,7 @@ typedef struct
   PhoshWifiManager *wifi_manager;
   PhoshPolkitAuthAgent *polkit_auth_agent;
   PhoshScreenSaverManager *screen_saver_manager;
+  PhoshScreenshotManager *screenshot_manager;
   PhoshNotifyManager *notify_manager;
   PhoshFeedbackManager *feedback_manager;
   PhoshBtManager *bt_manager;
@@ -346,8 +354,8 @@ phosh_shell_dispose (GObject *object)
 
   g_clear_object (&priv->notification_banner);
 
-  g_clear_object (&priv->keyboard_events);
   /* dispose managers in opposite order of declaration */
+  g_clear_object (&priv->screenshot_manager);
   g_clear_object (&priv->location_manager);
   g_clear_object (&priv->hks_manager);
   g_clear_object (&priv->docked_manager);
@@ -370,6 +378,7 @@ phosh_shell_dispose (GObject *object)
   g_clear_object (&priv->builtin_monitor);
   g_clear_object (&priv->primary_monitor);
   g_clear_object (&priv->background_manager);
+  g_clear_object (&priv->keyboard_events);
 
   /* sensors */
   g_clear_object (&priv->proximity);
@@ -468,7 +477,7 @@ setup_idle_cb (PhoshShell *self)
 
   priv->sensor_proxy_manager = phosh_sensor_proxy_manager_new (&err);
   if (!priv->sensor_proxy_manager)
-    g_warning ("Failed to connect to sensor-proxy: %s", err->message);
+    g_message ("Failed to connect to sensor-proxy: %s", err->message);
 
   panels_create (self);
   /* Create background after panel since it needs the panel's size */
@@ -514,8 +523,10 @@ setup_idle_cb (PhoshShell *self)
   g_unsetenv ("DESKTOP_AUTOSTART_ID");
 
   priv->gnome_shell_manager = phosh_gnome_shell_manager_get_default ();
+  priv->screenshot_manager = phosh_screenshot_manager_new ();
 
   priv->startup_finished = TRUE;
+  g_signal_emit (self, signals[READY], 0);
 
   return FALSE;
 }
@@ -784,6 +795,12 @@ phosh_shell_class_init (PhoshShellClass *klass)
                         G_PARAM_READABLE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
   g_object_class_install_properties (object_class, PHOSH_SHELL_PROP_LAST_PROP, props);
+
+  signals[READY] = g_signal_new ("ready",
+                                 G_TYPE_FROM_CLASS (klass),
+                                 G_SIGNAL_RUN_LAST, 0,
+                                 NULL, NULL, NULL,
+                                 G_TYPE_NONE, 0);
 }
 
 
@@ -901,6 +918,19 @@ phosh_shell_get_monitor_manager (PhoshShell *self)
 
   g_return_val_if_fail (PHOSH_IS_MONITOR_MANAGER (priv->monitor_manager), NULL);
   return priv->monitor_manager;
+}
+
+
+PhoshBackgroundManager *
+phosh_shell_get_background_manager (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
+  priv = phosh_shell_get_instance_private (self);
+  g_return_val_if_fail (PHOSH_IS_BACKGROUND_MANAGER (priv->background_manager), NULL);
+
+  return priv->background_manager;
 }
 
 
@@ -1169,7 +1199,6 @@ void
 phosh_shell_fade_out (PhoshShell *self, guint timeout)
 {
   PhoshShellPrivate *priv;
-  PhoshWayland *wl = phosh_wayland_get_default ();
   PhoshMonitorManager *monitor_manager;
 
   g_debug ("Fading out...");
@@ -1182,8 +1211,7 @@ phosh_shell_fade_out (PhoshShell *self, guint timeout)
     PhoshFader *fader;
     PhoshMonitor *monitor = phosh_monitor_manager_get_monitor (monitor_manager, i);
 
-    fader = phosh_fader_new (phosh_wayland_get_zwlr_layer_shell_v1 (wl),
-                             monitor->wl_output);
+    fader = phosh_fader_new (monitor);
     g_ptr_array_add (priv->faders, fader);
     gtk_widget_show (GTK_WIDGET (fader));
     if (timeout > 0)
@@ -1269,9 +1297,7 @@ phosh_shell_add_global_keyboard_action_entries (PhoshShell *self,
 
 void
 phosh_shell_remove_global_keyboard_action_entries (PhoshShell *self,
-                                                   const GActionEntry *entries,
-                                                   gint n_entries)
-
+                                                   GStrv       action_names)
 {
   PhoshShellPrivate *priv;
 
@@ -1279,9 +1305,9 @@ phosh_shell_remove_global_keyboard_action_entries (PhoshShell *self,
   priv = phosh_shell_get_instance_private (self);
   g_return_if_fail (priv->keyboard_events);
 
-  for (int i = 0; i < n_entries; i++) {
+  for (int i = 0; i < g_strv_length (action_names); i++) {
     g_action_map_remove_action (G_ACTION_MAP (priv->keyboard_events),
-                                entries[i].name);
+                                action_names[i]);
   }
 }
 

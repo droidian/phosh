@@ -136,7 +136,7 @@ get_display_name (PhoshHead *head)
       return g_strdup_printf (C_("This is a monitor vendor name followed by "
                                  "product/model name where size in inches "
                                  "could not be calculated, e.g. Dell U2414H",
-                                 "%s %sn"),
+                                 "%s %s"),
                               vendor_name, product_name);
     }
   }
@@ -1014,7 +1014,7 @@ on_bus_acquired (GDBusConnection *connection,
                  const char      *name,
                  gpointer         user_data)
 {
-  PhoshMonitorManager *self = user_data;
+  PhoshMonitorManager *self = PHOSH_MONITOR_MANAGER (user_data);
 
   /* We need to use Mutter's object path here to make gnome-settings happy */
   g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (self),
@@ -1211,6 +1211,11 @@ phosh_monitor_manager_dispose (GObject *object)
 {
   PhoshMonitorManager *self = PHOSH_MONITOR_MANAGER (object);
 
+  g_clear_handle_id (&self->dbus_name_id, g_bus_unown_name);
+
+  if (g_dbus_interface_skeleton_get_object_path (G_DBUS_INTERFACE_SKELETON (self)))
+    g_dbus_interface_skeleton_unexport (G_DBUS_INTERFACE_SKELETON (self));
+
   g_clear_object (&self->sensor_proxy_manager);
   g_clear_pointer (&self->sensor_proxy_binding, g_binding_unbind);
 
@@ -1284,8 +1289,8 @@ on_idle (PhoshMonitorManager *self)
                                        on_bus_acquired,
                                        on_name_acquired,
                                        on_name_lost,
-                                       g_object_ref (self),
-                                       g_object_unref);
+                                       self,
+                                       NULL);
   return FALSE;
 }
 

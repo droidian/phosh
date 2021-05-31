@@ -8,6 +8,7 @@
 
 #pragma once
 
+#include "background-manager.h"
 #include "bt-manager.h"
 #include "docked-manager.h"
 #include "feedback-manager.h"
@@ -70,6 +71,7 @@ void                 phosh_shell_set_primary_monitor (PhoshShell *self, PhoshMon
 PhoshMonitor        *phosh_shell_get_primary_monitor (PhoshShell *self);
 PhoshMonitor        *phosh_shell_get_builtin_monitor (PhoshShell *self);
 PhoshLockscreenManager *phosh_shell_get_lockscreen_manager (PhoshShell *self);
+PhoshBackgroundManager *phosh_shell_get_background_manager (PhoshShell *self);
 PhoshModeManager    *phosh_shell_get_mode_manager    (PhoshShell *self);
 PhoshMonitorManager *phosh_shell_get_monitor_manager (PhoshShell *self);
 PhoshOskManager     *phosh_shell_get_osk_manager     (PhoshShell *self);
@@ -93,8 +95,7 @@ void                 phosh_shell_add_global_keyboard_action_entries (PhoshShell 
                                                                      gint n_entries,
                                                                      gpointer user_data);
 void                 phosh_shell_remove_global_keyboard_action_entries (PhoshShell *self,
-                                                                        const GActionEntry *actions,
-                                                                        gint n_entries);
+                                                                        GStrv action_names);
 gboolean             phosh_shell_is_session_active (PhoshShell *self);
 GdkAppLaunchContext *phosh_shell_get_app_launch_context (PhoshShell *self);
 PhoshShellStateFlags phosh_shell_get_state (PhoshShell *self);
