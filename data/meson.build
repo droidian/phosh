@@ -14,6 +14,7 @@ gsd_required_components = [
   'org.gnome.SettingsDaemon.Sound',
   'org.gnome.SettingsDaemon.UsbProtection',
   'org.gnome.SettingsDaemon.Wacom',
+  'org.gnome.SettingsDaemon.Wwan',
   'org.gnome.SettingsDaemon.XSettings',
 ]
 
@@ -28,6 +29,8 @@ desktopconf.set('libexecdir', libexecdir)
 desktopconf.set('required_components', ';'.join(desktop_required_components) + ';')
 if get_option('systemd')
   desktopconf.set('hidden_under_systemd', 'X-GNOME-HiddenUnderSystemd=true')
+else
+  desktopconf.set('hidden_under_systemd', '')
 endif
 
 desktop_files = [
@@ -95,7 +98,8 @@ schemasdir = 'share/glib-2.0/schemas'
 
 #generate XML enum definitions for GSettings schema
 schema_enum_headers = files(
-  '../src/wwan/phosh-wwan-backend.h'
+  '../src/app-grid.h',
+  '../src/wwan/phosh-wwan-backend.h',
 )
 generate_enums_schema = gnome.mkenums('sm.puri.phosh.enums.xml',
   sources: schema_enum_headers,

@@ -55,8 +55,9 @@ typedef struct _PhoshScreenshotManager {
   ScreencopyFrame                   *frame;
 
   PhoshFader                        *fader;
-  PhoshFader                        *opaque;
   guint                              fader_id;
+  PhoshFader                        *opaque;
+  guint                              opaque_id;
 } PhoshScreenshotManager;
 
 
@@ -120,6 +121,7 @@ on_fader_timeout (gpointer user_data)
 
   g_clear_pointer (&self->fader, phosh_cp_widget_destroy);
 
+  self->fader_id = 0;
   return G_SOURCE_REMOVE;
 }
 
@@ -129,7 +131,8 @@ show_fader (PhoshScreenshotManager *self)
 {
   PhoshMonitor *monitor = phosh_shell_get_primary_monitor (phosh_shell_get_default ());
 
-  g_timeout_add (FLASH_FADER_TIMEOUT, on_fader_timeout, self);
+  self->fader_id = g_timeout_add (FLASH_FADER_TIMEOUT, on_fader_timeout, self);
+  g_source_set_name_by_id (self->fader_id, "[phosh] screenshot fader");
   self->fader = g_object_new (PHOSH_TYPE_FADER,
                               "monitor", monitor,
                               "style-class", "phosh-fader-flash-fade",
@@ -188,9 +191,10 @@ on_opaque_timeout (PhoshScreenshotManager *self)
   gtk_clipboard_set_image (clipboard, self->frame->pixbuf);
   g_debug ("Updated clipboard with %p", self->frame);
   screencopy_done (self, TRUE);
+
  out:
   g_clear_pointer (&self->opaque, phosh_cp_widget_destroy);
-
+  self->opaque_id = 0;
   return G_SOURCE_REMOVE;
 }
 
@@ -288,7 +292,9 @@ screencopy_frame_handle_ready (void                            *data,
     self->frame->pixbuf = g_steal_pointer (&pixbuf);
     /* FIXME: Would be better to trigger when the opaque window is up and got
        input focus but all such attempts failed */
-    g_timeout_add_seconds (1, (GSourceFunc) on_opaque_timeout, self);
+    self->opaque_id = g_timeout_add_seconds (1, (GSourceFunc) on_opaque_timeout, self);
+    g_source_set_name_by_id (self->opaque_id, "[phosh] screenshot opaque");
+
     gtk_widget_show (GTK_WIDGET (self->opaque));
   }
   return;
@@ -451,11 +457,15 @@ on_bus_acquired (GDBusConnection *connection,
                  gpointer         user_data)
 {
   PhoshScreenshotManager *self = PHOSH_SCREENSHOT_MANAGER (user_data);
+  g_autoptr (GError) err = NULL;
 
-  g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (self),
-                                    connection,
-                                    OBJECT_PATH,
-                                    NULL);
+  if (!g_dbus_interface_skeleton_export (G_DBUS_INTERFACE_SKELETON (self),
+                                         connection,
+                                         OBJECT_PATH,
+                                         &err)) {
+    g_warning ("Failed to export screensaver interface skeleton: %s", err->message);
+  }
+
 }
 
 
@@ -474,8 +484,8 @@ phosh_screenshot_manager_constructed (GObject *object)
                                        on_bus_acquired,
                                        on_name_acquired,
                                        on_name_lost,
-                                       g_object_ref (self),
-                                       g_object_unref);
+                                       self,
+                                       NULL);
 
   g_return_if_fail (PHOSH_IS_WAYLAND (wl));
   self->wl_scm = phosh_wayland_get_zwlr_screencopy_manager_v1 (wl);
@@ -493,6 +503,7 @@ phosh_screenshot_manager_dispose (GObject *object)
     g_dbus_interface_skeleton_unexport (G_DBUS_INTERFACE_SKELETON (self));
 
   g_clear_handle_id (&self->fader_id, g_source_remove);
+  g_clear_handle_id (&self->opaque_id, g_source_remove);
   g_clear_pointer (&self->fader, phosh_cp_widget_destroy);
 
   G_OBJECT_CLASS (phosh_screenshot_manager_parent_class)->dispose (object);

@@ -8,7 +8,7 @@ option('phoc_tests',
 
 option('gtk_doc',
        type: 'boolean', value: false,
-       description: 'Whether to generate the API reference for Handy')
+       description: 'Whether to generate the API reference for Phosh')
 
 option('systemd',
        type: 'boolean', value: false,
@@ -17,3 +17,8 @@ option('systemd',
 option('compositor',
        type: 'string', value: '/usr/bin/phoc',
        description: 'Path to the Phoc compositor for use in the launcher script')
+
+# For some tests we need (unreleased) glib >= 2.69
+option('g_tests',
+       type: 'boolean', value: false,
+       description: 'Whether to build tests that require recent glib')

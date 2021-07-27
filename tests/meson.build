@@ -46,6 +46,7 @@ test_stub_deps = [
 
 testlib_sources = [
   'testlib.c',
+  'testlib-full-shell.c',
 ]
 
 testlib = static_library('phoshtest', testlib_sources,
@@ -86,12 +87,16 @@ tests_phoc = [
 ]
 
 tests_manager = [
+  'gtk-mount-manager',
   'idle-manager',
   'monitor-manager',
   'notify-manager',
   'screenshot-manager',
 ]
 
+if get_option('g_tests')
+  tests_manager += ['calls-manager']
+endif
 
 # Unit tests
 foreach test : tests

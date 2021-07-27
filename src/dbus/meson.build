@@ -62,6 +62,12 @@ generated_dbus_sources += gnome.gdbus_codegen('mpris-dbus',
 					      'org.mpris.MediaPlayer2.xml',
 					      interface_prefix: 'org.mpris',
 					      namespace: 'PhoshMprisDBus')
+# Calls
+generated_dbus_sources += gnome.gdbus_codegen('calls-dbus',
+                                              'sm.puri.Calls.Call.xml',
+                                              object_manager: true,
+                                              interface_prefix: 'sm.puri',
+                                              namespace: 'PhoshCallsDBus')
 
 generated_dbus_sources += gnome.gdbus_codegen('phosh-wwan-ofono-dbus',
                                               'org.ofono.xml',
@@ -91,7 +97,7 @@ generated_dbus_sources += gnome.gdbus_codegen('phosh-gnome-shell-dbus',
 generated_dbus_sources += gnome.gdbus_codegen('phosh-display-dbus',
                                               'org.gnome.Mutter.DisplayConfig.xml',
                                               interface_prefix: 'org.gnome.Mutter',
-                                              namespace: 'PhoshDisplayDbus')
+                                              namespace: 'PhoshDBus')
 
 generated_dbus_sources += gnome.gdbus_codegen('phosh-idle-dbus',
 					      'org.gnome.Mutter.IdleMonitor.xml',
@@ -112,4 +118,9 @@ generated_dbus_sources += gnome.gdbus_codegen('phosh-screenshot-dbus',
 generated_dbus_sources += gnome.gdbus_codegen('phosh-end-session-dialog-dbus',
                                               'org.gnome.SessionManager.EndSessionDialog.xml',
 					      interface_prefix: 'org.gnome.SessionManager',
+					      namespace: 'PhoshDBus')
+
+generated_dbus_sources += gnome.gdbus_codegen('phosh-gtk-mountoperation-dbus',
+                                              'org.Gtk.MountOperationHandler.xml',
+					      interface_prefix: 'org.Gtk',
 					      namespace: 'PhoshDBus')

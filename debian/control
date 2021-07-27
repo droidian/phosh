@@ -20,6 +20,7 @@ Build-Depends:
  libpulse-dev,
  libupower-glib-dev,
  libwayland-dev,
+ linux-libc-dev (>= 5.12) [arm64],
  meson,
  pandoc <!nodoc>,
 # to run the tests
@@ -44,7 +45,7 @@ Depends:
  fonts-lato,
  gnome-shell-common,
  gsettings-desktop-schemas,
- phoc (>= 0.4.4),
+ phoc (>= 0.7.1),
 Recommends:
  feedbackd,
  gnome-session-bin,
@@ -56,6 +57,8 @@ Recommends:
 Provides:
  notification-daemon,
  polkit-1-auth-agent,
+Breaks:
+ gnome-calls (<< 0.3.4),
 Description: Pure Wayland shell for mobile devices
  Phosh is a graphical shell for Wayland compositors speaking the layer-surface
  protocol and aimed at mobile devices like smart phones and tablets using touch

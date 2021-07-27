@@ -10,20 +10,20 @@
 
 #include "config.h"
 
-#include "overview.h"
 #include "activity.h"
-#include "app-grid.h"
 #include "app-grid-button.h"
-#include "shell.h"
-#include "util.h"
-#include "toplevel-manager.h"
-#include "toplevel-thumbnail.h"
+#include "app-grid.h"
+#include "overview.h"
+#include "wlr-screencopy-unstable-v1-client-protocol.h"
 #include "phosh-private-client-protocol.h"
 #include "phosh-wayland.h"
+#include "shell.h"
+#include "toplevel-manager.h"
+#include "toplevel-thumbnail.h"
+#include "util.h"
 
 #include <gio/gdesktopappinfo.h>
 
-#define HANDY_USE_UNSTABLE_API
 #include <handy.h>
 
 #define OVERVIEW_ICON_SIZE 64
@@ -60,7 +60,7 @@ typedef struct
   /* Running activities */
   GtkWidget *carousel_running_activities;
   GtkWidget *app_grid;
-  GtkWidget *activity;
+  PhoshActivity *activity;
 
   int       has_activities;
 } PhoshOverviewPrivate;
@@ -170,11 +170,21 @@ on_activity_closed (PhoshOverview *self, PhoshActivity *activity)
 
 
 static void
-on_toplevel_closed (PhoshToplevel *toplevel, PhoshActivity *activity)
+on_toplevel_closed (PhoshToplevel *toplevel, PhoshOverview *overview)
 {
+  PhoshActivity *activity;
+  PhoshOverviewPrivate *priv;
+
   g_return_if_fail (PHOSH_IS_TOPLEVEL (toplevel));
+  g_return_if_fail (PHOSH_IS_OVERVIEW (overview));
+  priv = phosh_overview_get_instance_private (overview);
+
+  activity = find_activity_by_toplevel (overview, toplevel);
   g_return_if_fail (PHOSH_IS_ACTIVITY (activity));
   gtk_widget_destroy (GTK_WIDGET (activity));
+
+  if (priv->activity == activity)
+    priv->activity = NULL;
 }
 
 
@@ -187,9 +197,9 @@ on_toplevel_activated_changed (PhoshToplevel *toplevel, GParamSpec *pspec, Phosh
   g_return_if_fail (PHOSH_IS_TOPLEVEL (toplevel));
   priv = phosh_overview_get_instance_private (overview);
 
-  activity = find_activity_by_toplevel (overview, toplevel);
   if (phosh_toplevel_is_activated (toplevel)) {
-    priv->activity = GTK_WIDGET (activity);
+    activity = find_activity_by_toplevel (overview, toplevel);
+    priv->activity = activity;
     hdy_carousel_scroll_to (HDY_CAROUSEL (priv->carousel_running_activities), GTK_WIDGET (activity));
   }
 }
@@ -271,7 +281,7 @@ add_activity (PhoshOverview *self, PhoshToplevel *toplevel)
   g_signal_connect_swapped (activity, "closed",
                             G_CALLBACK (on_activity_closed), self);
 
-  g_signal_connect_object (toplevel, "closed", G_CALLBACK (on_toplevel_closed), activity, 0);
+  g_signal_connect_object (toplevel, "closed", G_CALLBACK (on_toplevel_closed), self, 0);
   g_signal_connect_object (toplevel, "notify::activated", G_CALLBACK (on_toplevel_activated_changed), self, 0);
   g_object_bind_property (toplevel, "maximized", activity, "maximized", G_BINDING_DEFAULT);
 
@@ -282,7 +292,7 @@ add_activity (PhoshOverview *self, PhoshToplevel *toplevel)
 
   if (phosh_toplevel_is_activated (toplevel)) {
     hdy_carousel_scroll_to (HDY_CAROUSEL (priv->carousel_running_activities), activity);
-    priv->activity = GTK_WIDGET (activity);
+    priv->activity = PHOSH_ACTIVITY (activity);
   }
 }
 
@@ -438,8 +448,6 @@ phosh_overview_class_init (PhoshOverviewClass *klass)
   object_class->get_property = phosh_overview_get_property;
   widget_class->size_allocate = phosh_overview_size_allocate;
 
-  gtk_widget_class_set_css_name (widget_class, "phosh-overview");
-
   props[PROP_HAS_ACTIVITIES] =
     g_param_spec_boolean (
       "has-activities",
@@ -518,4 +526,16 @@ phosh_overview_has_running_activities (PhoshOverview *self)
   priv = phosh_overview_get_instance_private (self);
 
   return priv->has_activities;
+}
+
+
+PhoshAppGrid *
+phosh_overview_get_app_grid (PhoshOverview *self)
+{
+  PhoshOverviewPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_OVERVIEW (self), NULL);
+  priv = phosh_overview_get_instance_private (self);
+
+  return PHOSH_APP_GRID (priv->app_grid);
 }

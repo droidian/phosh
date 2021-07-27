@@ -50,6 +50,7 @@
       <xi:include href="xml/batteryinfo.xml"/>
       <xi:include href="xml/bt-manager.xml"/>
       <xi:include href="xml/bt-info.xml"/>
+      <xi:include href="xml/calls-manager.xml"/>
       <xi:include href="xml/connectivity-info.xml"/>
       <xi:include href="xml/dbus-notification.xml"/>
       <xi:include href="xml/docked-info.xml"/>
@@ -60,6 +61,8 @@
       <xi:include href="xml/feedback-manager.xml"/>
       <xi:include href="xml/feedbackinfo.xml"/>
       <xi:include href="xml/gnome-shell-manager.xml"/>
+      <xi:include href="xml/gtk-mount-manager.xml"/>
+      <xi:include href="xml/gtk-mount-prompt.xml"/>
       <xi:include href="xml/head.xml"/>
       <xi:include href="xml/home.xml"/>
       <xi:include href="xml/hks-info.xml"/>
@@ -144,6 +147,7 @@
 
     <chapter id="gen_dbus_clients">
       <title>Generated DBus Clients</title>
+      <xi:include href="xml/calls-dbus.xml"/>
       <xi:include href="xml/phosh-idle-dbus.xml"/>
       <xi:include href="xml/login1-manager-dbus.xml"/>
       <xi:include href="xml/login1-session-dbus.xml"/>

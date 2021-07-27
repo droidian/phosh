@@ -140,10 +140,17 @@ phosh-home, phosh-top-panel {
   -gtk-icon-effect: highlight;
 }
 
+.phosh-search-bar-box {
+  margin: 6px 16px;
+}
+
 .phosh-search-bar {
   border-radius: 9999px;
   padding: 3px 18px 3px 14px;
-  margin: 0 10px 6px;
+}
+
+.phosh-menu-button {
+  margin: 3px 0px 3px 10px;
 }
 
 phosh-app-grid {
@@ -264,7 +271,7 @@ phosh-lockscreen phosh-media-player button:not(:hover):not(:active) {
 }
 
 /*
- * System modal dialogs (polkit, gcr)
+ * System modal dialogs (polkit, gcr, ...)
  */
 .phosh-system-modal {
   background-color: alpha(@theme_bg_color, 0.7);
@@ -351,6 +358,10 @@ phosh-lockscreen phosh-media-player button:not(:hover):not(:active) {
 .phosh-end-session-dialog list * {
   color: @theme_text_color;
   -gtk-icon-effect: none;
+}
+
+phosh-gtk-mount-prompt .phosh-system-modal-dialog-content > image {
+  -gtk-icon-style: symbolic;
 }
 
 /*

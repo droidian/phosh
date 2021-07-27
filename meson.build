@@ -1,5 +1,5 @@
 project('phosh', 'c',
-          version: '0.11.0',
+          version: '0.12.1',
           license: 'GPLv3+',
     meson_version: '>= 0.50.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
@@ -18,17 +18,6 @@ pkglibdir = join_paths(libdir, meson.project_name())
 systemddir = join_paths(prefix, 'lib/systemd')
 systemduserdir = join_paths(systemddir, 'user')
 
-config_h = configuration_data()
-config_h.set_quoted('GETTEXT_PACKAGE', 'phosh')
-config_h.set_quoted('LOCALEDIR', localedir)
-config_h.set_quoted('PHOSH_VERSION', meson.project_version())
-
-configure_file(
-  input: 'config.h.in',
-  output: 'config.h',
-  configuration: config_h,
-)
-
 glib_ver = 'GLIB_VERSION_2_62'
 
 add_project_arguments([
@@ -36,7 +25,6 @@ add_project_arguments([
   '-DGLIB_VERSION_MIN_REQUIRED=@0@'.format(glib_ver),
   '-DGLIB_VERSION_MAX_REQUIRED=@0@'.format(glib_ver),
   '-DG_LOG_USE_STRUCTURED',
-  '-I' + meson.build_root(),
 ], language: 'c')
 
 root_inc = include_directories('.')
@@ -106,12 +94,30 @@ configure_file(
 gnome = import('gnome')
 i18n  = import('i18n')
 
+if get_option('g_tests')
+  glib_ver = '>= 2.69'
+else
+  glib_ver = '>= 2.62'
+endif
+
 gcr_dep = dependency('gcr-3', version: '>= 3.7.5')
-gio_dep = dependency('gio-2.0', version: '>=2.62')
+glib_dep = dependency('glib-2.0',
+                      version: glib_ver,
+                      fallback: ['glib', 'libglib_dep'],
+                      default_options: ['tests=false']
+                     )
+gio_dep = dependency('gio-2.0',
+                      version: glib_ver,
+                      fallback: ['glib', 'libgio_dep'],
+                      default_options: ['tests=false']
+                     )
+gobject_dep = dependency('gobject-2.0',
+                      version: glib_ver,
+                      fallback: ['glib', 'libgobject_dep'],
+                      default_options: ['tests=false']
+                     )
 gio_unix_dep =  dependency('gio-unix-2.0', version: '>=2.62')
-glib_dep = dependency('glib-2.0', version: '>=2.62')
 gnome_desktop_dep = dependency('gnome-desktop-3.0', version: '>=3.26')
-gobject_dep =  dependency('gobject-2.0', version: '>=2.62')
 gsettings_desktop_schemas_dep = dependency('gsettings-desktop-schemas')
 gtk_dep = dependency('gtk+-3.0', version: '>=3.22')
 gtk_wayland_dep = dependency('gtk+-wayland-3.0', version: '>=3.22')
@@ -143,6 +149,26 @@ network_agent_dep = dependency('libsecret-1')
 upower_glib_dep = dependency('upower-glib', version: '>=0.99.1')
 wayland_client_dep = dependency('wayland-client', version: '>=1.14')
 wayland_protos_dep = dependency('wayland-protocols', version: '>=1.12')
+
+
+code ='''
+#include <linux/rfkill.h>
+
+struct rfkill_event_ext e;
+'''
+have_rfkill_event_ext = cc.compiles(code, name : 'Have rfkill_event_ext')
+
+config_h = configuration_data()
+config_h.set_quoted('GETTEXT_PACKAGE', 'phosh')
+config_h.set_quoted('LOCALEDIR', localedir)
+config_h.set_quoted('PHOSH_VERSION', meson.project_version())
+config_h.set('HAVE_RFKILL_EVENT_EXT', have_rfkill_event_ext)
+
+configure_file(
+  input: 'config.h.in',
+  output: 'config.h',
+  configuration: config_h,
+)
 
 meson.add_install_script(
   join_paths('build-aux', 'post_install.py'),
