@@ -15,8 +15,8 @@
 #include "util.h"
 #include "dbus/upower-torch-dbus.h"
 
-#define BUS_NAME "org.freedesktop.UPower"
-#define OBJECT_PATH "/org/freedesktop/UPower/Torch"
+#define BUS_NAME "org.droidian.Flashlightd"
+#define OBJECT_PATH "/org/droidian/Flashlightd"
 
 #define TORCH_DISABLED_ICON "torch-disabled-symbolic"
 #define TORCH_ENABLED_ICON  "torch-enabled-symbolic"
@@ -237,7 +237,7 @@ phosh_torch_manager_idle_init (PhoshManager *manager)
   PhoshTorchManager *self = PHOSH_TORCH_MANAGER (manager);
 
   self->cancel = g_cancellable_new ();
-  phosh_upower_dbus_torch_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
+  phosh_upower_dbus_torch_proxy_new_for_bus (G_BUS_TYPE_SESSION,
                                              G_DBUS_PROXY_FLAGS_NONE,
                                              BUS_NAME,
                                              OBJECT_PATH,
