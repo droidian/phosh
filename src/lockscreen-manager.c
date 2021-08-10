@@ -180,8 +180,8 @@ lock_primary_monitor (PhoshLockscreenManager *self)
   /* The primary output gets the clock, keypad, ... */
   self->lockscreen = PHOSH_LOCKSCREEN (phosh_lockscreen_new (
                                          phosh_wayland_get_zwlr_layer_shell_v1 (wl),
-                                         primary_monitor->wl_output));
-
+                                         primary_monitor->wl_output,
+                                         self->calls_manager));
   g_object_connect (
     self->lockscreen,
     "swapped-object-signal::lockscreen-unlock", G_CALLBACK (lockscreen_unlock_cb), self,
@@ -460,4 +460,20 @@ phosh_lockscreen_manager_get_active_time (PhoshLockscreenManager *self)
   g_return_val_if_fail (PHOSH_IS_LOCKSCREEN_MANAGER (self), 0);
 
   return self->active_time;
+}
+
+
+gboolean
+phosh_lockscreen_manager_set_page  (PhoshLockscreenManager *self,
+                                    PhoshLockscreenPage     page)
+{
+  g_return_val_if_fail (PHOSH_IS_LOCKSCREEN_MANAGER (self), FALSE);
+
+  if (!self->lockscreen)
+    return FALSE;
+
+  g_return_val_if_fail (PHOSH_IS_LOCKSCREEN (self->lockscreen), FALSE);
+
+  phosh_lockscreen_set_page (self->lockscreen, page);
+  return TRUE;
 }

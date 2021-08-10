@@ -43,6 +43,7 @@ static guint signals[N_SIGNALS] = { 0 };
 typedef struct {
   PhoshPanelState state;
 
+  GtkWidget *btn_power;
   GtkWidget *menu_power;
   GtkWidget *stack;
   GtkWidget *box;            /* main content box */
@@ -254,11 +255,22 @@ on_key_press_event (PhoshPanel *self, GdkEventKey *event, gpointer data)
 
 
 static gboolean
-on_button_press_event (PhoshPanel *self, GdkEventKey *event, gpointer data)
+on_button_press_event (PhoshPanel *self, GdkEventButton *event, gpointer data)
 {
+  PhoshPanelPrivate *priv = phosh_panel_get_instance_private (self);
+
   phosh_trigger_feedback ("button-pressed");
-  phosh_panel_fold (self);
-  return FALSE;
+
+  /*
+   * The popover has to be popdown manually as it doesn't happen
+   * automatically when the power button is tapped with touch
+   */
+  if (gtk_widget_is_visible (priv->menu_power))
+    gtk_popover_popdown (GTK_POPOVER (priv->menu_power));
+  else
+    phosh_panel_fold (self);
+
+  return GDK_EVENT_PROPAGATE;
 }
 
 
@@ -331,6 +343,10 @@ phosh_panel_constructed (GObject *object)
                     "button-press-event",
                     G_CALLBACK (on_button_press_event),
                     NULL);
+  g_signal_connect_swapped (priv->settings,
+                            "setting-done",
+                            G_CALLBACK (phosh_panel_fold),
+                            self);
 
   priv->actions = g_simple_action_group_new ();
   gtk_widget_insert_action_group (GTK_WIDGET (self), "panel",
@@ -387,6 +403,7 @@ phosh_panel_class_init (PhoshPanelClass *klass)
 
   gtk_widget_class_set_template_from_resource (widget_class,
                                                "/sm/puri/phosh/ui/top-panel.ui");
+  gtk_widget_class_bind_template_child_private (widget_class, PhoshPanel, btn_power);
   gtk_widget_class_bind_template_child_private (widget_class, PhoshPanel, menu_power);
   gtk_widget_class_bind_template_child_private (widget_class, PhoshPanel, btn_top_panel);
   gtk_widget_class_bind_template_child_private (widget_class, PhoshPanel, batteryinfo);
@@ -462,10 +479,6 @@ phosh_panel_unfold (PhoshPanel *self)
   gtk_widget_show (priv->settings);
   gtk_stack_set_transition_type (GTK_STACK (priv->stack), GTK_STACK_TRANSITION_TYPE_SLIDE_DOWN);
   gtk_stack_set_visible_child_name(GTK_STACK (priv->stack), "settings");
-  g_signal_connect_swapped (priv->settings,
-                            "setting-done",
-                            G_CALLBACK(phosh_panel_fold),
-                            self);
   priv->state =PHOSH_PANEL_STATE_UNFOLDED;
 }
 

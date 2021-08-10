@@ -54,3 +54,15 @@ void
 phosh_shell_set_state (PhoshShell *self, guint state, gboolean set)
 {
 }
+
+gboolean
+phosh_shell_get_locked (PhoshShell *self)
+{
+  return FALSE;
+}
+
+PhoshLockscreenManager *
+phosh_shell_get_lockscreen_manager (PhoshShell *self)
+{
+  return NULL;
+}
