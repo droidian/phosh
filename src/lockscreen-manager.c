@@ -141,6 +141,24 @@ remove_shield_by_monitor (PhoshLockscreenManager *self,
 
 
 static void
+on_power_save_mode_changed (PhoshLockscreenManager *self,
+                            GParamSpec             *pspec,
+                            PhoshMonitorManager    *monitormanager)
+{
+  int mode;
+
+  g_return_if_fail (PHOSH_IS_LOCKSCREEN_MANAGER (self));
+  g_return_if_fail (PHOSH_IS_MONITOR_MANAGER (monitormanager));
+
+  mode = phosh_dbus_display_config_get_power_save_mode (
+    PHOSH_DBUS_DISPLAY_CONFIG (monitormanager));
+
+  if (mode == 0) /* On */
+	  g_signal_emit (self, signals[WAKEUP_OUTPUTS], 0);
+}
+
+
+static void
 on_monitor_removed (PhoshLockscreenManager *self,
                     PhoshMonitor           *monitor,
                     PhoshMonitorManager    *monitormanager)
@@ -228,6 +246,11 @@ lockscreen_lock (PhoshLockscreenManager *self)
 
   g_signal_connect_object (monitor_manager, "monitor-removed",
                            G_CALLBACK (on_monitor_removed),
+                           self,
+                           G_CONNECT_SWAPPED);
+
+  g_signal_connect_object (monitor_manager, "notify::power-save-mode",
+                           G_CALLBACK (on_power_save_mode_changed),
                            self,
                            G_CONNECT_SWAPPED);
 
