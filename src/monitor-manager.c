@@ -986,6 +986,37 @@ power_save_mode_changed_cb (PhoshMonitorManager *self,
 
 
 static void
+on_monitor_power_save_changed (PhoshMonitorManager *self,
+                               GParamSpec          *pspec,
+                               PhoshMonitor        *changed_monitor)
+{
+  g_return_if_fail (PHOSH_IS_MONITOR_MANAGER (self));
+  g_return_if_fail (PHOSH_IS_MONITOR (changed_monitor));
+
+  /* If the monitor has been set to On, PowerSaveMode must be 0 */
+  if (phosh_monitor_get_power_save_mode (changed_monitor) == PHOSH_MONITOR_POWER_SAVE_MODE_ON) {
+    g_debug ("Monitor %s changed, power mode is on", changed_monitor->name);
+    phosh_dbus_display_config_set_power_save_mode (PHOSH_DBUS_DISPLAY_CONFIG (self), 0);
+
+    return;
+  }
+
+  /* Otherwise, loop through every monitor. If every monitor is shut off,
+   * change power save mode */
+
+  for (int i = 0; i < self->monitors->len; i++) {
+    PhoshMonitor *monitor = g_ptr_array_index (self->monitors, i);
+
+    if (phosh_monitor_get_power_save_mode (monitor) == PHOSH_MONITOR_POWER_SAVE_MODE_ON) {
+        return;
+    }
+  }
+
+  phosh_dbus_display_config_set_power_save_mode (PHOSH_DBUS_DISPLAY_CONFIG (self), 3);
+}
+
+
+static void
 on_name_acquired (GDBusConnection *connection,
                   const char      *name,
                   gpointer         user_data)
@@ -1043,6 +1074,11 @@ on_monitor_configured (PhoshMonitorManager *self, PhoshMonitor *monitor)
   g_object_notify_by_pspec (G_OBJECT (self), props[PROP_N_MONITORS]);
 
   g_signal_handlers_disconnect_by_data (monitor, self);
+
+  /* Subscribe to power events */
+  g_signal_connect_object (monitor, "notify::power-mode",
+                           G_CALLBACK (on_monitor_power_save_changed),
+                           self, G_CONNECT_SWAPPED);
 }
 
 
