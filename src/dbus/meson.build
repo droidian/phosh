@@ -118,3 +118,10 @@ generated_dbus_sources += gnome.gdbus_codegen('phosh-gtk-mountoperation-dbus',
                                               'org.Gtk.MountOperationHandler.xml',
 					      interface_prefix: 'org.Gtk',
 					      namespace: 'PhoshDBus')
+
+# Droidian Flashlightd (org.droidian.Flashlightd)
+generated_dbus_sources += gnome.gdbus_codegen('droidian-flashlightd-dbus',
+					      'org.droidian.Flashlightd.xml',
+					      interface_prefix: 'org.droidian.Flashlightd',
+					      namespace: 'DroidianTorchDbus')
+
