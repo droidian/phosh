@@ -203,7 +203,7 @@
             </child>
             <child>
               <object class="GtkRevealer" id="revealer">
-                <property name="visible">True</property>
+                <property name="visible">False</property>
                 <property name="reveal-child" bind-source="torchinfo" bind-property="enabled" bind-flags="sync-create"/>
                 <child>
                   <object class="GtkBox">
