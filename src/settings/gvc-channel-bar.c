@@ -553,3 +553,15 @@ gvc_channel_bar_new (void)
                        NULL);
   return GTK_WIDGET (self);
 }
+
+
+GtkWidget *
+gvc_channel_bar_new_with_icon (const char *icon_name)
+{
+  GObject *self;
+  self = g_object_new (GVC_TYPE_CHANNEL_BAR,
+                       "orientation", GTK_ORIENTATION_HORIZONTAL,
+                       "icon-name", icon_name,
+                       NULL);
+  return GTK_WIDGET (self);
+}
