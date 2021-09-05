@@ -51,10 +51,12 @@ typedef struct _PhoshSettings
   GtkWidget *quick_settings;
   GtkWidget *scale_brightness;
   GtkWidget *output_vol_bar;
+  GtkWidget *phone_vol_bar;
 
   /* Output volume control */
   GvcMixerControl *mixer_control;
   GvcMixerStream *output_stream;
+  GvcMixerStream *phone_stream;
   gboolean allow_volume_above_100_percent;
   gboolean setting_volume;
 
@@ -348,6 +350,106 @@ mixer_control_output_update_cb (GvcMixerControl *mixer, guint id, gpointer *data
 
 
 static void
+update_phone_vol_bar (PhoshSettings *self)
+{
+  GtkAdjustment *adj;
+
+  self->setting_volume = TRUE;
+  gvc_channel_bar_set_base_volume (GVC_CHANNEL_BAR (self->phone_vol_bar),
+                                   gvc_mixer_stream_get_base_volume (self->phone_stream));
+  adj = GTK_ADJUSTMENT (gvc_channel_bar_get_adjustment (GVC_CHANNEL_BAR (self->phone_vol_bar)));
+  g_debug ("Adjusting phone volume to %d", gvc_mixer_stream_get_volume (self->phone_stream));
+  gtk_adjustment_set_value (adj, gvc_mixer_stream_get_volume (self->phone_stream));
+  self->setting_volume = FALSE;
+}
+
+
+static void
+phone_stream_notify_is_muted_cb (GvcMixerStream *stream, GParamSpec *pspec, gpointer data)
+{
+  PhoshSettings *self = PHOSH_SETTINGS (data);
+
+  if (!self->setting_volume)
+    update_phone_vol_bar (self);
+}
+
+
+static void
+phone_stream_notify_volume_cb (GvcMixerStream *stream, GParamSpec *pspec, gpointer data)
+{
+  PhoshSettings *self = PHOSH_SETTINGS (data);
+
+  if (!self->setting_volume)
+    update_phone_vol_bar (self);
+}
+
+
+static void
+mixer_control_phone_stream_added_cb (GvcMixerControl *mixer,
+                                     guint           id,
+                                     PhoshSettings   *self)
+{
+  g_debug ("Phone stream added: %d", id);
+
+  g_return_if_fail (PHOSH_IS_SETTINGS (self));
+
+  if (self->phone_stream)
+    /* There can be only one */
+    g_signal_handlers_disconnect_by_data (self->phone_stream, self);
+
+  g_set_object (&self->phone_stream,
+                gvc_mixer_control_lookup_stream_id (self->mixer_control, id));
+  g_return_if_fail (self->phone_stream);
+
+  g_signal_connect_object (self->phone_stream,
+                           "notify::volume",
+                           G_CALLBACK (phone_stream_notify_volume_cb),
+                           self, 0);
+
+  g_signal_connect_object (self->phone_stream,
+                           "notify::is-muted",
+                           G_CALLBACK (phone_stream_notify_is_muted_cb),
+                           self, 0);
+
+  gtk_widget_show (self->phone_vol_bar);
+  update_phone_vol_bar (self);
+}
+
+static void
+mixer_control_phone_stream_removed_cb (GvcMixerControl *mixer,
+                                       guint           id,
+                                       PhoshSettings   *self)
+{
+  g_debug ("Phone stream removed: %d", id);
+
+  g_return_if_fail (PHOSH_IS_SETTINGS (self));
+
+  gtk_widget_hide (self->phone_vol_bar);
+
+  g_signal_handlers_disconnect_by_data (self->phone_stream, self);
+
+  g_clear_object (&self->phone_stream);
+}
+
+static void
+phone_vol_adjustment_value_changed_cb (GtkAdjustment *adjustment,
+                                       PhoshSettings *self)
+{
+  double volume, rounded;
+  g_autofree char *name = NULL;
+
+  volume = gtk_adjustment_get_value (adjustment);
+  rounded = round (volume);
+
+  g_object_get (self->output_vol_bar, "name", &name, NULL);
+  g_debug ("Setting phone stream volume %lf (rounded: %lf) for bar '%s'", volume, rounded, name);
+
+  g_return_if_fail (self->phone_stream);
+  if (gvc_mixer_stream_set_volume (self->phone_stream, (pa_volume_t) rounded) != FALSE)
+    gvc_mixer_stream_push_volume (self->phone_stream);
+}
+
+static void
 vol_adjustment_value_changed_cb (GtkAdjustment *adjustment,
                                  PhoshSettings *self)
 {
@@ -512,6 +614,17 @@ setup_volume_bar (PhoshSettings *self)
   gtk_box_pack_start (GTK_BOX (self->box_settings), self->output_vol_bar, FALSE, FALSE, 0);
   gtk_box_reorder_child (GTK_BOX (self->box_settings), self->output_vol_bar, 1);
 
+  self->phone_vol_bar = gvc_channel_bar_new_with_icon ("call-start-symbolic");
+  gtk_widget_set_sensitive (self->phone_vol_bar, TRUE);
+
+  gtk_box_pack_start (GTK_BOX (self->box_settings), self->phone_vol_bar, FALSE, FALSE, 0);
+  gtk_box_reorder_child (GTK_BOX (self->box_settings), self->phone_vol_bar, 1);
+
+  /* Bind the two channel bars together - when one is shown, the other is hidden automatically */
+  g_object_bind_property (self->phone_vol_bar, "visible",
+                          self->output_vol_bar, "visible",
+                          G_BINDING_INVERT_BOOLEAN);
+
   self->mixer_control = gvc_mixer_control_new ("Phone Shell Volume Control");
   g_return_if_fail (self->mixer_control);
 
@@ -519,6 +632,20 @@ setup_volume_bar (PhoshSettings *self)
   g_signal_connect (self->mixer_control,
                     "active-output-update",
                     G_CALLBACK (mixer_control_output_update_cb),
+                    self);
+  g_signal_connect (self->mixer_control,
+                    "phone-stream-added",
+                    G_CALLBACK (mixer_control_phone_stream_added_cb),
+                    self);
+  g_signal_connect (self->mixer_control,
+                    "phone-stream-removed",
+                    G_CALLBACK (mixer_control_phone_stream_removed_cb),
+                    self);
+
+  adj = gvc_channel_bar_get_adjustment (GVC_CHANNEL_BAR (self->phone_vol_bar));
+  g_signal_connect (adj,
+                    "value-changed",
+                    G_CALLBACK (phone_vol_adjustment_value_changed_cb),
                     self);
   adj = gvc_channel_bar_get_adjustment (GVC_CHANNEL_BAR (self->output_vol_bar));
   g_signal_connect (adj,
@@ -569,6 +696,10 @@ phosh_settings_dispose (GObject *object)
   brightness_dispose ();
 
   g_clear_object (&self->output_stream);
+
+  g_clear_object (&self->phone_stream);
+
+  g_clear_object (&self->phone_vol_bar);
 
   g_clear_object (&self->torch_manager);
 
