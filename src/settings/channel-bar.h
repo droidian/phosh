@@ -19,6 +19,7 @@ G_DECLARE_FINAL_TYPE (PhoshChannelBar, phosh_channel_bar, PHOSH, CHANNEL_BAR, Gt
 
 GtkWidget *    phosh_channel_bar_new                 (void);
 
+GtkWidget *    phosh_channel_bar_new_with_icon       (const char *icon_name);
 void           phosh_channel_bar_set_name            (PhoshChannelBar *bar, const char *name);
 void           phosh_channel_bar_set_icon_name       (PhoshChannelBar *bar, const char *icon_name);
 void           phosh_channel_bar_set_low_icon_name   (PhoshChannelBar *bar, const char *icon_name);
