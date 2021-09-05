@@ -391,3 +391,15 @@ gvc_channel_bar_get_volume (GvcChannelBar *self)
 
   return gtk_adjustment_get_value (self->adjustment);
 }
+
+
+GtkWidget *
+gvc_channel_bar_new_with_icon (const char *icon_name)
+{
+  GObject *self;
+  self = g_object_new (GVC_TYPE_CHANNEL_BAR,
+                       "orientation", GTK_ORIENTATION_HORIZONTAL,
+                       "icon-name", icon_name,
+                       NULL);
+  return GTK_WIDGET (self);
+}
