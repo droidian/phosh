@@ -18,6 +18,8 @@ G_DECLARE_FINAL_TYPE (GvcChannelBar, gvc_channel_bar, GVC, CHANNEL_BAR, GtkBox)
 
 GtkWidget *         gvc_channel_bar_new                 (void);
 
+GtkWidget *         gvc_channel_bar_new_with_icon       (const char *icon_name);
+
 void                gvc_channel_bar_set_name            (GvcChannelBar *bar,
                                                          const char    *name);
 void                gvc_channel_bar_set_icon_name       (GvcChannelBar *bar,

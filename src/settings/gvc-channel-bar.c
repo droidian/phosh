@@ -27,8 +27,8 @@
 #include "gvc-mixer-control.h"
 
 #define SCALE_SIZE 128
-#define ADJUSTMENT_MAX_NORMAL gvc_mixer_control_get_vol_max_norm(NULL)
-#define ADJUSTMENT_MAX_AMPLIFIED gvc_mixer_control_get_vol_max_amplified(NULL)
+#define ADJUSTMENT_MAX_NORMAL (gdouble) PA_VOLUME_NORM
+#define ADJUSTMENT_MAX_AMPLIFIED (gdouble) PA_VOLUME_UI_MAX
 #define ADJUSTMENT_MAX (self->is_amplified ? ADJUSTMENT_MAX_AMPLIFIED : ADJUSTMENT_MAX_NORMAL)
 #define SCROLLSTEP (ADJUSTMENT_MAX / 100.0 * 5.0)
 
@@ -550,6 +550,18 @@ gvc_channel_bar_new (void)
   self = g_object_new (GVC_TYPE_CHANNEL_BAR,
                        "orientation", GTK_ORIENTATION_HORIZONTAL,
                        "icon-name", "audio-volume-high-symbolic",
+                       NULL);
+  return GTK_WIDGET (self);
+}
+
+
+GtkWidget *
+gvc_channel_bar_new_with_icon (const char *icon_name)
+{
+  GObject *self;
+  self = g_object_new (GVC_TYPE_CHANNEL_BAR,
+                       "orientation", GTK_ORIENTATION_HORIZONTAL,
+                       "icon-name", icon_name,
                        NULL);
   return GTK_WIDGET (self);
 }
