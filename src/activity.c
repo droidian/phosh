@@ -39,7 +39,6 @@ static guint signals[N_SIGNALS] = { 0 };
 enum {
   PROP_0,
   PROP_APP_ID,
-  PROP_TITLE,
   PROP_MAXIMIZED,
   PROP_WIN_WIDTH,
   PROP_WIN_HEIGHT,
@@ -51,17 +50,15 @@ typedef struct
 {
   GtkWidget *swipe_bin;
   GtkWidget *icon;
-  GtkWidget *app_name;
   GtkWidget *box;
   GtkWidget *revealer;
+  GtkWidget *btn_close;
 
   gboolean maximized;
   int win_width;
   int win_height;
 
   char *app_id;
-  char *title;
-  GDesktopAppInfo *info;
 
   cairo_surface_t *surface;
   PhoshThumbnail *thumbnail;
@@ -94,9 +91,6 @@ phosh_activity_set_property (GObject *object,
       g_free (priv->app_id);
       priv->app_id = g_value_dup_string (value);
       g_object_notify_by_pspec (G_OBJECT (self), props[PROP_APP_ID]);
-      break;
-    case PROP_TITLE:
-      phosh_activity_set_title (self, g_value_get_string (value));
       break;
     case PROP_MAXIMIZED:
       priv->maximized = g_value_get_boolean (value);
@@ -136,9 +130,6 @@ phosh_activity_get_property (GObject *object,
   switch (property_id) {
     case PROP_APP_ID:
       g_value_set_string (value, priv->app_id);
-      break;
-    case PROP_TITLE:
-      g_value_set_string (value, priv->title);
       break;
     case PROP_MAXIMIZED:
       g_value_set_boolean (value, priv->maximized);
@@ -201,21 +192,19 @@ removed_cb (PhoshActivity *self)
 }
 
 
-static gboolean
-draw_cb (PhoshActivity *self, cairo_t *cairo, GtkDrawingArea *area)
+static float
+get_scale (PhoshActivity *self)
 {
-  int width, height, image_width, image_height, x, y;
   float scale;
+  int width, height, image_width, image_height;
   PhoshActivityPrivate *priv;
 
-  g_return_val_if_fail (PHOSH_IS_ACTIVITY (self), FALSE);
-  g_return_val_if_fail (GTK_IS_DRAWING_AREA (area), FALSE);
-  width = gtk_widget_get_allocated_width (GTK_WIDGET (area));
-  height = gtk_widget_get_allocated_height (GTK_WIDGET (area));
+  width = gtk_widget_get_allocated_width (GTK_WIDGET (self));
+  height = gtk_widget_get_allocated_height (GTK_WIDGET (self));
   priv = phosh_activity_get_instance_private (self);
 
   if (!priv->surface)
-    return FALSE;
+    return 1.0;
 
   image_width = cairo_image_surface_get_width (priv->surface);
   image_height = cairo_image_surface_get_height (priv->surface);
@@ -225,24 +214,37 @@ draw_cb (PhoshActivity *self, cairo_t *cairo, GtkDrawingArea *area)
   if (height / (float)image_height < scale)
     scale = height / (float)image_height;
 
-  /*
-   * If the window is maximized, draw it from the top with a grayish background;
-   * otherwise center it on transparent background - a poor man's way to take
-   * exclusive areas like virtual keyboard into account.
-   */
+  return scale;
+}
 
-  if (priv->maximized)
-    cairo_set_source_rgba (cairo, 0.1, 0.1, 0.1, 1.0);
-  else
-    cairo_set_source_rgba (cairo, 0, 0, 0, 0);
+static gboolean
+draw_cb (PhoshActivity *self, cairo_t *cairo, GtkDrawingArea *area)
+{
+  int width, height, image_width, image_height, x, y = 0;
+  float scale;
+  PhoshActivityPrivate *priv;
+  GtkStyleContext *context;
 
-  cairo_set_operator (cairo, CAIRO_OPERATOR_SOURCE);
-  cairo_paint (cairo);
+  g_return_val_if_fail (PHOSH_IS_ACTIVITY (self), FALSE);
+  g_return_val_if_fail (GTK_IS_DRAWING_AREA (area), FALSE);
+  width = gtk_widget_get_allocated_width (GTK_WIDGET (area));
+  height = gtk_widget_get_allocated_height (GTK_WIDGET (area));
+  priv = phosh_activity_get_instance_private (self);
+  context = gtk_widget_get_style_context (GTK_WIDGET (self));
 
+  if (!priv->surface)
+    return FALSE;
+
+  image_width = cairo_image_surface_get_width (priv->surface);
+  image_height = cairo_image_surface_get_height (priv->surface);
+
+
+  gtk_render_background(context, cairo, 0, 0, width, height);
+
+  scale = get_scale (self);
   cairo_scale (cairo, scale, scale);
 
   x = (width - image_width * scale) / 2.0 / scale;
-  y = priv->maximized ? 0 : ((height - image_height * scale) / 2.0 / scale);
 
   cairo_rectangle (cairo, x, y, image_width, image_height);
   cairo_set_source_surface (cairo, priv->surface, x, y);
@@ -257,25 +259,11 @@ phosh_activity_constructed (GObject *object)
 {
   PhoshActivity *self = PHOSH_ACTIVITY (object);
   PhoshActivityPrivate *priv = phosh_activity_get_instance_private (self);
-  g_autofree char *desktop_id = NULL;
+  g_autoptr (GDesktopAppInfo) app_info = phosh_get_desktop_app_info_for_app_id (priv->app_id);
 
-  desktop_id = g_strdup_printf ("%s.desktop", priv->app_id);
-  g_return_if_fail (desktop_id);
-  priv->info = g_desktop_app_info_new (desktop_id);
-
-  if (!priv->info) {
-    g_autofree char *name = phosh_fix_app_id (priv->app_id);
-    g_return_if_fail (name);
-    g_free (desktop_id);
-    desktop_id = g_strdup_printf ("%s.desktop", name);
-    g_return_if_fail (desktop_id);
-    g_debug ("%s has broken app_id, should be %s", priv->app_id, desktop_id);
-    priv->info = g_desktop_app_info_new (desktop_id);
-  }
-
-  if (priv->info) {
+  if (app_info) {
     gtk_image_set_from_gicon (GTK_IMAGE (priv->icon),
-                              g_app_info_get_icon (G_APP_INFO (priv->info)),
+                              g_app_info_get_icon (G_APP_INFO (app_info)),
                               ACTIVITY_ICON_SIZE);
   } else {
     gtk_image_set_from_icon_name (GTK_IMAGE (priv->icon),
@@ -297,7 +285,6 @@ phosh_activity_dispose (GObject *object)
 
   g_clear_pointer (&priv->surface, cairo_surface_destroy);
   g_clear_object (&priv->thumbnail);
-  g_clear_object (&priv->info);
 
   if (priv->remove_timeout_id) {
     g_source_remove (priv->remove_timeout_id);
@@ -315,7 +302,6 @@ phosh_activity_finalize (GObject *object)
   PhoshActivityPrivate *priv = phosh_activity_get_instance_private (self);
 
   g_free (priv->app_id);
-  g_free (priv->title);
 
   G_OBJECT_CLASS (phosh_activity_parent_class)->finalize (object);
 }
@@ -503,15 +489,6 @@ phosh_activity_class_init (PhoshActivityClass *klass)
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
       G_PARAM_STATIC_STRINGS | G_PARAM_EXPLICIT_NOTIFY);
 
-  props[PROP_TITLE] =
-    g_param_spec_string (
-      "title",
-      "title",
-      "The window's title",
-      "",
-      G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE |
-      G_PARAM_STATIC_STRINGS | G_PARAM_EXPLICIT_NOTIFY);
-
   props[PROP_MAXIMIZED] =
     g_param_spec_boolean (
       "maximized",
@@ -554,8 +531,8 @@ phosh_activity_class_init (PhoshActivityClass *klass)
 
   gtk_widget_class_set_template_from_resource (widget_class, "/sm/puri/phosh/ui/activity.ui");
 
+  gtk_widget_class_bind_template_child_private (widget_class, PhoshActivity, btn_close);
   gtk_widget_class_bind_template_child_private (widget_class, PhoshActivity, swipe_bin);
-  gtk_widget_class_bind_template_child_private (widget_class, PhoshActivity, app_name);
   gtk_widget_class_bind_template_child_private (widget_class, PhoshActivity, icon);
   gtk_widget_class_bind_template_child_private (widget_class, PhoshActivity, box);
   gtk_widget_class_bind_template_child_private (widget_class, PhoshActivity, revealer);
@@ -581,12 +558,10 @@ phosh_activity_init (PhoshActivity *self)
 
 
 GtkWidget *
-phosh_activity_new (const char *app_id,
-                    const char *title)
+phosh_activity_new (const char *app_id)
 {
   return g_object_new (PHOSH_TYPE_ACTIVITY,
                        "app-id", app_id,
-                       "title", title,
                        NULL);
 }
 
@@ -602,44 +577,14 @@ phosh_activity_get_app_id (PhoshActivity *self)
   return priv->app_id;
 }
 
-
-void
-phosh_activity_set_title (PhoshActivity *self, const char *title)
-{
-  PhoshActivityPrivate *priv;
-
-  g_return_if_fail (PHOSH_IS_ACTIVITY (self));
-  priv = phosh_activity_get_instance_private (self);
-
-  if (!g_strcmp0 (priv->title, title))
-    return;
-
-  g_free (priv->title);
-  priv->title = g_strdup (title);
-  gtk_label_set_label (GTK_LABEL (priv->app_name), priv->title);
-  g_object_notify_by_pspec (G_OBJECT (self), props[PROP_TITLE]);
-}
-
-
-const char *
-phosh_activity_get_title (PhoshActivity *self)
-{
-  PhoshActivityPrivate *priv;
-
-  g_return_val_if_fail (PHOSH_IS_ACTIVITY (self), NULL);
-  priv = phosh_activity_get_instance_private (self);
-
-  return priv->title;
-}
-
-
 void
 phosh_activity_set_thumbnail (PhoshActivity *self, PhoshThumbnail *thumbnail)
 {
   PhoshActivityPrivate *priv;
   void *data;
-  guint width, height, stride;
+  guint w, width, height, stride, margin;
   enum wl_shm_format format;
+  float scale;
 
   g_return_if_fail (PHOSH_IS_ACTIVITY (self));
   priv = phosh_activity_get_instance_private (self);
@@ -658,6 +603,12 @@ phosh_activity_set_thumbnail (PhoshActivity *self, PhoshThumbnail *thumbnail)
   priv->thumbnail = thumbnail;
 
   gtk_style_context_remove_class (gtk_widget_get_style_context (GTK_WIDGET (self)), "phosh-activity-empty");
+
+  /* Make sure the close button is over the thumbnail */
+  w = gtk_widget_get_allocated_width (GTK_WIDGET (self));
+  scale = get_scale (self);
+  margin = w ? (w - (width * scale)) / 2 : 0;
+  gtk_widget_set_margin_end (priv->btn_close, margin);
 
   gtk_widget_queue_draw (GTK_WIDGET (self));
 }

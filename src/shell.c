@@ -25,6 +25,7 @@
 
 #include "config.h"
 #include "shell.h"
+#include "app-tracker.h"
 #include "batteryinfo.h"
 #include "background-manager.h"
 #include "bt-info.h"
@@ -55,6 +56,7 @@
 #include "notifications/notify-manager.h"
 #include "notifications/notification-banner.h"
 #include "osk-manager.h"
+#include "phosh-private-client-protocol.h"
 #include "phosh-wayland.h"
 #include "polkit-auth-agent.h"
 #include "proximity.h"
@@ -65,6 +67,7 @@
 #include "screen-saver-manager.h"
 #include "screenshot-manager.h"
 #include "session-manager.h"
+#include "splash-manager.h"
 #include "system-prompter.h"
 #include "top-panel.h"
 #include "torch-manager.h"
@@ -111,6 +114,7 @@ typedef struct
 
   GtkWidget *notification_banner;
 
+  PhoshAppTracker *app_tracker;
   PhoshSessionManager *session_manager;
   PhoshBackgroundManager *background_manager;
   PhoshCallsManager *calls_manager;
@@ -138,13 +142,17 @@ typedef struct
   PhoshKeyboardEvents *keyboard_events;
   PhoshLocationManager *location_manager;
   PhoshGnomeShellManager *gnome_shell_manager;
+  PhoshSplashManager *splash_manager;
 
   /* sensors */
   PhoshSensorProxyManager *sensor_proxy_manager;
   PhoshProximity *proximity;
   PhoshRotationManager *rotation_manager;
 
-  gboolean startup_finished;
+  PhoshShellDebugFlags debug_flags;
+  gboolean             startup_finished;
+  guint                startup_finished_id;
+
 
   /* Mirrors PhoshLockscreenManager's locked property */
   gboolean locked;
@@ -339,12 +347,15 @@ phosh_shell_dispose (GObject *object)
   PhoshShell *self = PHOSH_SHELL (object);
   PhoshShellPrivate *priv = phosh_shell_get_instance_private(self);
 
+  g_clear_handle_id (&priv->startup_finished_id, g_source_remove);
+
   panels_dispose (self);
   g_clear_pointer (&priv->faders, g_ptr_array_unref);
 
   g_clear_object (&priv->notification_banner);
 
   /* dispose managers in opposite order of declaration */
+  g_clear_object (&priv->splash_manager);
   g_clear_object (&priv->screenshot_manager);
   g_clear_object (&priv->calls_manager);
   g_clear_object (&priv->location_manager);
@@ -371,6 +382,7 @@ phosh_shell_dispose (GObject *object)
   g_clear_object (&priv->primary_monitor);
   g_clear_object (&priv->background_manager);
   g_clear_object (&priv->keyboard_events);
+  g_clear_object (&priv->app_tracker);
 
   /* sensors */
   g_clear_object (&priv->proximity);
@@ -404,7 +416,7 @@ on_num_toplevels_changed (PhoshShell *self, GParamSpec *pspec, PhoshToplevelMana
 
 
 static void
-on_toplevel_added (PhoshShell *self, GParamSpec *pspec, PhoshToplevelManager *toplevel_manager)
+on_toplevel_added (PhoshShell *self, PhoshToplevel *unused, PhoshToplevelManager *toplevel_manager)
 {
   PhoshShellPrivate *priv;
 
@@ -462,11 +474,30 @@ on_fade_out_timeout (PhoshShell *self)
 
 
 static gboolean
+on_startup_finished (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+  struct phosh_private *phosh_private;
+
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), G_SOURCE_REMOVE);
+  priv = phosh_shell_get_instance_private (self);
+
+  phosh_private = phosh_wayland_get_phosh_private (phosh_wayland_get_default ());
+  if (phosh_private && phosh_private_get_version (phosh_private) >= PHOSH_PRIVATE_SHELL_READY_SINCE)
+    phosh_private_set_shell_state (phosh_private, PHOSH_PRIVATE_SHELL_STATE_UP);
+
+  priv->startup_finished_id = 0;
+  return G_SOURCE_REMOVE;
+}
+
+
+static gboolean
 setup_idle_cb (PhoshShell *self)
 {
   g_autoptr (GError) err = NULL;
   PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
 
+  priv->app_tracker = phosh_app_tracker_new ();
   priv->session_manager = phosh_session_manager_new ();
   priv->mode_manager = phosh_mode_manager_new ();
 
@@ -520,6 +551,13 @@ setup_idle_cb (PhoshShell *self)
 
   priv->gnome_shell_manager = phosh_gnome_shell_manager_get_default ();
   priv->screenshot_manager = phosh_screenshot_manager_new ();
+  priv->splash_manager = phosh_splash_manager_new (priv->app_tracker);
+
+  /* Delay signaling the compositor a bit so that idle handlers get a
+   * chance to run and the user has can unlock right away. Ideally
+   * we'd not need this */
+  priv->startup_finished_id = g_timeout_add_seconds (1, (GSourceFunc)on_startup_finished, self);
+  g_source_set_name_by_id (priv->startup_finished_id, "[phosh] startup finished");
 
   priv->startup_finished = TRUE;
   g_signal_emit (self, signals[READY], 0);
@@ -803,11 +841,23 @@ phosh_shell_class_init (PhoshShellClass *klass)
 }
 
 
+static GDebugKey debug_keys[] =
+{
+ { .key = "always-splash",
+   .value = PHOSH_SHELL_DEBUG_FLAG_ALWAYS_SPLASH,
+ },
+};
+
+
 static void
 phosh_shell_init (PhoshShell *self)
 {
   PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
   GtkSettings *gtk_settings;
+
+  priv->debug_flags = g_parse_debug_string(g_getenv ("PHOSH_DEBUG"),
+                                           debug_keys,
+                                           G_N_ELEMENTS (debug_keys));
 
   gtk_settings = gtk_settings_get_default ();
   g_object_set (G_OBJECT (gtk_settings), "gtk-application-prefer-dark-theme", TRUE, NULL);
@@ -884,6 +934,19 @@ phosh_shell_get_primary_monitor (PhoshShell *self)
 }
 
 /* Manager getters */
+
+PhoshAppTracker *
+phosh_shell_get_app_tracker (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
+  priv = phosh_shell_get_instance_private (self);
+  g_return_val_if_fail (PHOSH_IS_APP_TRACKER (priv->app_tracker), NULL);
+
+  return priv->app_tracker;
+}
+
 
 PhoshBackgroundManager *
 phosh_shell_get_background_manager (PhoshShell *self)
@@ -1182,9 +1245,11 @@ phosh_shell_get_usable_area (PhoshShell *self, int *x, int *y, int *width, int *
 
   scale = MAX(1.0, phosh_monitor_get_fractional_scale (monitor));
 
-  g_debug ("Primary monitor %p scale is %f, transform is %d",
+  g_debug ("Primary monitor %p scale is %f, mode: %dx%d, transform is %d",
            monitor,
            scale,
+           mode->width,
+           mode->height,
            monitor->transform);
 
   switch (phosh_monitor_get_transform(monitor)) {
@@ -1492,4 +1557,30 @@ phosh_shell_set_locked (PhoshShell *self, gboolean locked)
     return;
 
   phosh_lockscreen_manager_set_locked (priv->lockscreen_manager, locked);
+}
+
+
+/**
+ * phosh_shell_get_show_splash:
+ * @self: The #PhoshShell singleton
+ *
+ * Whether splash screens should be used when apps start
+ * Returns: %TRUE when splash should be used, otherwise %FALSE
+ */
+gboolean
+phosh_shell_get_show_splash (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), TRUE);
+  priv = phosh_shell_get_instance_private (self);
+  g_return_val_if_fail (PHOSH_IS_DOCKED_MANAGER (priv->docked_manager), TRUE);
+
+  if (priv->debug_flags & PHOSH_SHELL_DEBUG_FLAG_ALWAYS_SPLASH)
+    return TRUE;
+
+  if (phosh_docked_manager_get_enabled (priv->docked_manager))
+    return FALSE;
+
+  return TRUE;
 }

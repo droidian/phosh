@@ -86,6 +86,27 @@ signal_strength_icon_name (guint strength)
 }
 
 
+static gboolean
+get_is_hotspot_master (PhoshWifiManager *self)
+{
+  NMSettingIPConfig *ip4_setting;
+  NMConnection *c;
+
+  if (!self->dev || !self->active ||
+      nm_active_connection_get_state (self->active) != NM_ACTIVE_CONNECTION_STATE_ACTIVATED)
+    return FALSE;
+
+  c = NM_CONNECTION (nm_active_connection_get_connection (self->active));
+  ip4_setting = nm_connection_get_setting_ip4_config (c);
+
+  if (ip4_setting &&
+      g_strcmp0 (nm_setting_ip_config_get_method (ip4_setting),
+                 NM_SETTING_IP4_CONFIG_METHOD_SHARED) == 0)
+    return TRUE;
+
+  return FALSE;
+}
+
 static const char *
 get_icon_name (PhoshWifiManager *self)
 {
@@ -105,7 +126,9 @@ get_icon_name (PhoshWifiManager *self)
   case NM_ACTIVE_CONNECTION_STATE_ACTIVATING:
     return "network-wireless-acquiring-symbolic";
   case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:
-    if (!self->ap) {
+    if (get_is_hotspot_master (self)) {
+      return "network-wireless-hotspot-symbolic";
+    } else if (!self->ap) {
       return "network-wireless-connected-symbolic";
     } else {
       strength = phosh_wifi_manager_get_strength (self);
@@ -283,9 +306,8 @@ check_device (PhoshWifiManager *self)
     if (dev != NM_DEVICE (self->dev)) {
       if (self->dev) {
         g_signal_handlers_disconnect_by_data (self->dev, self);
-        g_object_unref (self->dev);
       }
-      self->dev = g_object_ref(NM_DEVICE_WIFI (dev));
+      g_set_object (&self->dev, NM_DEVICE_WIFI (dev));
       g_signal_connect_swapped (self->dev, "notify::active-access-point",
                                 G_CALLBACK (on_nm_device_wifi_active_access_point_changed), self);
       on_nm_device_wifi_active_access_point_changed (self, NULL, self->dev);
@@ -322,12 +344,10 @@ on_nm_active_connection_state_changed (PhoshWifiManager *self,
    update_state (self);
 
    switch (state) {
-   case NM_ACTIVE_CONNECTION_STATE_ACTIVATING:
-     cleanup_device (self);
-     break;
    case NM_ACTIVE_CONNECTION_STATE_ACTIVATED:
      check_device (self);
      break;
+   case NM_ACTIVE_CONNECTION_STATE_ACTIVATING:
    case NM_ACTIVE_CONNECTION_STATE_UNKNOWN:
    case NM_ACTIVE_CONNECTION_STATE_DEACTIVATING:
    case NM_ACTIVE_CONNECTION_STATE_DEACTIVATED:
@@ -386,7 +406,9 @@ on_nmclient_active_connections_changed (PhoshWifiManager *self, GParamSpec *pspe
     if (conn != self->active) {
       g_debug ("New active connection %p", conn);
       cleanup_device (self);
-      self->active = g_object_ref (conn);
+      if (self->active)
+        g_signal_handlers_disconnect_by_data (self->active, self);
+      g_set_object (&self->active, conn);
       g_signal_connect_swapped (self->active, "state-changed",
                                 G_CALLBACK (on_nm_active_connection_state_changed), self);
     }
@@ -395,8 +417,12 @@ on_nmclient_active_connections_changed (PhoshWifiManager *self, GParamSpec *pspe
   }
 
   /* Clean up if there's no active wifi connection */
-  if (!found && self->dev)
+  if (!found) {
+    if (self->active)
+      g_signal_handlers_disconnect_by_data (self->active, self);
+    g_clear_object (&self->active);
     cleanup_device (self);
+  }
 }
 
 
@@ -680,6 +706,7 @@ phosh_wifi_manager_class_init (PhoshWifiManagerClass *klass)
 static void
 phosh_wifi_manager_init (PhoshWifiManager *self)
 {
+  self->icon_name = "network-wireless-disabled-symbolic";
 }
 
 

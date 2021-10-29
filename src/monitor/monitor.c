@@ -570,6 +570,12 @@ phosh_monitor_connector_type_from_name (const char *name)
     return PHOSH_MONITOR_CONNECTOR_TYPE_DSI;
   else if (g_str_has_prefix (name, "HWCOMPOSER-"))
     return PHOSH_MONITOR_CONNECTOR_TYPE_HWC;
+  else if (g_str_has_prefix (name, "HEADLESS-"))
+    return PHOSH_MONITOR_CONNECTOR_TYPE_VIRTUAL;
+  else if (g_str_has_prefix (name, "WL-"))
+    return PHOSH_MONITOR_CONNECTOR_TYPE_VIRTUAL;
+  else if (g_str_has_prefix (name, "X11-"))
+    return PHOSH_MONITOR_CONNECTOR_TYPE_VIRTUAL;
   else
     return PHOSH_MONITOR_CONNECTOR_TYPE_Unknown;
 }
@@ -623,9 +629,13 @@ float
 phosh_monitor_get_fractional_scale (PhoshMonitor *self)
 {
   float width;
+  PhoshMonitorMode *mode;
 
   g_return_val_if_fail (PHOSH_IS_MONITOR (self), 1.0);
   g_return_val_if_fail (phosh_monitor_is_configured (self), 1.0);
+
+  mode = phosh_monitor_get_current_mode (self);
+  g_return_val_if_fail (mode, 1.0);
 
   switch (self->transform) {
   case PHOSH_MONITOR_TRANSFORM_NORMAL:
@@ -637,5 +647,5 @@ phosh_monitor_get_fractional_scale (PhoshMonitor *self)
   default:
     width = self->logical.height;
   }
-  return self->width / width;
+  return mode->width / width;
 }

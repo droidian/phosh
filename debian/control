@@ -47,13 +47,15 @@ Depends:
  fonts-lato,
  gnome-shell-common,
  gsettings-desktop-schemas,
- phoc (>= 0.7.1),
+ phoc (>= 0.9.0),
 Recommends:
  feedbackd,
+ fonts-cantarell,
  gnome-session-bin,
  gnome-session-common,
  gnome-settings-daemon,
  iio-sensor-proxy,
+ librsvg2-common,
  phosh-mobile-tweaks,
  squeekboard | phosh-osk-stub,
 Provides:
