@@ -347,6 +347,10 @@ on_output_stream_port_changed (GvcMixerStream *stream, GParamSpec *pspec, gpoint
     is_headphone = TRUE;
   }
 
+  if (g_strcmp0 (port->port, "output-wired_headset") == 0) {
+    is_headphone = TRUE;
+  }
+
   if (is_headphone == self->is_headphone)
     return;
 
