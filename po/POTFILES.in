@@ -32,7 +32,6 @@ src/notifications/notification.c
 src/notifications/timestamp-label.c
 src/osk-manager.c
 src/overview.c
-src/panel.c
 src/phosh-wayland.c
 src/polkit-auth-agent.c
 src/polkit-auth-prompt.c
@@ -65,6 +64,7 @@ src/ui/notification-frame.ui
 src/ui/overview.ui
 src/ui/polkit-auth-prompt.ui
 src/ui/quick-setting.ui
+src/ui/run-command-dialog.ui
 src/ui/settings-menu.ui
 src/ui/system-prompt.ui
 src/ui/top-panel.ui
