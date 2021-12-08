@@ -18,6 +18,7 @@ enum {
   PROP_0,
   PROP_DBUS_PROXY,
   PROP_DISPLAY_NAME,
+  PROP_AVATAR_ICON,
   PROP_ID,
   PROP_STATE,
   PROP_ENCRYPTED,
@@ -33,6 +34,7 @@ typedef struct _PhoshCall {
   PhoshCallsDBusCallsCall *proxy; /* DBus proxy to a single call on for gnome-calls' DBus service */
   GCancellable            *cancel;
 
+  GLoadableIcon           *avatar_icon;
   gboolean                 can_dtmf;
 } PhoshCall;
 
@@ -41,6 +43,15 @@ static void phosh_call_cui_call_interface_init (CuiCallInterface *iface);
 G_DEFINE_TYPE_WITH_CODE (PhoshCall, phosh_call, G_TYPE_OBJECT,
                          G_IMPLEMENT_INTERFACE (CUI_TYPE_CALL,
                                                 phosh_call_cui_call_interface_init))
+
+
+static GLoadableIcon *
+phosh_call_get_avatar_icon (CuiCall *call)
+{
+  g_return_val_if_fail (PHOSH_IS_CALL (call), NULL);
+
+  return PHOSH_CALL (call)->avatar_icon;
+}
 
 
 static const char *
@@ -99,7 +110,7 @@ phosh_call_get_can_dtmf (CuiCall *call)
   g_return_val_if_fail (PHOSH_IS_CALL (call), CUI_CALL_STATE_UNKNOWN);
   self = PHOSH_CALL (call);
 
-  return self->can_dtmf;
+  return phosh_calls_dbus_calls_call_get_can_dtmf (self->proxy);
 }
 
 
@@ -112,7 +123,8 @@ on_prop_changed (PhoshCall *self, GParamSpec *pspec)
   if (g_strcmp0 (name, "state") == 0 ||
       g_strcmp0 (name, "encrypted") == 0 ||
       g_strcmp0 (name, "id") == 0 ||
-      g_strcmp0 (name, "display-name") == 0) {
+      g_strcmp0 (name, "display-name") == 0 ||
+      g_strcmp0 (name, "can-dtmf")) {
     g_object_notify (G_OBJECT (self), name);
   }
 }
@@ -128,6 +140,7 @@ phosh_call_set_dbus_proxy (PhoshCall *self, PhoshCallsDBusCallsCall *proxy)
                     "swapped-signal::notify::encrypted", G_CALLBACK (on_prop_changed), self,
                     "swapped-signal::notify::id", G_CALLBACK (on_prop_changed), self,
                     "swapped-signal::notify::display-name", G_CALLBACK (on_prop_changed), self,
+                    "swapped-signal::notify::can-dtmf", G_CALLBACK (on_prop_changed), self,
                     NULL);
 
   g_object_notify_by_pspec (G_OBJECT (self), props[PROP_DBUS_PROXY]);
@@ -167,6 +180,9 @@ phosh_call_get_property (GObject    *object,
   case PROP_DBUS_PROXY:
     g_value_set_object (value, self->proxy);
     break;
+  case PROP_AVATAR_ICON:
+    g_value_set_object (value, self->avatar_icon);
+    break;
   case PROP_ID:
     g_value_set_string (value, phosh_call_get_id (iface));
     break;
@@ -190,6 +206,25 @@ phosh_call_get_property (GObject    *object,
 
 
 static void
+phosh_call_constructed (GObject *object)
+{
+  PhoshCall *self = PHOSH_CALL (object);
+  g_autoptr (GFile) file = NULL;
+  const char *path = NULL;
+
+  G_OBJECT_CLASS (phosh_call_parent_class)->constructed (object);
+
+  path = phosh_calls_dbus_calls_call_get_image_path (self->proxy);
+  if (path) {
+    file = g_file_new_for_path (path);
+    if (file) {
+      self->avatar_icon = G_LOADABLE_ICON (g_file_icon_new (file));
+    }
+  }
+}
+
+
+static void
 phosh_call_dispose (GObject *object)
 {
   PhoshCall *self = PHOSH_CALL (object);
@@ -198,6 +233,7 @@ phosh_call_dispose (GObject *object)
   g_clear_object (&self->cancel);
   g_signal_handlers_disconnect_by_data (self->proxy, self);
   g_clear_object (&self->proxy);
+  g_clear_object (&self->avatar_icon);
 
   G_OBJECT_CLASS (phosh_call_parent_class)->dispose (object);
 }
@@ -208,6 +244,7 @@ phosh_call_class_init (PhoshCallClass *klass)
 {
   GObjectClass *object_class = G_OBJECT_CLASS (klass);
 
+  object_class->constructed = phosh_call_constructed;
   object_class->dispose = phosh_call_dispose;
   object_class->set_property = phosh_call_set_property;
   object_class->get_property = phosh_call_get_property;
@@ -226,6 +263,10 @@ phosh_call_class_init (PhoshCallClass *klass)
   g_object_class_install_properties (object_class, PROP_LAST_PROP, props);
 
   g_object_class_override_property (object_class,
+                                    PROP_AVATAR_ICON,
+                                    "avatar-icon");
+
+  g_object_class_override_property (object_class,
                                     PROP_DISPLAY_NAME,
                                     "id");
 
@@ -238,11 +279,11 @@ phosh_call_class_init (PhoshCallClass *klass)
                                     "state");
 
   g_object_class_override_property (object_class,
-				    PROP_ENCRYPTED,
+                                    PROP_ENCRYPTED,
                                     "encrypted");
 
   g_object_class_override_property (object_class,
-				    PROP_CAN_DTMF,
+                                    PROP_CAN_DTMF,
                                     "can-dtmf");
 }
 
@@ -305,17 +346,41 @@ phosh_call_hang_up (CuiCall *call)
 
 
 static void
+on_call_send_dtmf_finish (PhoshCallsDBusCallsCall *proxy,
+                          GAsyncResult            *res,
+                          gpointer                 dtmf_key)
+{
+  g_autoptr (GError) err = NULL;
+  char key = (char) GPOINTER_TO_INT (dtmf_key);
+
+  g_return_if_fail (PHOSH_CALLS_DBUS_IS_CALLS_CALL_PROXY (proxy));
+
+  if (!phosh_calls_dbus_calls_call_call_send_dtmf_finish (proxy, res, &err))
+    phosh_async_error_warn(err, "Failed to send DTMF `%c' %p", key, proxy);
+}
+
+
+static void
 phosh_call_send_dtmf (CuiCall *call, const char *dtmf)
 {
+  PhoshCall *self;
+
   g_return_if_fail (PHOSH_IS_CALL (call));
 
-  /* TBD */
+  self = PHOSH_CALL (call);
+
+  phosh_calls_dbus_calls_call_call_send_dtmf (self->proxy,
+                                              dtmf,
+                                              self->cancel,
+                                              (GAsyncReadyCallback) on_call_send_dtmf_finish,
+                                              GINT_TO_POINTER (dtmf));
 }
 
 
 static void
 phosh_call_cui_call_interface_init (CuiCallInterface *iface)
 {
+  iface->get_avatar_icon = phosh_call_get_avatar_icon;
   iface->get_id = phosh_call_get_id;
   iface->get_display_name = phosh_call_get_display_name;
   iface->get_state = phosh_call_get_state;

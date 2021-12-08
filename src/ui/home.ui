@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- Generated with glade 3.22.1 -->
 <interface>
   <requires lib="gtk+" version="3.20"/>
   <template class="PhoshHome" parent="PhoshLayerSurface">
@@ -52,7 +51,7 @@
                     <property name="can_focus">True</property>
                     <property name="halign">end</property>
                     <property name="valign">center</property>
-                    <property name="margin_right">6</property>
+                    <property name="margin-end">6</property>
                     <property name="receives_default">True</property>
                     <signal name="clicked" handler="osk_clicked_cb" swapped="true"/>
                     <style>
