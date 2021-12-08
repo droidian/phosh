@@ -84,9 +84,13 @@ phosh-activity box button {
   /* box-shadow: 0 2px 2px rgba(0,0,0,0.4), 0 3px 16px rgba(0,0,0,0.3); */
 }
 
-.phosh-activity-empty {
+phosh-activity.phosh-empty {
   background: url('resource:///sm/puri/phosh/fake-app.svg');
   background-size: cover;
+}
+
+phosh-activity.phosh-maximized .phosh-drawingarea {
+  background: @phosh_activity_bg_color;
 }
 
 phosh-home, phosh-top-panel {
@@ -212,7 +216,12 @@ phosh-lockscreen, .phosh-lockshield {
 }
 
 /* Lockscreen keypad */
-keypad > grid > button {
+phosh-keypad label.digit {
+  font-size: 200%;
+  font-weight: bold;
+}
+
+phosh-keypad button {
   border-radius: 9999px;
   -gtk-outline-radius: 9999px;
   background-origin: padding-box, border-box;
@@ -225,7 +234,7 @@ keypad > grid > button {
   background: 0;
 }
 
-keypad > grid > button:active {
+phosh-keypad button:active {
   background: rgba(255, 255, 255, 0.3);
 }
 
@@ -233,7 +242,7 @@ keypad > grid > button:active {
   background: rgba(255, 255, 255, 0.5);
 }
 
-keypad > grid > button:focus, .text-only-button:focus {
+phosh-keypad button:focus, .text-only-button:focus {
   outline-style: none;
 }
 
@@ -273,6 +282,10 @@ phosh-lockscreen .phosh-notification-tray phosh-notification-content {
 phosh-lockscreen .phosh-notification-tray phosh-notification-content:last-child {
   margin-bottom: 3px;
   border-radius: 0px 0px 6px 6px;
+}
+
+phosh-lockscreen cui-call-display actionbar {
+  background-color: @phosh_bg_color;
 }
 
 /*

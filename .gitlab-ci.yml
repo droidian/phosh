@@ -33,7 +33,7 @@ variables:
 .test_step: &test_step
   script:
     - export LC_ALL=C.UTF-8
-    - ${XVFB_RUN} meson test -C _build
+    - ${XVFB_RUN} meson test --print-errorlogs -C _build
     - ninja -C _build coverage
 
 build:native-debian-bookworm:
@@ -76,6 +76,7 @@ unit-test:native-debian-bookworm:
        de_DE.UTF-8 UTF-8
        en_US.UTF-8 UTF-8
        ja_JP.UTF-8 UTF-8
+       uk_UA.UTF-8 UTF-8
        ' > /etc/locale.gen
      - dpkg-reconfigure locales
   needs:
@@ -103,6 +104,7 @@ screenshot:native-debian-bookworm:
        de_DE.UTF-8 UTF-8
        en_US.UTF-8 UTF-8
        ja_JP.UTF-8 UTF-8
+       uk_UA.UTF-8 UTF-8
        ' > /etc/locale.gen
      - dpkg-reconfigure locales
   needs:
