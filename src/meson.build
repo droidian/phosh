@@ -130,6 +130,7 @@ libphosh_tool_sources = files(
   'overview.h',
   'osd-window.c',
   'osd-window.h',
+  'paginated-model.c',
   'plugin-loader.c',
   'plugin-loader.h',
   'status-icon.c',

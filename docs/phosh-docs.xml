@@ -101,6 +101,7 @@
       <xi:include href="xml/osk-manager.xml"/>
       <xi:include href="xml/overview.xml"/>
       <xi:include href="xml/osd-window.xml"/>
+      <xi:include href="xml/paginated-model.xml"/>
       <xi:include href="xml/phosh-wayland.xml"/>
       <xi:include href="xml/phosh-wwan-backend.xml"/>
       <xi:include href="xml/phosh-wwan-iface.xml"/>
