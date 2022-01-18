@@ -23,12 +23,15 @@ struct _PhoshAppGridButtonPrivate {
   GAppInfo *info;
   gboolean is_favorite;
   PhoshAppGridButtonMode mode;
+  gboolean adaptive;
 
   gulong favorite_changed_watcher;
 
+  GtkWidget  *form_factor_desktop;
   GtkWidget  *icon;
   GtkWidget  *label;
   GtkWidget  *popover;
+  GtkWidget  *title_box;
   GtkGesture *gesture;
 
   GMenu *menu;
@@ -44,6 +47,7 @@ enum {
   PROP_APP_INFO,
   PROP_IS_FAVORITE,
   PROP_MODE,
+  PROP_ADAPTIVE,
   LAST_PROP
 };
 static GParamSpec *props[LAST_PROP];
@@ -69,6 +73,9 @@ phosh_app_grid_button_set_property (GObject      *object,
     case PROP_MODE:
       phosh_app_grid_button_set_mode (self, g_value_get_enum (value));
       break;
+    case PROP_ADAPTIVE:
+      phosh_app_grid_button_set_adaptive (self, g_value_get_boolean (value));
+      break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -93,6 +100,9 @@ phosh_app_grid_button_get_property (GObject    *object,
       break;
     case PROP_MODE:
       g_value_set_enum (value, phosh_app_grid_button_get_mode (self));
+      break;
+    case PROP_ADAPTIVE:
+      g_value_set_boolean (value, phosh_app_grid_button_get_adaptive (self));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -230,14 +240,30 @@ phosh_app_grid_button_class_init (PhoshAppGridButtonClass *klass)
                        G_PARAM_READWRITE |
                        G_PARAM_EXPLICIT_NOTIFY);
 
+  /**
+   * PhoshAppGridButton:adaptive:
+   *
+   * Whether to set the button in adaptive mode.
+   *
+   * An icon will be shown to warn of a lack of adaptiveness.
+   */
+  props[PROP_ADAPTIVE] =
+    g_param_spec_boolean ("adaptive", "", "",
+                          FALSE,
+                          G_PARAM_STATIC_STRINGS |
+                          G_PARAM_READWRITE |
+                          G_PARAM_EXPLICIT_NOTIFY);
+
 
   g_object_class_install_properties (object_class, LAST_PROP, props);
 
   gtk_widget_class_set_template_from_resource (widget_class, "/sm/puri/phosh/ui/app-grid-button.ui");
 
+  gtk_widget_class_bind_template_child_private (widget_class, PhoshAppGridButton, form_factor_desktop);
   gtk_widget_class_bind_template_child_private (widget_class, PhoshAppGridButton, icon);
   gtk_widget_class_bind_template_child_private (widget_class, PhoshAppGridButton, label);
   gtk_widget_class_bind_template_child_private (widget_class, PhoshAppGridButton, popover);
+  gtk_widget_class_bind_template_child_private (widget_class, PhoshAppGridButton, title_box);
 
   gtk_widget_class_bind_template_child_private (widget_class, PhoshAppGridButton, menu);
   gtk_widget_class_bind_template_child_private (widget_class, PhoshAppGridButton, actions);
@@ -577,10 +603,10 @@ phosh_app_grid_button_set_mode (PhoshAppGridButton     *self,
 
   switch (mode) {
     case PHOSH_APP_GRID_BUTTON_LAUNCHER:
-      gtk_widget_set_visible (priv->label, TRUE);
+      gtk_widget_set_visible (priv->title_box, TRUE);
       break;
     case PHOSH_APP_GRID_BUTTON_FAVORITES:
-      gtk_widget_set_visible (priv->label, FALSE);
+      gtk_widget_set_visible (priv->title_box, FALSE);
       break;
     default:
       g_critical ("Invalid mode %i", mode);
@@ -602,4 +628,36 @@ phosh_app_grid_button_get_mode (PhoshAppGridButton *self)
   priv = phosh_app_grid_button_get_instance_private (self);
 
   return priv->mode;
+}
+
+
+void
+phosh_app_grid_button_set_adaptive (PhoshAppGridButton *self,
+                                        gboolean            adaptive)
+{
+  PhoshAppGridButtonPrivate *priv;
+
+  g_return_if_fail (PHOSH_IS_APP_GRID_BUTTON (self));
+  priv = phosh_app_grid_button_get_instance_private (self);
+
+  adaptive = !!adaptive;
+
+  if (priv->adaptive == adaptive)
+    return;
+
+  priv->adaptive = adaptive;
+
+  g_object_notify_by_pspec (G_OBJECT (self), props[PROP_ADAPTIVE]);
+}
+
+
+gboolean
+phosh_app_grid_button_get_adaptive (PhoshAppGridButton *self)
+{
+  PhoshAppGridButtonPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_APP_GRID_BUTTON (self), FALSE);
+  priv = phosh_app_grid_button_get_instance_private (self);
+
+  return priv->adaptive;
 }

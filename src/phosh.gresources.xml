@@ -38,6 +38,7 @@
     <file alias="auth-sim-locked-symbolic.svg">../data/icons/auth-sim-locked-symbolic.svg</file>
     <file alias="auth-sim-missing-symbolic.svg">../data/icons/auth-sim-missing-symbolic.svg</file>
     <file alias="camera-hardware-disabled-symbolic.svg">../data/icons/camera-hardware-disabled-symbolic.svg</file>
+    <file alias="desktop-thin-small-symbolic.svg">../data/icons/desktop-thin-small-symbolic.svg</file>
     <file alias="eye-not-looking-symbolic.svg">../data/icons/eye-not-looking-symbolic.svg</file>
     <file alias="eye-open-negative-filled-symbolic.svg">../data/icons/eye-open-negative-filled-symbolic.svg</file>
     <file alias="feedback-quiet-symbolic.svg">../data/icons/feedback-quiet-symbolic.svg</file>
