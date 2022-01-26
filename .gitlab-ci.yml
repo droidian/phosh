@@ -1,5 +1,6 @@
 include:
- - 'https://source.puri.sm/Librem5/librem5-ci/raw/master/librem5-pipeline-definitions.yml'
+ - remote: 'https://source.puri.sm/Librem5/librem5-ci/raw/master/librem5-pipeline-definitions.yml'
+ - remote: 'https://gitlab.freedesktop.org/freedesktop/ci-templates/-/raw/34039cd573a2df832d465bc9e4c5f543571f5241/templates/ci-fairy.yml'
 
 stages:
  - build
@@ -7,12 +8,29 @@ stages:
  - package
  - deploy
 
+default:
+  # Protect CI infra from rogue jobs
+  timeout: 15 minutes
+  # Allow jobs to be caneled on new commits
+  interruptible: true
+  # Retry on infra hickups automatically
+  retry:
+    max: 1
+    when:
+      - 'api_failure'
+      - 'runner_system_failure'
+      - 'scheduler_failure'
+      - 'stuck_or_timeout_failure'
+
 variables:
-  DEBIAN_IMAGE: $CI_REGISTRY/world/phosh/phosh/debian:v0.0.20211005
-  SCREENSHOT_IMAGE: $CI_REGISTRY/world/phosh/phosh/screenshot:v0.0.20211008
+  # For ci-fairy
+  FDO_UPSTREAM_REPO: World/Phosh/phosh
+  # SCREENSHOT_IMAGE builds on DEBIAN_IMAGE so keep them in sync
+  DEBIAN_IMAGE: $CI_REGISTRY/world/phosh/phosh/debian:v0.0.20211208
+  SCREENSHOT_IMAGE: $CI_REGISTRY/world/phosh/phosh/screenshot:v0.0.20211208
   DEBIAN_CROSS_IMAGE: $CI_REGISTRY/world/phosh/phosh/debian-cross:v0.0.20210803
   XVFB_RUN: xvfb-run -a -s -noreset
-  COMMON_BUILD_OPTS: -Db_coverage=true --werror
+  COMMON_BUILD_OPTS: -Db_coverage=true --werror -Dosk-stub=true -Dtools=true
   ALPINE_EDGE_DEPS: alpine-sdk callaudiod-dev elogind-dev feedbackd-dev gcr-dev git glib-dev gnome-desktop-dev
                     gtk+3.0-dev libgudev-dev libhandy1-dev gcr-dev libsecret-dev gcovr linux-pam-dev
                     meson musl-dev networkmanager-dev ninja polkit-elogind-dev pulseaudio-dev
@@ -21,7 +39,7 @@ variables:
 .bookworm_vars: &bookworm_vars
   variables:
     DIST: bookworm
-    BUILD_OPTS: -Dphoc_tests=enabled ${COMMON_BUILD_OPTS}
+    BUILD_OPTS: -Dcallui-i18n=true -Dphoc_tests=enabled ${COMMON_BUILD_OPTS}
 
 .build_step: &build_step
   script:
@@ -35,6 +53,24 @@ variables:
     - export LC_ALL=C.UTF-8
     - ${XVFB_RUN} meson test --print-errorlogs -C _build
     - ninja -C _build coverage
+
+# Sanity checks of MR settings and commit logs
+sanity:
+  extends:
+    - .fdo.ci-fairy
+  stage: build
+  script: |
+    if [ -n "$CI_OPEN_MERGE_REQUESTS" ]; then
+      ci-fairy check-commits --junit-xml=commit-message-junit-report.xml cifairy/main..HEAD ;
+    else
+      echo "Not a merge request" ;
+    fi
+  artifacts:
+    reports:
+      junit: commit-message-junit-report.xml
+  only:
+    variables:
+      - $CI_OPEN_MERGE_REQUESTS && $PKG_ONLY != "1"
 
 build:native-debian-bookworm:
   stage: build
@@ -94,6 +130,20 @@ unit-test:native-debian-bookworm:
     variables:
       - $PKG_ONLY == "1"
 
+asan-test:native-debian-bookworm:
+  stage: test+docs
+  image: ${DEBIAN_IMAGE}
+  tags: [ asan ]
+  <<: *bookworm_vars
+  script:
+    - meson -Dphoc_tests=disabled -Dtools=false -Dosk-stub=false -Db_sanitize=address -Dbuildtype=debug _build-asan
+    - ninja -C _build-asan data/gschemas.compiled
+    - ${XVFB_RUN} meson test --print-errorlogs -C _build-asan --suite unit --no-suite phoc
+  except:
+    variables:
+      - $PKG_ONLY == "1"
+  allow_failure: true
+
 screenshot:native-debian-bookworm:
   stage: test+docs
   image: ${SCREENSHOT_IMAGE}
@@ -114,7 +164,7 @@ screenshot:native-debian-bookworm:
     - export LC_ALL=C.UTF-8
     # Install .po files so tests can find them
     - "DESTDIR=$PWD/_build/install meson install -C _build"
-    - ${XVFB_RUN} meson test -C _build --print-errorlogs --no-suite integration --no-suite unit
+    - ${XVFB_RUN} meson test -C _build --print-errorlogs --suite screenshots
     - mv _build/tests/screenshots/* screenshots/
     - for dir in screenshots/*_*.UTF-8; do montage -mode concatenate $dir/*.png ${dir}.png; done
   artifacts:
@@ -130,13 +180,13 @@ build-gtkdoc:
   image: ${DEBIAN_IMAGE}
   variables:
     DIST: bookworm
-    BUILD_OPTS: -Dgtk_doc=true ${COMMON_BUILD_OPTS}
+    BUILD_OPTS: -Dtests=false -Dgtk_doc=true ${COMMON_BUILD_OPTS}
   script:
     - git clean -dfx
     - 'echo "Build opts: ${BUILD_OPTS}"'
     - meson ${BUILD_OPTS} . _build
     - ninja -C _build
-    - tools/doc-check
+    - tools/doc-check _build
     - mv _build/docs/html/ _reference/
   artifacts:
     paths:

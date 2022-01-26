@@ -53,6 +53,7 @@
 #include "mount-manager.h"
 #include "settings.h"
 #include "system-modal-dialog.h"
+#include "network-auth-manager.h"
 #include "notifications/notify-manager.h"
 #include "notifications/notification-banner.h"
 #include "osk-manager.h"
@@ -74,6 +75,7 @@
 #include "torch-manager.h"
 #include "torch-info.h"
 #include "util.h"
+#include "vpn-info.h"
 #include "wifiinfo.h"
 #include "wwaninfo.h"
 #include "wwan/phosh-wwan-ofono.h"
@@ -145,6 +147,8 @@ typedef struct
   PhoshGnomeShellManager *gnome_shell_manager;
   PhoshSplashManager *splash_manager;
   PhoshRunCommandManager *run_command_manager;
+  PhoshNetworkAuthManager *network_auth_manager;
+  PhoshVpnManager *vpn_manager;
 
   /* sensors */
   PhoshSensorProxyManager *sensor_proxy_manager;
@@ -357,6 +361,8 @@ phosh_shell_dispose (GObject *object)
   g_clear_object (&priv->notification_banner);
 
   /* dispose managers in opposite order of declaration */
+  g_clear_object (&priv->vpn_manager);
+  g_clear_object (&priv->network_auth_manager);
   g_clear_object (&priv->run_command_manager);
   g_clear_object (&priv->splash_manager);
   g_clear_object (&priv->screenshot_manager);
@@ -566,6 +572,7 @@ setup_idle_cb (PhoshShell *self)
   priv->screenshot_manager = phosh_screenshot_manager_new ();
   priv->splash_manager = phosh_splash_manager_new (priv->app_tracker);
   priv->run_command_manager = phosh_run_command_manager_new();
+  priv->network_auth_manager = phosh_network_auth_manager_new ();
 
   /* Delay signaling the compositor a bit so that idle handlers get a
    * chance to run and the user has can unlock right away. Ideally
@@ -598,6 +605,7 @@ type_setup (void)
   g_type_ensure (PHOSH_TYPE_SYSTEM_MODAL);
   g_type_ensure (PHOSH_TYPE_SYSTEM_MODAL_DIALOG);
   g_type_ensure (PHOSH_TYPE_TORCH_INFO);
+  g_type_ensure (PHOSH_TYPE_VPN_INFO);
   g_type_ensure (PHOSH_TYPE_WIFI_INFO);
   g_type_ensure (PHOSH_TYPE_WWAN_INFO);
 }
@@ -1255,6 +1263,22 @@ phosh_shell_get_torch_manager (PhoshShell *self)
 
   g_return_val_if_fail (PHOSH_IS_TORCH_MANAGER (priv->torch_manager), NULL);
   return priv->torch_manager;
+}
+
+
+PhoshVpnManager *
+phosh_shell_get_vpn_manager (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
+  priv = phosh_shell_get_instance_private (self);
+
+  if (!priv->vpn_manager)
+      priv->vpn_manager = phosh_vpn_manager_new ();
+
+  g_return_val_if_fail (PHOSH_IS_VPN_MANAGER (priv->vpn_manager), NULL);
+  return priv->vpn_manager;
 }
 
 

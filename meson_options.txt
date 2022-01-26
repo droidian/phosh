@@ -17,3 +17,16 @@ option('systemd',
 option('compositor',
        type: 'string', value: '/usr/bin/phoc',
        description: 'Path to the Phoc compositor for use in the launcher script')
+
+option('callui-i18n',
+       type: 'boolean', value: false,
+       description: 'Whether to install libcallui\s i18n fles')
+
+option('osk-stub',
+       type: 'boolean', value: false,
+       description: 'Whether to build and install the osk stub')
+
+# Tools helping with e.g. notification server development
+option('tools',
+       type: 'boolean', value: false,
+       description: 'Whether to build the tools')

@@ -1,5 +1,5 @@
 project('phosh', 'c',
-          version: '0.14.1',
+          version: '0.15.0',
           license: 'GPLv3+',
     meson_version: '>= 0.52.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
@@ -132,11 +132,11 @@ libcall_ui = subproject('libcall-ui',
     'examples=false',
     'gtk_doc=false',
     'tests=false',
+    'install-i18n=@0@'.format(get_option('callui-i18n')),
   ])
 libcall_ui_dep = libcall_ui.get_variable('libcall_ui_dep')
 libnm_dep = dependency('libnm', version: '>= 1.14')
 libpolkit_agent_dep = dependency('polkit-agent-1', version: '>= 0.105')
-# TODO: make optional for elogind?
 libsystemd_dep = dependency('libsystemd', version: '>= 241')
 network_agent_dep = dependency('libsecret-1')
 upower_glib_dep = dependency('upower-glib', version: '>=0.99.1')
@@ -186,6 +186,8 @@ summary = [
   '   Compositor: @0@'.format(get_option('compositor')),
   '      Systemd: @0@'.format(get_option('systemd')),
   'Documentation: @0@'.format(get_option('gtk_doc')),
+  '     osk-stub: @0@'.format(get_option('osk-stub')),
+  '        tools: @0@'.format(get_option('tools')),
   '-----------',
 ]
 

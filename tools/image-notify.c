@@ -27,7 +27,7 @@ action_test (GSimpleAction *action,
 
 
 static GActionEntry entries[] = {
-  { "test", action_test, NULL, NULL, NULL },
+  { .name = "test", .activate = action_test },
 };
 
 

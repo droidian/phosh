@@ -19,6 +19,7 @@
 #include "settings/gvc-channel-bar.h"
 #include "torch-info.h"
 #include "torch-manager.h"
+#include "vpn-manager.h"
 #include "wwan/phosh-wwan-mm.h"
 #include "notifications/notify-manager.h"
 #include "notifications/notification-frame.h"
@@ -303,6 +304,30 @@ update_output_vol_bar (PhoshSettings *self)
 
 
 static void
+on_vpn_setting_clicked (PhoshSettings *self)
+{
+  PhoshShell *shell = phosh_shell_get_default ();
+  PhoshVpnManager *vpn_manager;
+
+  g_return_if_fail (PHOSH_IS_SETTINGS (self));
+  g_return_if_fail (PHOSH_IS_SHELL (shell));
+
+  g_debug ("Toggling VPN connection");
+
+  vpn_manager = phosh_shell_get_vpn_manager (shell);
+  phosh_vpn_manager_toggle_last_connection (vpn_manager);
+}
+
+
+static void
+on_vpn_setting_long_pressed (PhoshSettings *self)
+{
+  phosh_quick_setting_open_settings_panel ("network");
+  close_settings_menu (self);
+}
+
+
+static void
 output_stream_notify_is_muted_cb (GvcMixerStream *stream, GParamSpec *pspec, gpointer data)
 {
   PhoshSettings *self = PHOSH_SETTINGS (data);
@@ -521,6 +546,8 @@ vol_adjustment_value_changed_cb (GtkAdjustment *adjustment,
   g_return_if_fail (self->output_stream);
   if (gvc_mixer_stream_set_volume (self->output_stream, (pa_volume_t) rounded) != FALSE)
     gvc_mixer_stream_push_volume (self->output_stream);
+
+  gvc_mixer_stream_change_is_muted (self->output_stream, (int) rounded == 0);
 }
 
 
@@ -823,8 +850,11 @@ phosh_settings_class_init (PhoshSettingsClass *klass)
   gtk_widget_class_bind_template_callback (widget_class, wifi_setting_long_pressed_cb);
   gtk_widget_class_bind_template_callback (widget_class, wwan_setting_clicked_cb);
   gtk_widget_class_bind_template_callback (widget_class, wwan_setting_long_pressed_cb);
-  gtk_widget_class_bind_template_callback (widget_class, on_torch_scale_value_changed);
   gtk_widget_class_bind_template_callback (widget_class, on_notifications_clear_all_clicked);
+  gtk_widget_class_bind_template_callback (widget_class, on_torch_scale_value_changed);
+  gtk_widget_class_bind_template_callback (widget_class, on_vpn_setting_long_pressed);
+  gtk_widget_class_bind_template_callback (widget_class, on_vpn_setting_clicked);
+
 }
 
 

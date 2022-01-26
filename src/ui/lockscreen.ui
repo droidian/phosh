@@ -107,6 +107,9 @@
                         <property name="visible">True</property>
                         <property name="can_focus">False</property>
                         <property name="valign">center</property>
+                        <style>
+                          <class name="phosh-lockscreen-date"/>
+                        </style>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -189,6 +192,9 @@
                             <property name="position">3</property>
                           </packing>
                         </child>
+                        <style>
+                          <class name="phosh-lockscreen-status-icons"/>
+                        </style>
                       </object>
                       <packing>
                         <property name="expand">False</property>
@@ -200,7 +206,7 @@
                       <object class="HdyClamp">
                         <property name="visible" bind-source="media_player" bind-property="visible" bind-flags="sync-create"/>
                         <property name="can_focus">False</property>
-                        <property name="maximum_size">350</property>
+                        <property name="maximum_size">360</property>
                         <property name="margin_top">6</property>
                         <property name="vexpand">True</property>
                         <property name="valign">center</property>
@@ -221,11 +227,10 @@
                       <object class="HdyClamp">
                         <property name="visible" bind-source="list_notifications" bind-property="visible" bind-flags="sync-create"/>
                         <property name="can_focus">False</property>
-                        <property name="maximum_size">350</property>
+                        <property name="maximum_size">360</property>
                         <property name="margin_top">6</property>
                         <property name="vexpand">True</property>
                         <property name="valign">center</property>
-
                         <child>
                           <object class="GtkScrolledWindow" id="sw_notifications">
                             <property name="vscrollbar-policy">automatic</property>
@@ -286,15 +291,21 @@
                   </object>
                 </child>
                 <child>
-                  <object class="PhoshKeypad" id="keypad">
+                  <object class="GtkRevealer" id="keypad_revealer">
                     <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <property name="halign">center</property>
-                    <property name="valign">center</property>
-                    <property name="margin_top">12</property>
-                    <property name="margin_bottom">12</property>
-                    <property name="entry">entry_pin</property>
-                    <property name="end-action">btn_delete</property>
+                    <child>
+                      <object class="PhoshKeypad" id="keypad">
+                        <property name="visible">True</property>
+                        <property name="can_focus">False</property>
+                        <property name="halign">center</property>
+                        <property name="valign">center</property>
+                        <property name="margin_top">12</property>
+                        <property name="margin_bottom">12</property>
+                        <property name="entry">entry_pin</property>
+                        <property name="start-action">btn_keyboard</property>
+                        <property name="end-action">btn_delete</property>
+                      </object>
+                    </child>
                   </object>
                 </child>
                 <child>
@@ -396,6 +407,12 @@
         <property name="icon-name">edit-clear-symbolic</property>
       </object>
     </child>
+  </object>
+  <object class="PhoshOskButton" id="btn_keyboard">
+    <property name="visible">True</property>
+    <property name="can_focus">True</property>
+    <property name="focus_on_click">False</property>
+    <signal name="clicked" handler="osk_button_clicked_cb" object="PhoshLockscreen" swapped="true"/>
   </object>
   <object class="GtkGestureLongPress" id="long_press_del_gesture">
     <property name="widget">btn_delete</property>

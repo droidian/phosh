@@ -38,6 +38,8 @@ src/polkit-auth-prompt.c
 src/proximity.c
 src/quick-setting.c
 src/rotateinfo.c
+src/run-command-dialog.c
+src/run-command-manager.c
 src/screen-saver-manager.c
 src/sensor-proxy-manager.c
 src/session-presence.c
@@ -69,6 +71,7 @@ src/ui/settings-menu.ui
 src/ui/system-prompt.ui
 src/ui/top-panel.ui
 src/util.c
+src/vpn-info.c
 src/wifiinfo.c
 src/wifimanager.c
 src/wwaninfo.c

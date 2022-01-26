@@ -50,6 +50,11 @@ libphosh_generated_sources = [
   generated_dbus_sources,
 ]
 
+phosh_layer_surface_sources = files(
+  'layersurface.c',
+  'layersurface.h',
+)
+
 libphosh_tool_sources = files(
   'activity.c',
   'activity.h',
@@ -91,8 +96,6 @@ libphosh_tool_sources = files(
   'gtk-mount-prompt.h',
   'keypad.c',
   'keypad.h',
-  'layersurface.c',
-  'layersurface.h',
   'lockshield.c',
   'lockshield.h',
   'log.h',
@@ -123,6 +126,10 @@ libphosh_tool_sources = files(
   'system-modal-dialog.h',
   'thumbnail.c',
   'thumbnail.h',
+  'vpn-info.c',
+  'vpn-info.h',
+  'vpn-manager.c',
+  'vpn-manager.h',
   'quick-setting.c',
   'quick-setting.h',
   'phosh-wayland.c',
@@ -136,6 +143,7 @@ libphosh_tool_sources = files(
 ) + [
   libphosh_generated_sources,
   phosh_gtk_list_models_sources,
+  phosh_layer_surface_sources,
   phosh_monitor_sources,
   phosh_notifications_sources,
 ]
@@ -179,6 +187,8 @@ libphosh_sources = files(
   'lockscreen.h',
   'monitor-manager.c',
   'monitor-manager.h',
+  'network-auth-manager.c',
+  'network-auth-manager.h',
   'network-auth-prompt.c',
   'network-auth-prompt.h',
   'osk-button.c',

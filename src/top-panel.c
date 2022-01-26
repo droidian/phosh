@@ -70,6 +70,8 @@ typedef struct _PhoshTopPanel {
   /* Keybinding */
   GStrv           action_names;
   GSettings      *kb_settings;
+
+  GtkGesture     *click_gesture; /* needed so that the gesture isn't destroyed immediately */
 } PhoshTopPanel;
 
 G_DEFINE_TYPE (PhoshTopPanel, phosh_top_panel, PHOSH_TYPE_LAYER_SURFACE)
@@ -251,10 +253,10 @@ on_key_press_event (PhoshTopPanel *self, GdkEventKey *event, gpointer data)
 }
 
 
-static gboolean
-on_button_press_event (PhoshTopPanel *self, GdkEventButton *event, gpointer data)
+static void
+released_cb (PhoshTopPanel *self)
 {
-  phosh_trigger_feedback ("button-pressed");
+  phosh_trigger_feedback ("button-released");
 
   /*
    * The popover has to be popdown manually as it doesn't happen
@@ -265,7 +267,6 @@ on_button_press_event (PhoshTopPanel *self, GdkEventButton *event, gpointer data
   else
     phosh_top_panel_fold (self);
 
-  return GDK_EVENT_PROPAGATE;
 }
 
 
@@ -284,25 +285,19 @@ toggle_message_tray_action (GSimpleAction *action, GVariant *param, gpointer dat
 static void
 add_keybindings (PhoshTopPanel *self)
 {
-  GStrv keybindings;
-
-  GPtrArray *action_names = g_ptr_array_new ();
+  g_auto (GStrv) keybindings = NULL;
   g_autoptr (GArray) actions = g_array_new (FALSE, TRUE, sizeof (GActionEntry));
 
   keybindings = g_settings_get_strv (self->kb_settings, KEYBINDING_KEY_TOGGLE_MESSAGE_TRAY);
   for (int i = 0; i < g_strv_length (keybindings); i++) {
-    GActionEntry entry = { keybindings[i], toggle_message_tray_action, };
+    GActionEntry entry = { .name = keybindings[i], .activate = toggle_message_tray_action };
     g_array_append_val (actions, entry);
-    g_ptr_array_add (action_names, keybindings[i]);
   }
-  /* Free GStrv container but keep individual strings for action_names */
-  g_free (keybindings);
-
   phosh_shell_add_global_keyboard_action_entries (phosh_shell_get_default (),
                                                   (GActionEntry*) actions->data,
                                                   actions->len,
                                                   self);
-  self->action_names = (GStrv) g_ptr_array_free (action_names, FALSE);
+  self->action_names = g_steal_pointer (&keybindings);
 }
 
 
@@ -322,10 +317,10 @@ on_keybindings_changed (PhoshTopPanel *self,
 
 
 static GActionEntry entries[] = {
-  { "poweroff", on_shutdown_action, NULL, NULL, NULL },
-  { "restart", on_restart_action, NULL, NULL, NULL },
-  { "lockscreen", on_lockscreen_action, NULL, NULL, NULL },
-  { "logout", on_logout_action, NULL, NULL, NULL },
+  { .name = "poweroff", .activate = on_shutdown_action },
+  { .name = "restart", .activate = on_restart_action },
+  { .name = "lockscreen", .activate = on_lockscreen_action },
+  { .name = "logout", .activate = on_logout_action },
 };
 
 
@@ -381,14 +376,10 @@ phosh_top_panel_constructed (GObject *object)
   }
 
   /* Settings menu and it's top-bar / menu */
-  gtk_widget_add_events (GTK_WIDGET (self), GDK_KEY_PRESS_MASK);
+  gtk_widget_add_events (GTK_WIDGET (self), GDK_ALL_EVENTS_MASK);
   g_signal_connect (G_OBJECT (self),
                     "key-press-event",
                     G_CALLBACK (on_key_press_event),
-                    NULL);
-  g_signal_connect (G_OBJECT (self),
-                    "button-press-event",
-                    G_CALLBACK (on_button_press_event),
                     NULL);
   g_signal_connect_swapped (self->settings,
                             "setting-done",
@@ -465,6 +456,8 @@ phosh_top_panel_class_init (PhoshTopPanelClass *klass)
   gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, box);
   gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, stack);
   gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, settings);
+  gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, click_gesture);
+  gtk_widget_class_bind_template_callback (widget_class, released_cb);
 }
 
 

@@ -259,7 +259,6 @@ action_activated (GSimpleAction *action,
   PhoshAppGridButton *self = PHOSH_APP_GRID_BUTTON (data);
   PhoshAppGridButtonPrivate *priv = phosh_app_grid_button_get_instance_private (self);
   g_autoptr (GdkAppLaunchContext) context = NULL;
-  g_autoptr (GError) error = NULL;
   const char *action_name;
 
   action_name = g_variant_get_string (parameter, NULL);
@@ -315,9 +314,9 @@ long_pressed (GtkGestureLongPress *gesture,
 
 static GActionEntry entries[] =
 {
-  { "action", action_activated, "s", NULL, NULL },
-  { "favorite-remove", favorite_remove_activated, NULL, NULL, NULL },
-  { "favorite-add", favorite_add_activated, NULL, NULL, NULL },
+  { .name = "action", .activate = action_activated, .parameter_type = "s" },
+  { .name = "favorite-remove", .activate = favorite_remove_activated },
+  { .name = "favorite-add", .activate = favorite_add_activated },
 };
 
 

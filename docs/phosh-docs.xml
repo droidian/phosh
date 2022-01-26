@@ -84,6 +84,7 @@
       <xi:include href="xml/monitor.xml"/>
       <xi:include href="xml/mount-manager.xml"/>
       <xi:include href="xml/mount-notification.xml"/>
+      <xi:include href="xml/network-auth-manager.xml"/>
       <xi:include href="xml/network-auth-prompt.xml"/>
       <xi:include href="xml/notification-banner.xml"/>
       <xi:include href="xml/notification-content.xml"/>
@@ -131,6 +132,8 @@
       <xi:include href="xml/toplevel-thumbnail.xml"/>
       <xi:include href="xml/torch-info.xml"/>
       <xi:include href="xml/torch-manager.xml"/>
+      <xi:include href="xml/vpn-info.xml"/>
+      <xi:include href="xml/vpn-manager.xml"/>
       <xi:include href="xml/wifiinfo.xml"/>
       <xi:include href="xml/wifimanager.xml"/>
       <xi:include href="xml/wwaninfo.xml"/>
@@ -169,10 +172,10 @@
 
     <chapter id="wayland_protocols">
       <title>Wayland protocols</title>
-      <xi:include href="xml/gamma-control-client-protocol.xml"/>
       <xi:include href="xml/idle-client-protocol.xml"/>
       <xi:include href="xml/phosh-private-client-protocol.xml"/>
       <xi:include href="xml/wlr-foreign-toplevel-management-unstable-v1-client-protocol.xml"/>
+      <xi:include href="xml/wlr-gamma-control-unstable-v1-client-protocol.xml"/>
       <xi:include href="xml/wlr-input-inhibitor-unstable-v1-client-protocol.xml"/>
       <xi:include href="xml/wlr-layer-shell-unstable-v1-client-protocol.xml"/>
       <xi:include href="xml/wlr-output-management-unstable-v1-client-protocol.xml"/>

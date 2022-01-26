@@ -40,8 +40,8 @@ phosh-top-panel .indicators {
  */
 .phosh-settings-menu {
   background-color: @phosh_bg_color;
-  border-bottom-right-radius: 10px;
-  border-bottom-left-radius: 10px;
+  border-bottom-right-radius: 12px;
+  border-bottom-left-radius: 12px;
 }
 
 .phosh-settings-menu button.circular:not(:hover):not(:active) {
@@ -56,8 +56,10 @@ phosh-top-panel .indicators {
 .phosh-quick-setting {
   font-size: 9px;
   padding: 9px;
+  border-radius: 8px;
   border: 0;
   box-shadow: 0 0;
+  background-color: transparent;
 }
 
 .phosh-quick-setting:not(:hover):not(:active) {
@@ -124,6 +126,7 @@ phosh-home, phosh-top-panel {
   -gtk-icon-effect: highlight;
 }
 
+/* Search Bar */
 .phosh-search-bar-box {
   margin: 6px 16px;
 }
@@ -131,6 +134,13 @@ phosh-home, phosh-top-panel {
 .phosh-search-bar {
   border-radius: 9999px;
   padding: 3px 18px 3px 14px;
+  border: 1px solid transparent;
+}
+
+.phosh-search-bar:focus {
+  box-shadow: inset 0 0 0 1px @theme_selected_bg_color;
+  outline: none;
+  border: 1px solid @theme_selected_bg_color;
 }
 
 .phosh-menu-button {
@@ -142,8 +152,10 @@ phosh-app-grid {
 }
 
 phosh-app-grid separator {
-  background: rgba(51, 51, 51, 1);
-  min-height: 2px
+  background: alpha(@phosh_fg_color,.2);
+  min-height: 2px;
+  border-radius: 1px;
+  margin: 0 12px;
 }
 
 phosh-app-grid-button {
@@ -186,23 +198,37 @@ phosh-app-grid-button image {
   outline-style: none;
 }
 
+
 /*
  * Lock screen
  */
-phosh-lockscreen, .phosh-lockshield {
+phosh-lockscreen,
+.phosh-lockshield {
   background-color: @phosh_bg_color;
+  color: @phosh_fg_color;
 }
 
 .phosh-lockscreen-clock {
   font-size: 72px;
-  font-weight: 100;
+  font-weight: 300;
   font-feature-settings: "tnum";
+  margin: 12px 0;
+}
+
+.phosh-lockscreen-date {
+  font-size: 18px;
+  margin: 6px 0;
+  font-weight: 400;
 }
 
 .phosh-lockscreen-arrow {
   transition: 400ms linear;
   animation: pulsate 1.8s ease-out;
   animation-iteration-count: 15;
+}
+
+.phosh-lockscreen-status-icons {
+  padding: 6px;
 }
 
 .phosh-lockscreen-pin {
@@ -270,7 +296,7 @@ phosh-lockscreen .phosh-notification-tray row {
   margin-right: 12px;
 }
 
-phosh-lockscreen .phosh-notification-tray phosh-notification-frame {
+phosh-lockscreen .phosh-notification-tray phosh-notification-frame .notification-container {
   background-color: @phosh_notification_bg_color;
   margin: 3px 0px 0px 0px;
 }
@@ -288,19 +314,21 @@ phosh-lockscreen cui-call-display actionbar {
   background-color: @phosh_bg_color;
 }
 
+
 /*
  * System modal dialogs (polkit, gcr, ...)
  */
 .phosh-system-modal {
-  background-color: alpha(@theme_bg_color, 0.7);
+  background-color: alpha(@phosh_bg_color, 0.8);
 }
 
 .phosh-system-modal-dialog {
   background-color: @theme_bg_color;
-  border: none;
-  border-radius: 10px;
-  box-shadow: 0 0 0 1px alpha(black, .75);
+  border: 1px solid @borders;
+  border-radius: 12px;
+  box-shadow: 0 2px 4px 0 rgba(0,0,0,.2);
   padding: 0px;
+  margin: 12px;
 }
 
 .phosh-system-modal-dialog-buttons label {
@@ -409,13 +437,13 @@ phosh-notification-content:last-child .actions-area button:last-child {
   border-bottom: none;
 }
 
-phosh-notification-frame {
+phosh-notification-frame .notification-container {
   border-radius: 6px;
   background-color: @phosh_notification_bg_color;
   margin: 12px;
 }
 
-phosh-notification-banner > phosh-notification-frame {
+phosh-notification-banner .notification-container {
   box-shadow: 0px 0px 5px 0px rgba(0, 0, 0, 0.33),
               0px 5px 6px 0px rgba(0, 0, 0, 0.07),
               0px 0px 0px 1px rgba(0, 0, 0, 0.2);
@@ -564,3 +592,44 @@ phosh-splash.dark {
 .phosh-dropicon-shadow {
   -gtk-icon-shadow: 0 1px 2px rgba(0, 0, 0, 0.4), 0 1px 8px rgba(0, 0, 0, 0.2);
 }
+
+/*
+ * GTK Overrides
+ */
+
+/* Scrollbars */
+scrollbar {
+  background-color: transparent;
+  border: none;
+}
+
+/* Sliders  */
+scale trough {
+  padding: 1px;
+  border-radius: 2px;
+  border: none;
+  background: alpha(@phosh_fg_color, 0.3);
+}
+
+scale trough > highlight {
+  padding: 2px;
+  border: none;
+}
+
+scale trough slider {
+  border-width: 1px;
+  border-style: solid;
+  border-color: shade(@phosh_fg_color, 0.9);
+  background: shade(@phosh_fg_color, 0.9);
+}
+
+scale trough slider:hover {
+  border-color: @phosh_fg_color;
+  background: @phosh_fg_color;
+}
+
+scale trough slider:active {
+  border-color: shade(@phosh_fg_color, 0.9);
+  background: shade(@phosh_fg_color, 0.9);
+}
+
