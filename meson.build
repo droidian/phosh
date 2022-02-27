@@ -1,7 +1,7 @@
 project('phosh', 'c',
-          version: '0.15.0',
+          version: '0.16.0',
           license: 'GPLv3+',
-    meson_version: '>= 0.52.0',
+    meson_version: '>= 0.54.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
 )
 
@@ -96,6 +96,7 @@ i18n  = import('i18n')
 
 glib_ver = '>= 2.62'
 
+fribidi_dep = dependency('fribidi')
 gcr_dep = dependency('gcr-3', version: '>= 3.7.5')
 glib_dep = dependency('glib-2.0', version: glib_ver)
 gio_dep = dependency('gio-2.0', version: glib_ver)
@@ -172,8 +173,8 @@ subdir('data')
 subdir('po')
 subdir('protocol')
 subdir('src')
-subdir('tools')
 subdir('tests')
+subdir('tools')
 subdir('docs')
 
 summary = [
@@ -186,7 +187,6 @@ summary = [
   '   Compositor: @0@'.format(get_option('compositor')),
   '      Systemd: @0@'.format(get_option('systemd')),
   'Documentation: @0@'.format(get_option('gtk_doc')),
-  '     osk-stub: @0@'.format(get_option('osk-stub')),
   '        tools: @0@'.format(get_option('tools')),
   '-----------',
 ]

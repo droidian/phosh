@@ -1,5 +1,15 @@
 run_phoc_tests = false
 
+# Deps for all tests
+test_stub_deps = files(
+  'stubs/phosh.c',
+  'stubs/app-tracker.c',
+  'stubs/lockscreen-manager.c',
+  'stubs/toplevel.c',
+  'stubs/toplevel-manager.c',
+  'stubs/thumbnail.c',
+)
+
 if get_option('tests')
 
 subdir('system')
@@ -19,8 +29,12 @@ test_env_common.set('GSETTINGS_SCHEMA_DIR', '@0@/data'.format(meson.build_root()
 test_env_common.set('PYTHONDONTWRITEBYTECODE', 'yes')
 test_env_common.set('MALLOC_CHECK_', '2')
 test_env_common.set('NO_AT_BRIDGE', '1')
+
+# For -Db_sanitize=address
 test_env_common.set('LSAN_OPTIONS',
 		    'suppressions=@0@/data/leak-suppress.txt'.format(meson.source_root()))
+# as our libraries lack frame pointers since otherwise back traces are incomplete
+test_env_common.set('ASAN_OPTIONS', 'fast_unwind_on_malloc=0')
 
 # xdg setup for the app-grid:
 test_env_unit = test_env_common
@@ -45,18 +59,9 @@ test_link_args = [
   '-fPIC',
 ]
 
-# Deps for all tests
-test_stub_deps = [
-  'stubs/phosh.c',
-  'stubs/app-tracker.c',
-  'stubs/lockscreen-manager.c',
-  'stubs/toplevel.c',
-  'stubs/toplevel-manager.c',
-  'stubs/thumbnail.c',
-]
-
 testlib_sources = [
   'testlib.c',
+  'testlib-head-stub.c',
   'testlib-full-shell.c',
   'testlib-calls-mock.c',
   'testlib-mpris-mock.c',
@@ -75,6 +80,7 @@ tests = [
   'app-grid-button',
   'app-list-model',
   'connectivity-info',
+  'fading-label',
   'favourite-model',
   'head',
   'keypad',
@@ -92,11 +98,13 @@ tests = [
 ]
 
 tests_phoc = [
+  'app-auth-prompt',
   'background',
   'end-session-dialog',
   'layer-surface',
   'lockshield',
   'notification-banner',
+  'osd-window',
   'system-modal',
   'system-modal-dialog',
   'timestamp-label',

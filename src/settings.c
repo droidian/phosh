@@ -86,7 +86,7 @@ close_settings_menu (PhoshSettings *self)
 }
 
 static void
-brightness_value_changed_cb (GtkScale *scale_brightness, gpointer *unused)
+brightness_value_changed_cb (GtkScale *scale_brightness, gpointer unused)
 {
   int brightness;
 
@@ -331,9 +331,15 @@ static void
 output_stream_notify_is_muted_cb (GvcMixerStream *stream, GParamSpec *pspec, gpointer data)
 {
   PhoshSettings *self = PHOSH_SETTINGS (data);
+  gboolean muted;
 
-  if (!self->setting_volume)
-    update_output_vol_bar (self);
+  muted = gvc_mixer_stream_get_is_muted (stream);
+  if (!self->setting_volume) {
+    gvc_channel_bar_set_is_muted (GVC_CHANNEL_BAR (self->output_vol_bar), muted);
+    if (!muted)
+      update_output_vol_bar (self);
+  };
+
 }
 
 
@@ -392,7 +398,7 @@ on_output_stream_port_changed (GvcMixerStream *stream, GParamSpec *pspec, gpoint
 
 
 static void
-mixer_control_output_update_cb (GvcMixerControl *mixer, guint id, gpointer *data)
+mixer_control_output_update_cb (GvcMixerControl *mixer, guint id, gpointer data)
 {
   PhoshSettings *self = PHOSH_SETTINGS (data);
 
@@ -510,13 +516,12 @@ mixer_control_phone_stream_removed_cb (GvcMixerControl *mixer,
 }
 
 static void
-phone_vol_adjustment_value_changed_cb (GtkAdjustment *adjustment,
-                                       PhoshSettings *self)
+phone_vol_bar_changed_cb (GvcChannelBar *bar, PhoshSettings *self)
 {
   double volume, rounded;
   g_autofree char *name = NULL;
 
-  volume = gtk_adjustment_get_value (adjustment);
+  volume = gvc_channel_bar_get_volume (bar);
   rounded = round (volume);
 
   g_object_get (self->output_vol_bar, "name", &name, NULL);
@@ -525,11 +530,12 @@ phone_vol_adjustment_value_changed_cb (GtkAdjustment *adjustment,
   g_return_if_fail (self->phone_stream);
   if (gvc_mixer_stream_set_volume (self->phone_stream, (pa_volume_t) rounded) != FALSE)
     gvc_mixer_stream_push_volume (self->phone_stream);
+
+  gvc_mixer_stream_change_is_muted (self->output_stream, (int) rounded == 0);
 }
 
 static void
-vol_adjustment_value_changed_cb (GtkAdjustment *adjustment,
-                                 PhoshSettings *self)
+vol_bar_value_changed_cb (GvcChannelBar *bar, PhoshSettings *self)
 {
   double volume, rounded;
   g_autofree char *name = NULL;
@@ -537,7 +543,7 @@ vol_adjustment_value_changed_cb (GtkAdjustment *adjustment,
   if (!self->output_stream)
     self->output_stream = g_object_ref (gvc_mixer_control_get_default_sink (self->mixer_control));
 
-  volume = gtk_adjustment_get_value (adjustment);
+  volume = gvc_channel_bar_get_volume (bar);
   rounded = round (volume);
 
   g_object_get (self->output_vol_bar, "name", &name, NULL);
@@ -696,8 +702,6 @@ setup_torch (PhoshSettings *self)
 static void
 setup_volume_bar (PhoshSettings *self)
 {
-  GtkAdjustment *adj;
-
   self->output_vol_bar = gvc_channel_bar_new ();
   gtk_widget_set_sensitive (self->output_vol_bar, TRUE);
   gtk_widget_show (self->output_vol_bar);
@@ -732,16 +736,13 @@ setup_volume_bar (PhoshSettings *self)
                     "phone-stream-removed",
                     G_CALLBACK (mixer_control_phone_stream_removed_cb),
                     self);
-
-  adj = gvc_channel_bar_get_adjustment (GVC_CHANNEL_BAR (self->phone_vol_bar));
-  g_signal_connect (adj,
+  g_signal_connect (self->phone_vol_bar,
                     "value-changed",
-                    G_CALLBACK (phone_vol_adjustment_value_changed_cb),
+                    G_CALLBACK (phone_vol_bar_changed_cb),
                     self);
-  adj = gvc_channel_bar_get_adjustment (GVC_CHANNEL_BAR (self->output_vol_bar));
-  g_signal_connect (adj,
+  g_signal_connect (self->output_vol_bar,
                     "value-changed",
-                    G_CALLBACK (vol_adjustment_value_changed_cb),
+                    G_CALLBACK (vol_bar_value_changed_cb),
                     self);
 }
 

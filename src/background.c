@@ -397,8 +397,6 @@ load_slideshow (PhoshBackground *self)
 {
   g_autoptr (GError) err = NULL;
   g_autofree gchar *filename = NULL;
-  g_autoptr (GFile) file = NULL;
-  g_autoptr (GInputStream) stream = NULL;
 
   g_debug ("loading %s", self->uri);
   /* Older gnome-desktop doesn't have a file property so
@@ -564,7 +562,7 @@ phosh_background_finalize (GObject *object)
   GObjectClass *parent_class = G_OBJECT_CLASS (phosh_background_parent_class);
   PhoshBackground *self = PHOSH_BACKGROUND (object);
 
-  g_object_unref (self->pixbuf);
+  g_clear_object (&self->pixbuf);
   g_clear_pointer (&self->uri, g_free);
   g_clear_object (&self->settings);
 
