@@ -97,6 +97,7 @@
 enum {
   PROP_0,
   PROP_LOCKED,
+  PROP_DOCKED,
   PROP_BUILTIN_MONITOR,
   PROP_PRIMARY_MONITOR,
   PROP_SHELL_STATE,
@@ -165,6 +166,9 @@ typedef struct
   /* Mirrors PhoshLockscreenManager's locked property */
   gboolean locked;
 
+  /* Mirrors PhoshDockedManager's docked property */
+  gboolean docked;
+
   PhoshShellStateFlags shell_state;
 
   char           *theme_name;
@@ -188,6 +192,24 @@ settings_activated_cb (PhoshShell    *self,
 
   g_return_if_fail (PHOSH_IS_TOP_PANEL (priv->panel));
   phosh_top_panel_toggle_fold (PHOSH_TOP_PANEL(priv->panel));
+}
+
+
+static void
+on_proximity_fader_changed (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+  gboolean on;
+
+  g_return_if_fail (PHOSH_IS_SHELL (self));
+  priv = phosh_shell_get_instance_private (self);
+
+  /* When the proximity fader is on we want to hide the top-panel on
+     the lock screen since it uses an exclusive zone and hence the fader is
+     drawn below that top-panel. */
+  on = phosh_proximity_has_fader (priv->proximity);
+
+  gtk_widget_set_visible (GTK_WIDGET (priv->panel), !on);
 }
 
 
@@ -297,6 +319,20 @@ on_gtk_theme_name_changed (PhoshShell *self, GParamSpec *pspec, GtkSettings *set
 
 
 static void
+set_locked (PhoshShell *self, gboolean locked)
+{
+  PhoshShellPrivate *priv = phosh_shell_get_instance_private(self);
+
+  if (priv->locked == locked)
+    return;
+
+  priv->locked = locked;
+  phosh_shell_set_state (self, PHOSH_STATE_LOCKED, priv->locked);
+  g_object_notify_by_pspec (G_OBJECT (self), props[PROP_LOCKED]);
+}
+
+
+static void
 phosh_shell_set_property (GObject *object,
                           guint property_id,
                           const GValue *value,
@@ -307,8 +343,12 @@ phosh_shell_set_property (GObject *object,
 
   switch (property_id) {
   case PROP_LOCKED:
-    priv->locked = g_value_get_boolean (value);
-    phosh_shell_set_state (self, PHOSH_STATE_LOCKED, priv->locked);
+    /* Only written by lockscreen manager on property sync */
+    set_locked (self, g_value_get_boolean (value));
+    break;
+  case PROP_DOCKED:
+    /* Only written by docked manager on property sync */
+    priv->docked = g_value_get_boolean (value);
     break;
   case PROP_PRIMARY_MONITOR:
     phosh_shell_set_primary_monitor (self, g_value_get_object (value));
@@ -331,7 +371,10 @@ phosh_shell_get_property (GObject *object,
 
   switch (property_id) {
   case PROP_LOCKED:
-    g_value_set_boolean (value, priv->locked);
+    g_value_set_boolean (value, phosh_shell_get_locked (self));
+    break;
+  case PROP_DOCKED:
+    g_value_set_boolean (value, phosh_shell_get_docked (self));
     break;
   case PROP_BUILTIN_MONITOR:
     g_value_set_object (value, phosh_shell_get_builtin_monitor (self));
@@ -561,6 +604,8 @@ setup_idle_cb (PhoshShell *self)
                                            priv->calls_manager);
     phosh_monitor_manager_set_sensor_proxy_manager (priv->monitor_manager,
                                                     priv->sensor_proxy_manager);
+    g_signal_connect_swapped (priv->proximity, "notify::fader",
+                              G_CALLBACK (on_proximity_fader_changed), self);
   }
 
   priv->mount_manager = phosh_mount_manager_new ();
@@ -853,12 +898,26 @@ phosh_shell_class_init (PhoshShellClass *klass)
 
   type_setup ();
 
+  /**
+   * PhoshShell:locked:
+   *
+   * Whether the screen is currently locked. This mirrors the property
+   * from #PhoshLockscreenManager for easier access.
+   */
   props[PROP_LOCKED] =
-    g_param_spec_boolean ("locked",
-                          "Locked",
-                          "Whether the screen is locked",
+    g_param_spec_boolean ("locked", "", "",
                           FALSE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  /**
+   * PhoshShell:docked:
+   *
+   * Whether the device is currently docked. This mirrors the property
+   * from #PhoshDockedManager for easier access.
+   */
+  props[PROP_DOCKED] =
+    g_param_spec_boolean ("docked", "", "",
+                          FALSE,
+                          G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
   /**
    * PhoshShell:builtin-monitor:
@@ -1179,8 +1238,14 @@ phosh_shell_get_docked_manager (PhoshShell *self)
   g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
   priv = phosh_shell_get_instance_private (self);
 
-  if (!priv->docked_manager)
+  if (!priv->docked_manager) {
     priv->docked_manager = phosh_docked_manager_new (priv->mode_manager);
+    g_object_bind_property (priv->docked_manager,
+                            "enabled",
+                            self,
+                            "docked",
+                            G_BINDING_SYNC_CREATE);
+  }
 
   g_return_val_if_fail (PHOSH_IS_DOCKED_MANAGER (priv->docked_manager), NULL);
   return priv->docked_manager;
@@ -1688,4 +1753,22 @@ phosh_shell_get_show_splash (PhoshShell *self)
     return FALSE;
 
   return TRUE;
+}
+
+
+/**
+ * phosh_shell_get_docked:
+ * @self: The #PhoshShell singleton
+ *
+ * Returns: %TRUE if the device is currently docked, otherwise %FALSE.
+ */
+gboolean
+phosh_shell_get_docked (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), FALSE);
+  priv = phosh_shell_get_instance_private (self);
+
+  return priv->docked;
 }
