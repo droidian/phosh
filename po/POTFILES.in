@@ -1,6 +1,7 @@
 data/phosh.session.desktop.in.in
 data/sm.puri.Phosh.desktop.in.in
 src/activity.c
+src/app-carousel.c
 src/app-grid-button.c
 src/app-grid.c
 src/app-list-model.c
