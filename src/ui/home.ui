@@ -8,8 +8,14 @@
       <placeholder/>
     </child>
     <child>
-      <object class="GtkBox">
+      <object class="HdyCarousel" id="main_carousel">
         <property name="visible">True</property>
+        <property name="orientation">vertical</property>
+        <signal name="notify::position" handler="on_main_carousel_position_changed" swapped="true"/>
+    <child>
+      <object class="GtkBox" id="overview_page">
+        <property name="visible">True</property>
+        <property name="vexpand">True</property>
         <property name="orientation">vertical</property>
         <child>
 
@@ -69,12 +75,29 @@
             <signal name="activity-launched" handler="fold_cb" swapped="true"/>
             <signal name="activity-raised" handler="fold_cb" swapped="true"/>
             <signal name="notify::has-activities" handler="on_has_activities_changed" swapped="true"/>
+            <signal name="notify::search-activated" handler="on_search_activated_changed" swapped="true"/>
+            <signal name="notify::scrolled" handler="on_overview_scrolled_changed" swapped="true"/>
+            <signal name="notify::activity-swiped" handler="on_overview_activity_swiped_changed" swapped="true"/>
             <signal name="selection-aborted" handler="fold_cb" swapped="true"/>
           </object>
           <packing>
             <property name="expand">True</property>
             <property name="fill">True</property>
           </packing>
+        </child>
+      </object>
+    </child>
+        <child>
+          <object class="GtkScrolledWindow" id="app_carousel_bin">
+            <property name="visible">True</property>
+            <child>
+              <object class="PhoshAppCarousel" id="app_carousel">
+                <property name="visible">True</property>
+                <property name="vexpand">True</property>
+                <signal name="app-launched" handler="fold_cb" swapped="true"/>
+              </object>
+            </child>
+          </object>
         </child>
       </object>
     </child>

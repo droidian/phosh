@@ -2,7 +2,7 @@
 
 #include "phosh-config.h"
 
-#include "app-grid.h"
+#include "app-carousel.h"
 #include "app-grid-button.h"
 #include "gnome-shell-manager.h"
 #include "home.h"

@@ -96,7 +96,7 @@ schemasdir = 'share/glib-2.0/schemas'
 
 #generate XML enum definitions for GSettings schema
 schema_enum_headers = files(
-  '../src/app-grid.h',
+  '../src/app-carousel.h',
   '../src/wwan/phosh-wwan-backend.h',
 )
 generate_enums_schema = gnome.mkenums('sm.puri.phosh.enums.xml',

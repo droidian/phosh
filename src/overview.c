@@ -8,11 +8,14 @@
 
 #define G_LOG_DOMAIN "phosh-overview"
 
+#define SEARCH_DEBOUNCE 350
+#define DEFAULT_GTK_DEBOUNCE 150
+
 #include "phosh-config.h"
 
 #include "activity.h"
 #include "app-grid-button.h"
-#include "app-grid.h"
+#include "app-search.h"
 #include "overview.h"
 #include "wlr-screencopy-unstable-v1-client-protocol.h"
 #include "phosh-private-client-protocol.h"
@@ -35,7 +38,7 @@
  * @Title: PhoshOverview
  *
  * The #PhoshOverview shows running apps (#PhoshActivity) and
- * the app grid (#PhoshAppGrid) to launch new applications.
+ * allows searching for apps (FIXME PhoshAppSearch).
  */
 
 enum {
@@ -50,6 +53,9 @@ static guint signals[N_SIGNALS] = { 0 };
 enum {
   PROP_0,
   PROP_HAS_ACTIVITIES,
+  PROP_SEARCH_ACTIVATED,
+  PROP_SCROLLED,
+  PROP_ACTIVITY_SWIPED,
   LAST_PROP,
 };
 static GParamSpec *props[LAST_PROP];
@@ -59,10 +65,18 @@ typedef struct
 {
   /* Running activities */
   GtkWidget *carousel_running_activities;
-  GtkWidget *app_grid;
+  GtkWidget *page_running_activities;
+  GtkWidget *page_empty_activities;
+  GtkWidget *search;
+  GtkWidget *search_close_revealer;
+  GtkWidget *stack_running_activities;
+  GtkWidget *app_search;
   PhoshActivity *activity;
 
   int       has_activities;
+  char *search_string;
+  guint debounce;
+  gboolean activity_swiped;
 } PhoshOverviewPrivate;
 
 
@@ -72,6 +86,17 @@ struct _PhoshOverview
 };
 
 G_DEFINE_TYPE_WITH_PRIVATE (PhoshOverview, phosh_overview, GTK_TYPE_BOX)
+
+
+static void
+update_search_close_button (PhoshOverview  *self)
+{
+  PhoshOverviewPrivate *priv = phosh_overview_get_instance_private (self);
+  gboolean has_search_string = priv->search_string && *priv->search_string != '\0';
+
+  gtk_revealer_set_reveal_child (GTK_REVEALER (priv->search_close_revealer),
+                                 gtk_widget_has_focus (priv->search) || has_search_string);
+}
 
 
 static void
@@ -86,6 +111,15 @@ phosh_overview_get_property (GObject    *object,
   switch (property_id) {
   case PROP_HAS_ACTIVITIES:
     g_value_set_boolean (value, priv->has_activities);
+    break;
+  case PROP_SEARCH_ACTIVATED:
+    g_value_set_boolean (value, phosh_overview_search_activated (self));
+    break;
+  case PROP_SCROLLED:
+    g_value_set_boolean (value, phosh_overview_get_scrolled (self));
+    break;
+  case PROP_ACTIVITY_SWIPED:
+    g_value_set_boolean (value, phosh_overview_get_activity_swiped (self));
     break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -126,6 +160,30 @@ find_activity_by_toplevel (PhoshOverview        *self,
 
   g_return_val_if_fail (activity, NULL);
   return activity;
+}
+
+
+static void
+update_view (PhoshOverview *self)
+{
+  PhoshOverviewPrivate *priv = phosh_overview_get_instance_private (self);
+  GtkWidget *old_view, *new_view;
+
+  old_view = gtk_stack_get_visible_child (GTK_STACK (priv->stack_running_activities));
+  if (priv->search_string && *priv->search_string != '\0')
+    new_view = priv->app_search;
+  else if (priv->has_activities)
+    new_view = priv->page_running_activities;
+  else
+    new_view = priv->page_empty_activities;
+
+  if (old_view == new_view)
+    return;
+
+  gtk_stack_set_visible_child (GTK_STACK (priv->stack_running_activities), new_view);
+
+  if (old_view == priv->app_search || new_view == priv->app_search)
+    g_object_notify_by_pspec (G_OBJECT (self), props[PROP_SEARCH_ACTIVATED]);
 }
 
 
@@ -178,6 +236,29 @@ on_activity_closed (PhoshOverview *self, PhoshActivity *activity)
 
 
 static void
+on_activity_swiping_changed (PhoshOverview *self)
+{
+  PhoshOverviewPrivate *priv = phosh_overview_get_instance_private (self);
+  GList *children, *l;
+  gboolean activity_swiped = FALSE;
+
+  children = gtk_container_get_children (GTK_CONTAINER (priv->carousel_running_activities));
+
+  for (l = children; l && !activity_swiped; l = l->next)
+    activity_swiped = phosh_activity_get_swiping (PHOSH_ACTIVITY (l->data));
+
+  g_list_free (children);
+
+  if (priv->activity_swiped == activity_swiped)
+    return;
+
+  priv->activity_swiped = activity_swiped;
+
+  g_object_notify_by_pspec (G_OBJECT (self), props[PROP_ACTIVITY_SWIPED]);
+}
+
+
+static void
 on_toplevel_closed (PhoshToplevel *toplevel, PhoshOverview *overview)
 {
   PhoshActivity *activity;
@@ -193,6 +274,10 @@ on_toplevel_closed (PhoshToplevel *toplevel, PhoshOverview *overview)
 
   if (priv->activity == activity)
     priv->activity = NULL;
+
+  /* If an activity is closed by a swipe we may end up in an incoherent state
+   * as the destroyed widget didn't have the time to be non-swipped. */
+  on_activity_swiping_changed (overview);
 }
 
 
@@ -290,6 +375,7 @@ add_activity (PhoshOverview *self, PhoshToplevel *toplevel)
   g_signal_connect_swapped (activity, "clicked", G_CALLBACK (on_activity_clicked), self);
   g_signal_connect_swapped (activity, "closed",
                             G_CALLBACK (on_activity_closed), self);
+  g_signal_connect_swapped (activity, "notify::swiping", G_CALLBACK (on_activity_swiping_changed), self);
 
   g_signal_connect_object (toplevel, "closed", G_CALLBACK (on_toplevel_closed), self, 0);
   g_signal_connect_object (toplevel, "notify::activated", G_CALLBACK (on_toplevel_activated_changed), self, 0);
@@ -318,8 +404,7 @@ get_running_activities (PhoshOverview *self)
   priv = phosh_overview_get_instance_private (self);
 
   priv->has_activities = !!toplevels_num;
-  if (toplevels_num == 0)
-    gtk_widget_hide (priv->carousel_running_activities);
+  update_view (self);
 
   for (guint i = 0; i < toplevels_num; i++) {
     PhoshToplevel *toplevel = phosh_toplevel_manager_get_toplevel (toplevel_manager, i);
@@ -378,7 +463,7 @@ num_toplevels_cb (PhoshOverview        *self,
     return;
 
   priv->has_activities = has_activities;
-  gtk_widget_set_visible (priv->carousel_running_activities, has_activities);
+  update_view (self);
   g_object_notify_by_pspec (G_OBJECT (self), props[PROP_HAS_ACTIVITIES]);
 }
 
@@ -416,6 +501,107 @@ app_launched_cb (PhoshOverview *self,
   g_return_if_fail (PHOSH_IS_OVERVIEW (self));
 
   g_signal_emit (self, signals[ACTIVITY_LAUNCHED], 0);
+}
+
+
+static gboolean
+do_search (PhoshOverview *self)
+{
+  PhoshOverviewPrivate *priv = phosh_overview_get_instance_private (self);
+
+  update_view (self);
+  phosh_app_search_set_text (PHOSH_APP_SEARCH (priv->app_search), priv->search_string);
+
+  priv->debounce = 0;
+  return G_SOURCE_REMOVE;
+}
+
+
+static void
+search_changed (GtkSearchEntry *entry,
+                PhoshOverview  *self)
+{
+  PhoshOverviewPrivate *priv = phosh_overview_get_instance_private (self);
+  const char *search = gtk_entry_get_text (GTK_ENTRY (entry));
+
+  g_clear_pointer (&priv->search_string, g_free);
+
+  g_clear_handle_id (&priv->debounce, g_source_remove);
+
+  if (search && *search != '\0') {
+    priv->search_string = g_utf8_casefold (search, -1);
+
+    update_search_close_button (self);
+
+    /* GtkSearchEntry already adds 150ms of delay, but it's too little
+     * so add a bit more until searching is faster and/or non-blocking */
+    priv->debounce = g_timeout_add (SEARCH_DEBOUNCE, (GSourceFunc) do_search, self);
+    g_source_set_name_by_id (priv->debounce, "[phosh] debounce app grid search (search-changed)");
+  } else {
+    /* don't add the delay when the entry got cleared */
+    do_search (self);
+  }
+}
+
+
+static void
+search_preedit_changed (GtkSearchEntry *entry,
+                        const char     *preedit,
+                        PhoshOverview  *self)
+{
+  PhoshOverviewPrivate *priv = phosh_overview_get_instance_private (self);
+
+  g_clear_pointer (&priv->search_string, g_free);
+
+  if (preedit && *preedit != '\0') {
+    priv->search_string = g_utf8_casefold (preedit, -1);
+
+    update_search_close_button (self);
+  }
+
+  g_clear_handle_id (&priv->debounce, g_source_remove);
+
+  priv->debounce = g_timeout_add (SEARCH_DEBOUNCE + DEFAULT_GTK_DEBOUNCE, (GSourceFunc) do_search, self);
+  g_source_set_name_by_id (priv->debounce, "[phosh] debounce app grid search (preedit-changed)");
+}
+
+
+static void
+search_activated (GtkSearchEntry *entry,
+                  PhoshOverview  *self)
+{
+  PhoshOverviewPrivate *priv = phosh_overview_get_instance_private (self);
+
+  if (!gtk_widget_has_focus (GTK_WIDGET (entry)))
+    return;
+
+  /* Don't activate when there isn't an active search */
+  if (!priv->search_string || *priv->search_string == '\0') {
+    return;
+  }
+
+  phosh_app_search_activate (PHOSH_APP_SEARCH (priv->app_search));
+}
+
+
+static void
+search_focus_changed (PhoshOverview  *self)
+{
+  update_search_close_button (self);
+}
+
+
+static void
+search_close_clicked (PhoshOverview  *self)
+{
+  phosh_overview_reset (self, FALSE);
+}
+
+
+static void
+search_scrolled_changed (PhoshOverview  *self)
+{
+  g_object_notify_by_pspec (G_OBJECT (self), props[PROP_SCROLLED]);
 }
 
 
@@ -469,11 +655,37 @@ phosh_overview_constructed (GObject *object)
 
   get_running_activities (self);
 
-  g_signal_connect_swapped (priv->app_grid, "app-launched",
+  /* FIXME Do it with the carousel in the shell too */
+  g_signal_connect_swapped (priv->app_search, "app-launched",
                             G_CALLBACK (app_launched_cb), self);
 
   g_signal_connect_swapped (priv->carousel_running_activities, "page-changed",
                             G_CALLBACK (page_changed_cb), self);
+}
+
+
+static void
+phosh_overview_dispose (GObject *object)
+{
+  PhoshOverview *self = PHOSH_OVERVIEW (object);
+  PhoshOverviewPrivate *priv = phosh_overview_get_instance_private (self);
+
+  g_clear_handle_id (&priv->debounce, g_source_remove);
+
+  G_OBJECT_CLASS (phosh_overview_parent_class)->dispose (object);
+}
+
+
+
+static void
+phosh_overview_finalize (GObject *object)
+{
+  PhoshOverview *self = PHOSH_OVERVIEW (object);
+  PhoshOverviewPrivate *priv = phosh_overview_get_instance_private (self);
+
+  g_clear_pointer (&priv->search_string, g_free);
+
+  G_OBJECT_CLASS (phosh_overview_parent_class)->finalize (object);
 }
 
 
@@ -484,6 +696,8 @@ phosh_overview_class_init (PhoshOverviewClass *klass)
   GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
 
   object_class->constructed = phosh_overview_constructed;
+  object_class->finalize = phosh_overview_dispose;
+  object_class->finalize = phosh_overview_finalize;
   object_class->get_property = phosh_overview_get_property;
   widget_class->size_allocate = phosh_overview_size_allocate;
 
@@ -495,13 +709,50 @@ phosh_overview_class_init (PhoshOverviewClass *klass)
       FALSE,
       G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
 
+  props[PROP_SEARCH_ACTIVATED] =
+    g_param_spec_boolean (
+      "search-activated",
+      "Search activated",
+      "Whether app search is activated",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+  props[PROP_SCROLLED] =
+    g_param_spec_boolean (
+      "scrolled",
+      "Scrolled",
+      "Whether app search is scrolled",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+  props[PROP_ACTIVITY_SWIPED] =
+    g_param_spec_boolean (
+      "activity-swiped",
+      "Activity Swiped",
+      "Whether an activity is being swiped",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
+  g_object_class_install_properties (object_class, LAST_PROP, props);
+
   /* ensure used custom types */
-  PHOSH_TYPE_APP_GRID;
   gtk_widget_class_set_template_from_resource (widget_class,
                                                "/sm/puri/phosh/ui/overview.ui");
 
   gtk_widget_class_bind_template_child_private (widget_class, PhoshOverview, carousel_running_activities);
-  gtk_widget_class_bind_template_child_private (widget_class, PhoshOverview, app_grid);
+  gtk_widget_class_bind_template_child_private (widget_class, PhoshOverview, page_running_activities);
+  gtk_widget_class_bind_template_child_private (widget_class, PhoshOverview, page_empty_activities);
+  gtk_widget_class_bind_template_child_private (widget_class, PhoshOverview, stack_running_activities);
+  gtk_widget_class_bind_template_child_private (widget_class, PhoshOverview, app_search);
+  gtk_widget_class_bind_template_child_private (widget_class, PhoshOverview, search);
+  gtk_widget_class_bind_template_child_private (widget_class, PhoshOverview, search_close_revealer);
+
+  gtk_widget_class_bind_template_callback (widget_class, search_changed);
+  gtk_widget_class_bind_template_callback (widget_class, search_preedit_changed);
+  gtk_widget_class_bind_template_callback (widget_class, search_activated);
+  gtk_widget_class_bind_template_callback (widget_class, search_focus_changed);
+  gtk_widget_class_bind_template_callback (widget_class, search_close_clicked);
+  gtk_widget_class_bind_template_callback (widget_class, search_scrolled_changed);
 
   signals[ACTIVITY_LAUNCHED] = g_signal_new ("activity-launched",
       G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
@@ -523,6 +774,8 @@ phosh_overview_class_init (PhoshOverviewClass *klass)
 static void
 phosh_overview_init (PhoshOverview *self)
 {
+  g_type_ensure (PHOSH_TYPE_APP_SEARCH);
+
   gtk_widget_init_template (GTK_WIDGET (self));
 }
 
@@ -541,7 +794,8 @@ phosh_overview_reset (PhoshOverview *self,
   PhoshOverviewPrivate *priv;
   g_return_if_fail(PHOSH_IS_OVERVIEW (self));
   priv = phosh_overview_get_instance_private (self);
-  phosh_app_grid_reset (PHOSH_APP_GRID (priv->app_grid));
+  gtk_entry_set_text (GTK_ENTRY (priv->search), "");
+  phosh_app_search_reset (PHOSH_APP_SEARCH (priv->app_search));
 
   if (priv->activity) {
     gtk_widget_grab_focus (GTK_WIDGET (priv->activity));
@@ -551,6 +805,8 @@ phosh_overview_reset (PhoshOverview *self,
     /* Needed to ensure we unfocus the search entry. */
     gtk_widget_grab_focus (GTK_WIDGET (self));
   }
+
+  update_search_close_button (self);
 }
 
 void
@@ -560,7 +816,7 @@ phosh_overview_focus_app_search (PhoshOverview *self)
 
   g_return_if_fail(PHOSH_IS_OVERVIEW (self));
   priv = phosh_overview_get_instance_private (self);
-  phosh_app_grid_focus_search (PHOSH_APP_GRID (priv->app_grid));
+  gtk_widget_grab_focus (priv->search);
 }
 
 
@@ -568,10 +824,15 @@ gboolean
 phosh_overview_handle_search (PhoshOverview *self, GdkEvent *event)
 {
   PhoshOverviewPrivate *priv;
+  gboolean ret;
 
   g_return_val_if_fail(PHOSH_IS_OVERVIEW (self), GDK_EVENT_PROPAGATE);
   priv = phosh_overview_get_instance_private (self);
-  return phosh_app_grid_handle_search (PHOSH_APP_GRID (priv->app_grid), event);
+  ret = gtk_search_entry_handle_event (GTK_SEARCH_ENTRY (priv->search), event);
+  if (ret == GDK_EVENT_STOP)
+    gtk_entry_grab_focus_without_selecting (GTK_ENTRY (priv->search));
+
+  return ret;
 }
 
 
@@ -587,13 +848,37 @@ phosh_overview_has_running_activities (PhoshOverview *self)
 }
 
 
-PhoshAppGrid *
-phosh_overview_get_app_grid (PhoshOverview *self)
+gboolean
+phosh_overview_search_activated (PhoshOverview *self)
 {
   PhoshOverviewPrivate *priv;
 
-  g_return_val_if_fail (PHOSH_IS_OVERVIEW (self), NULL);
+  g_return_val_if_fail (PHOSH_IS_OVERVIEW (self), FALSE);
   priv = phosh_overview_get_instance_private (self);
 
-  return PHOSH_APP_GRID (priv->app_grid);
+  return gtk_stack_get_visible_child (GTK_STACK (priv->stack_running_activities)) == priv->app_search;
+}
+
+
+gboolean
+phosh_overview_get_scrolled (PhoshOverview *self)
+{
+  PhoshOverviewPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_OVERVIEW (self), FALSE);
+  priv = phosh_overview_get_instance_private (self);
+
+  return phosh_app_search_get_scrolled (PHOSH_APP_SEARCH (priv->app_search));
+}
+
+
+gboolean
+phosh_overview_get_activity_swiped (PhoshOverview *self)
+{
+  PhoshOverviewPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_OVERVIEW (self), FALSE);
+  priv = phosh_overview_get_instance_private (self);
+
+  return priv->activity_swiped;
 }

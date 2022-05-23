@@ -54,6 +54,7 @@ src/toplevel-manager.c
 src/torch-info.c
 src/ui/activity.ui
 src/ui/app-auth-prompt.ui
+src/ui/app-carousel.ui
 src/ui/app-grid-button.ui
 src/ui/app-grid.ui
 src/ui/end-session-dialog.ui
