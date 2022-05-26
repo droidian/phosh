@@ -4,7 +4,6 @@
     <file preprocess="xml-stripblanks">ui/activity.ui</file>
     <file preprocess="xml-stripblanks">ui/app-auth-prompt.ui</file>
     <file preprocess="xml-stripblanks">ui/app-carousel.ui</file>
-    <file preprocess="xml-stripblanks">ui/app-grid.ui</file>
     <file preprocess="xml-stripblanks">ui/app-grid-button.ui</file>
     <file preprocess="xml-stripblanks">ui/app-search.ui</file>
     <file preprocess="xml-stripblanks">ui/end-session-dialog.ui</file>

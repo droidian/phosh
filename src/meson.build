@@ -70,8 +70,6 @@ libphosh_tool_sources = files(
   'app-carousel.h',
   'app-carousel-indicator.c',
   'app-carousel-indicator.h',
-  'app-grid.c',
-  'app-grid.h',
   'app-grid-button.c',
   'app-grid-button.h',
   'app-list-model.c',

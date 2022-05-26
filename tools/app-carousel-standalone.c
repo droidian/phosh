@@ -3,12 +3,12 @@
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * BUILDDIR $ ./run_tool ./tools/app-grid-standalone
+ * BUILDDIR $ ./run_tool ./tools/app-carousel-standalone
  *
- * PhoshAppGrid in a simple wrapper
+ * PhoshAppCarousel in a simple wrapper
  */
 
-#include <app-grid.h>
+#include <app-carousel.h>
 
 static void
 css_setup (void)
@@ -50,7 +50,8 @@ main (int argc, char *argv[])
 
   gtk_widget_show (win);
 
-  widget = g_object_new (PHOSH_TYPE_APP_GRID, NULL);
+  /* FIXME What to do with this? */
+  widget = g_object_new (PHOSH_TYPE_APP_CAROUSEL, NULL);
 
   gtk_widget_show (widget);
 
