@@ -6,6 +6,9 @@
  * Author: Guido Günther <agx@sigxcpu.org>
  */
 
+#define _GNU_SOURCE
+#include <string.h>
+
 #include "util.h"
 #include <gtk/gtk.h>
 
@@ -539,4 +542,41 @@ phosh_util_get_stylesheet (const char *theme_name)
     style = "/sm/puri/phosh/stylesheet/adwaita-dark.css";
 
   return style;
+}
+
+/*
+ * phosh_util_get_app_is_adaptive:
+ * @app_info: The #GAppInfo to check for adaptiveness
+ * @adaptive_app_ids: (nullable): A set of apps to always consider adaptive
+ *
+ * Returns: whether @app_info is adaptive.
+ */
+gboolean
+phosh_util_get_app_is_adaptive (GAppInfo           *app_info,
+                                const char * const *adaptive_app_ids)
+{
+  if (G_IS_DESKTOP_APP_INFO (app_info)) {
+    g_autofree char *mobile = NULL;
+
+    mobile = g_desktop_app_info_get_string (G_DESKTOP_APP_INFO (app_info),
+                                            "X-Purism-FormFactor");
+    if (mobile && strcasestr (mobile, "mobile;"))
+      return TRUE;
+
+    g_free (mobile);
+    mobile = g_desktop_app_info_get_string (G_DESKTOP_APP_INFO (app_info),
+                                            "X-KDE-FormFactor");
+    if (mobile && strcasestr (mobile, "handset;"))
+      return TRUE;
+  }
+
+  if (G_IS_APP_INFO (app_info) && adaptive_app_ids) {
+    const char *id;
+
+    id = g_app_info_get_id (app_info);
+    if (id && g_strv_contains (adaptive_app_ids, id))
+      return TRUE;
+  }
+
+  return FALSE;
 }
