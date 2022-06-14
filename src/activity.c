@@ -44,6 +44,7 @@ enum {
   PROP_FULLSCREEN,
   PROP_WIN_WIDTH,
   PROP_WIN_HEIGHT,
+  PROP_SWIPING,
   LAST_PROP,
 };
 static GParamSpec *props[LAST_PROP];
@@ -122,6 +123,8 @@ phosh_activity_set_property (GObject *object,
         g_object_notify_by_pspec (G_OBJECT (self), props[PROP_WIN_HEIGHT]);
       }
       break;
+    case PROP_SWIPING:
+      g_assert_not_reached ();
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
       break;
@@ -153,6 +156,9 @@ phosh_activity_get_property (GObject *object,
       break;
     case PROP_WIN_HEIGHT:
       g_value_set_int (value, priv->win_height);
+      break;
+    case PROP_SWIPING:
+      g_value_set_boolean (value, phosh_activity_get_swiping (self));
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -203,6 +209,13 @@ removed_cb (PhoshActivity *self)
   g_source_set_name_by_id (priv->remove_timeout_id, "[phosh] remove_timeout_id");
 
   g_signal_emit (self, signals[CLOSED], 0);
+}
+
+
+static void
+swiping_cb (PhoshActivity *self)
+{
+  g_object_notify_by_pspec (G_OBJECT (self), props[PROP_SWIPING]);
 }
 
 
@@ -583,6 +596,14 @@ phosh_activity_class_init (PhoshActivityClass *klass)
       300,
       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | G_PARAM_EXPLICIT_NOTIFY);
 
+  props[PROP_SWIPING] =
+    g_param_spec_boolean (
+      "swiping",
+      "Swiping",
+      "Whether the activity is being swiped away",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS);
+
   g_object_class_install_properties (object_class, LAST_PROP, props);
 
   signals[CLICKED] = g_signal_new ("clicked",
@@ -613,6 +634,7 @@ phosh_activity_class_init (PhoshActivityClass *klass)
   gtk_widget_class_bind_template_callback (widget_class, size_allocate_cb);
   gtk_widget_class_bind_template_callback (widget_class, closed_cb);
   gtk_widget_class_bind_template_callback (widget_class, removed_cb);
+  gtk_widget_class_bind_template_callback (widget_class, swiping_cb);
 
   gtk_widget_class_set_css_name (widget_class, "phosh-activity");
 }
@@ -690,4 +712,13 @@ phosh_activity_get_thumbnail_allocation (PhoshActivity *self, GtkAllocation *all
   g_return_if_fail (allocation);
   priv = phosh_activity_get_instance_private (self);
   *allocation = priv->allocation;
+}
+
+gboolean
+phosh_activity_get_swiping (PhoshActivity *self)
+{
+  PhoshActivityPrivate *priv;
+  g_return_val_if_fail (PHOSH_IS_ACTIVITY (self), FALSE);
+  priv = phosh_activity_get_instance_private (self);
+  return phosh_swipe_away_bin_get_swiping (PHOSH_SWIPE_AWAY_BIN (priv->swipe_bin));
 }
