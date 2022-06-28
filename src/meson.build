@@ -66,6 +66,8 @@ libphosh_tool_sources = files(
   'ambient.h',
   'animation.c',
   'animation.h',
+  'app-carousel-indicator.c',
+  'app-carousel-indicator.h',
   'app-grid.c',
   'app-grid.h',
   'app-grid-button.c',
