@@ -406,7 +406,7 @@ on_drag_state_changed (PhoshHome *self)
     break;
   case PHOSH_DRAG_SURFACE_STATE_DRAGGED:
     if (self->state == PHOSH_HOME_STATE_FOLDED)
-      phosh_overview_reset (PHOSH_OVERVIEW (self->overview));
+      phosh_overview_reset (PHOSH_OVERVIEW (self->overview), TRUE);
     break;
   default:
     g_return_if_reached ();

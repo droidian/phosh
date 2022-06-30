@@ -535,7 +535,8 @@ phosh_overview_new (void)
 
 
 void
-phosh_overview_reset (PhoshOverview *self)
+phosh_overview_reset (PhoshOverview *self,
+                      gboolean       reset_thumbnails)
 {
   PhoshOverviewPrivate *priv;
   g_return_if_fail(PHOSH_IS_OVERVIEW (self));
@@ -544,7 +545,8 @@ phosh_overview_reset (PhoshOverview *self)
 
   if (priv->activity) {
     gtk_widget_grab_focus (GTK_WIDGET (priv->activity));
-    request_thumbnail (priv->activity, get_toplevel_from_activity (priv->activity));
+    if (reset_thumbnails)
+      request_thumbnail (priv->activity, get_toplevel_from_activity (priv->activity));
   } else {
     /* Needed to ensure we unfocus the search entry. */
     gtk_widget_grab_focus (GTK_WIDGET (self));
