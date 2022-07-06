@@ -10,7 +10,7 @@
         <property name="visible">True</property>
         <property name="orientation">horizontal</property>
         <property name="spacing">18</property>
-        <property name="margin_bottom">6</property>
+        <property name="margin_bottom">32</property>
         <property name="valign">fill</property>
         <property name="expand">true</property>
         <property name="reveal-duration">200</property>
