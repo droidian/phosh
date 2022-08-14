@@ -39,7 +39,8 @@
       </object>
     </child>
   </object>
-  <template class="PhoshTopPanel" parent="PhoshLayerSurface">
+
+  <template class="PhoshTopPanel" parent="PhoshDragSurface">
     <property name="can_focus">False</property>
     <child>
       <object class="GtkBox" id="box">
@@ -47,269 +48,236 @@
         <property name="can_focus">False</property>
         <property name="orientation">vertical</property>
         <child>
-          <object class="GtkStack" id="stack">
+          <object class="GtkBox" id="box_clock">
             <property name="visible">True</property>
-            <property name="can_focus">False</property>
-            <property name="transition_type">slide-down</property>
+            <style>
+              <class name="phosh-clock-box"/>
+            </style>
             <child>
-              <object class="GtkButton" id="btn_top_panel">
+              <object class="GtkButton" id="btn_lock">
                 <property name="visible">True</property>
-                <property name="can_focus">False</property>
-                <property name="receives_default">False</property>
+                <property name="sensitive" bind-source="PhoshTopPanel" bind-property="on-lockscreen" bind-flags="sync-create|invert-boolean"/>
+                <property name="action-name">panel.lockscreen</property>
+                <style>
+                  <class name="phosh-topbar-button"/>
+                </style>
                 <child>
-                  <object class="GtkBox" id="box_top_panel">
+                  <object class="GtkImage">
                     <property name="visible">True</property>
-                    <property name="can_focus">False</property>
-                    <child>
-                      <object class="GtkBox" id="box_network">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <child>
-                          <object class="PhoshWWanInfo" id="wwaninfo">
-                            <property name="visible" bind-source="wwaninfo" bind-property="present" bind-flags="sync-create"/>
-                            <property name="can_focus">False</property>
-                            <property name="margin-start">0</property>
-                            <property name="margin-end">8</property>
-                            <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
-                            <property name="show_detail">True</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="PhoshWifiInfo" id="wifiinfo">
-                            <property name="visible" bind-source="wifiinfo" bind-property="present" bind-flags="sync-create"/>
-                            <property name="can_focus">False</property>
-                            <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
-                            <property name="margin-end">8</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="PhoshBtInfo" id="btinfo">
-                            <property name="visible" bind-source="btinfo" bind-property="present" bind-flags="sync-create"/>
-                            <property name="can_focus">False</property>
-                            <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
-                            <property name="margin-end">8</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">2</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="PhoshVpnInfo" id="vpn_info">
-                            <property name="visible" bind-source="vpn_info" bind-property="enabled" bind-flags="sync-create"/>
-                            <property name="can_focus">False</property>
-                            <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
-                            <property name="margin-end">8</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">3</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="PhoshConnectivityInfo" id="connectivity_info">
-                            <property name="visible" bind-source="connectivity_info" bind-property="connectivity" bind-flags="invert-boolean|sync-create"/>
-                            <property name="can_focus">False</property>
-                            <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
-                            <property name="margin-end">8</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">3</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="PhoshDockedInfo" id="docked_info">
-                            <property name="visible" bind-source="docked_info" bind-property="enabled" bind-flags="sync-create"/>
-                            <property name="can_focus">False</property>
-                            <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
-                            <property name="margin-end">8</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">4</property>
-                          </packing>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">0</property>
-                      </packing>
-                    </child>
-                    <child type="center">
-                      <object class="GtkLabel" id="lbl_clock">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="receives_default">True</property>
-                        <property name="margin_top">2</property>
-                        <property name="label">00:00</property>
-                        <style>
-                          <class name="phosh-topbar-clock"/>
-                        </style>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="position">2</property>
-                      </packing>
-                    </child>
-                    <child>
-                      <object class="GtkBox" id="box_indicators">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="halign">end</property>
-                        <style>
-                          <class name="indicators"/>
-                        </style>
-                        <child>
-                          <object class="GtkLabel" id="lbl_lang">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="margin-end">8</property>
-                            <property name="margin_top">2</property>
-                            <property name="justify">center</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">0</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="PhoshHksInfo" id="hks_info_mic">
-                            <property name="device-type">mic</property>
-                            <property name="visible" bind-source="hks_info_mic" bind-property="blocked" bind-flags="sync-create"/>
-                            <property name="can_focus">False</property>
-                            <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
-                            <property name="margin-end">8</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">1</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="PhoshHksInfo" id="hks_info_camera">
-                            <property name="device-type">camera</property>
-                            <property name="visible" bind-source="hks_info_camera" bind-property="blocked" bind-flags="sync-create"/>
-                            <property name="can_focus">False</property>
-                            <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
-                            <property name="margin-end">8</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">3</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="PhoshLocationInfo" id="location_info">
-                            <property name="visible" bind-source="location_info" bind-property="active" bind-flags="sync-create"/>
-                            <property name="can_focus">False</property>
-                            <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
-                            <property name="margin-end">8</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">4</property>
-                          </packing>
-                        </child>
-                        <child>
-                          <object class="PhoshBatteryInfo" id="batteryinfo">
-                            <property name="visible">True</property>
-                            <property name="can_focus">False</property>
-                            <property name="margin-end">0</property>
-                            <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
-                          </object>
-                          <packing>
-                            <property name="expand">False</property>
-                            <property name="fill">True</property>
-                            <property name="position">5</property>
-                          </packing>
-                        </child>
-                      </object>
-                      <packing>
-                        <property name="expand">False</property>
-                        <property name="fill">True</property>
-                        <property name="pack_type">end</property>
-                        <property name="position">4</property>
-                      </packing>
-                    </child>
+                    <property name="icon-name">padlock-symbolic</property>
                   </object>
                 </child>
-                <style>
-                  <class name="phosh-panel-btn"/>
-                </style>
               </object>
-              <packing>
-                <property name="name">topbar</property>
-              </packing>
             </child>
-            <child>
+            <child type="center">
               <object class="GtkBox">
                 <property name="visible">True</property>
-                <property name="can_focus">False</property>
+                <property name="orientation">vertical</property>
                 <child>
-                  <object class="GtkMenuButton" id="btn_power">
+                  <object class="GtkLabel" id="lbl_clock2">
                     <property name="visible">True</property>
-                    <property name="can_focus">True</property>
-                    <property name="receives_default">True</property>
-                    <property name="popover">menu_power</property>
-                    <property name="width-request">32</property>
-                    <property name="height-request">32</property>
+                    <property name="margin-top">2</property>
                     <style>
-                      <class name="phosh-power-button"/>
-                      <class name="circular"/>
+                      <class name="phosh-topbar-clock"/>
                     </style>
-                    <child>
-                      <object class="GtkImage">
-                        <property name="visible">True</property>
-                        <property name="can_focus">False</property>
-                        <property name="icon_name">system-shutdown-symbolic</property>
-                      </object>
-                    </child>
                   </object>
-                  <packing>
-                    <property name="expand">False</property>
-                    <property name="fill">False</property>
-                    <property name="pack_type">end</property>
-                    <property name="position">0</property>
-                  </packing>
+                </child>
+                <child>
+                  <object class="GtkLabel" id="lbl_date">
+                    <property name="visible">True</property>
+                    <style>
+                      <class name="phosh-topbar-date"/>
+                    </style>
+                  </object>
+                </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkMenuButton" id="btn_power">
+                <property name="visible">True</property>
+                <property name="sensitive" bind-source="PhoshTopPanel" bind-property="on-lockscreen" bind-flags="sync-create|invert-boolean"/>
+                <property name="popover">menu_power</property>
+                <style>
+                  <class name="phosh-topbar-button"/>
+                </style>
+                <child>
+                  <object class="GtkImage">
+                    <property name="visible">True</property>
+                    <property name="icon-name">system-shutdown-symbolic</property>
+                  </object>
                 </child>
               </object>
               <packing>
-                <property name="name">settings</property>
-                <property name="position">1</property>
+                <property name="pack-type">end</property>
               </packing>
             </child>
-          </object>
+          </object> <!-- box_clock -->
+        </child>
+        <child>
+
+          <object class="GtkStack" id="stack">
+            <property name="visible">True</property>
+            <property name="transition-type">crossfade</property>
+            <child>
+              <object class="GtkBox" id="box_top_bar">
+                <property name="visible">True</property>
+                <property name="expand">True</property>
+                <property name="valign">end</property>
+                <property name="name">top-bar</property>
+                <!-- PHOSH_TOP_PANEL_HEIGHT -->
+                <property name="height-request">32</property>
+                <child>
+                  <object class="GtkBox" id="box_network">
+                    <property name="visible">True</property>
+                    <child>
+                      <object class="PhoshWWanInfo" id="wwaninfo">
+                        <property name="visible" bind-source="wwaninfo" bind-property="present" bind-flags="sync-create"/>
+                        <property name="margin-start">0</property>
+                        <property name="margin-end">8</property>
+                        <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
+                        <property name="show_detail">True</property>
+                        <style>
+                          <class name="phosh-wwan-indicator"/>
+                        </style>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="PhoshWifiInfo" id="wifiinfo">
+                        <property name="visible" bind-source="wifiinfo" bind-property="present" bind-flags="sync-create"/>
+                        <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
+                        <property name="margin-end">8</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="PhoshBtInfo" id="btinfo">
+                        <property name="visible" bind-source="btinfo" bind-property="present" bind-flags="sync-create"/>
+                        <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
+                        <property name="margin-end">8</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="PhoshVpnInfo" id="vpn_info">
+                        <property name="visible" bind-source="vpn_info" bind-property="enabled" bind-flags="sync-create"/>
+                        <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
+                        <property name="margin-end">8</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="PhoshConnectivityInfo" id="connectivity_info">
+                        <property name="visible" bind-source="connectivity_info" bind-property="connectivity" bind-flags="invert-boolean|sync-create"/>
+                        <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
+                        <property name="margin-end">8</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="PhoshDockedInfo" id="docked_info">
+                        <property name="visible" bind-source="docked_info" bind-property="enabled" bind-flags="sync-create"/>
+                        <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
+                        <property name="margin-end">8</property>
+                      </object>
+                    </child>
+                  </object> <!-- box_network -->
+                </child>
+                <child type="center">
+                  <object class="GtkLabel" id="lbl_clock">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="receives_default">True</property>
+                    <property name="margin_top">2</property>
+                    <property name="label">00:00</property>
+                    <style>
+                      <class name="phosh-topbar-clock"/>
+                    </style>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkBox" id="box_indicators">
+                    <property name="visible">True</property>
+                    <property name="can_focus">False</property>
+                    <property name="halign">end</property>
+                    <style>
+                      <class name="indicators"/>
+                    </style>
+                    <child>
+                      <object class="GtkLabel" id="lbl_lang">
+                        <property name="visible">True</property>
+                        <property name="margin-end">8</property>
+                        <property name="margin_top">2</property>
+                        <property name="justify">center</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="PhoshHksInfo" id="hks_info_mic">
+                        <property name="device-type">mic</property>
+                        <property name="visible" bind-source="hks_info_mic" bind-property="blocked" bind-flags="sync-create"/>
+                        <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
+                        <property name="margin-end">8</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="PhoshHksInfo" id="hks_info_camera">
+                        <property name="device-type">camera</property>
+                        <property name="visible" bind-source="hks_info_camera" bind-property="blocked" bind-flags="sync-create"/>
+                        <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
+                        <property name="margin-end">8</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="PhoshFeedbackInfo" id="feedback_info">
+                        <property name="visible" bind-source="feedback_info" bind-property="muted" bind-flags="sync-create"/>
+                        <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
+                        <property name="margin-end">8</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="PhoshLocationInfo" id="location_info">
+                        <property name="visible" bind-source="location_info" bind-property="active" bind-flags="sync-create"/>
+                        <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
+                        <property name="margin-end">8</property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="PhoshBatteryInfo" id="batteryinfo">
+                        <property name="visible">True</property>
+                        <property name="margin-end">0</property>
+                        <property name="icon-size">GTK_ICON_SIZE_SMALL_TOOLBAR</property>
+                      </object>
+                    </child>
+                  </object> <!-- box_indicators -->
+                  <packing>
+                    <property name="pack_type">end</property>
+                  </packing>
+                </child>
+              </object> <!-- box_top_bar -->
+              <packing>
+                <property name="name">top-bar</property>
+              </packing>
+            </child>
+
+            <child>
+              <object class="PhoshArrow" id="arrow">
+                <property name="visible">True</property>
+                <property name="vexpand">True</property>
+                <property name="valign">end</property>
+                <property name="margin-bottom">6</property>
+              </object>
+              <packing>
+                <property name="name">arrow</property>
+              </packing>
+            </child>
+          </object>  <!-- stack -->
           <packing>
-            <property name="expand">False</property>
-            <property name="fill">True</property>
-            <property name="position">0</property>
+            <property name="position">2</property>
           </packing>
         </child>
         <child>
           <object class="PhoshSettings" id="settings">
-            <property name="visible">False</property>
+            <property name="visible">True</property>
+            <signal name="notify::drag-handle-offset" handler="on_settings_drag_handle_offset_changed" swapped="true"/>
           </object>
+          <packing>
+            <property name="position">1</property>
+          </packing>
         </child>
       </object>
     </child>

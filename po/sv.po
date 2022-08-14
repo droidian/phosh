@@ -1,14 +1,14 @@
 # Ludwig Johnson <public@ludwigjohnson.se>, 2018. #zanata
 # Nami <namii@tutamail.com>, 2019. #zanata
 # Anders Jonsson <anders.jonsson@norsjovallen.se>, 2020, 2021, 2022.
-# Luna Jernberg <droidbittin@gmail.com>, 2021.
+# Luna Jernberg <droidbittin@gmail.com>, 2021, 2022.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: phosh\n"
 "Report-Msgid-Bugs-To: https://gitlab.gnome.org/World/Phosh/phosh/issues\n"
-"POT-Creation-Date: 2022-01-20 19:23+0000\n"
-"PO-Revision-Date: 2022-01-20 22:09+0100\n"
+"POT-Creation-Date: 2022-06-01 08:28+0000\n"
+"PO-Revision-Date: 2022-06-01 17:17+0200\n"
 "Last-Translator: Anders Jonsson <anders.jonsson@norsjovallen.se>\n"
 "Language-Team: Swedish <tp-sv@listor.tp-sv.se>\n"
 "Language: sv\n"
@@ -31,7 +31,7 @@ msgstr "Phone Shell"
 msgid "Window management and application launching for mobile"
 msgstr "Fönsterhantering och programstartare för mobil"
 
-#: src/app-grid-button.c:502
+#: src/app-grid-button.c:529
 msgid "Application"
 msgstr "Program"
 
@@ -43,7 +43,7 @@ msgstr "Visa alla appar"
 msgid "Show Only Mobile Friendly Apps"
 msgstr "Visa endast mobilanpassade appar"
 
-#: src/bt-info.c:92 src/feedbackinfo.c:51 src/rotateinfo.c:103
+#: src/bt-info.c:92 src/feedbackinfo.c:78 src/rotateinfo.c:103
 msgid "On"
 msgstr "På"
 
@@ -100,14 +100,14 @@ msgstr "Okänt program"
 #. Translators: quiet and silent are fbd profiles names:
 #. see https://source.puri.sm/Librem5/feedbackd#profiles
 #. for details
-#: src/feedbackinfo.c:44
+#: src/feedbackinfo.c:69
 msgid "Quiet"
 msgstr "Ljudlös"
 
 #. Translators: quiet and silent are fbd profiles names:
 #. see https://source.puri.sm/Librem5/feedbackd#profiles
 #. for details
-#: src/feedbackinfo.c:49
+#: src/feedbackinfo.c:75
 msgid "Silent"
 msgstr "Tyst"
 
@@ -128,19 +128,13 @@ msgstr "Ja"
 msgid "No"
 msgstr "Nej"
 
-#: src/lockscreen.c:162 src/ui/lockscreen.ui:270
+#: src/lockscreen.c:165 src/ui/lockscreen.ui:181
 msgid "Enter Passcode"
 msgstr "Ange lösenord"
 
-#: src/lockscreen.c:362
+#: src/lockscreen.c:364
 msgid "Checking…"
 msgstr "Kontrollerar…"
-
-#. Translators: This is a time format for a date in
-#. long format
-#: src/lockscreen.c:440
-msgid "%A, %B %-e"
-msgstr "%A, %-e %B"
 
 #. Translators: Used when the title of a song is unknown
 #: src/media-player.c:322 src/ui/media-player.ui:182
@@ -331,29 +325,33 @@ msgstr "Lösenordet får inte vara tomt"
 msgid "Torch"
 msgstr "Ficklampa"
 
-#: src/ui/app-auth-prompt.ui:40
+#: src/ui/app-auth-prompt.ui:49
 msgid "Remember decision"
 msgstr "Kom ihåg beslut"
 
-#: src/ui/app-auth-prompt.ui:53 src/ui/end-session-dialog.ui:53
+#: src/ui/app-auth-prompt.ui:62 src/ui/end-session-dialog.ui:53
 msgid "Cancel"
 msgstr "Avbryt"
 
-#: src/ui/app-auth-prompt.ui:62 src/ui/end-session-dialog.ui:62
+#: src/ui/app-auth-prompt.ui:71 src/ui/end-session-dialog.ui:62
 msgid "Ok"
 msgstr "OK"
 
-#: src/ui/app-grid-button.ui:48
+#: src/ui/app-grid-button.ui:55
 msgid "App"
 msgstr "App"
 
-#: src/ui/app-grid-button.ui:75
+#: src/ui/app-grid-button.ui:79
 msgid "Remove from _Favorites"
 msgstr "Ta bort från _favoriter"
 
-#: src/ui/app-grid-button.ui:80
+#: src/ui/app-grid-button.ui:84
 msgid "Add to _Favorites"
 msgstr "Lägg till i _favoriter"
+
+#: src/ui/app-grid-button.ui:89
+msgid "View _Details"
+msgstr "Visa _detaljer"
 
 #: src/ui/app-grid.ui:21
 msgid "Search apps…"
@@ -379,15 +377,15 @@ msgstr "A_nslut"
 msgid "Slide up to unlock"
 msgstr "Svep uppåt för att låsa upp"
 
-#: src/ui/lockscreen.ui:320
+#: src/ui/lockscreen.ui:231
 msgid "Emergency"
 msgstr "Nödläge"
 
-#: src/ui/lockscreen.ui:336
+#: src/ui/lockscreen.ui:247
 msgid "Unlock"
 msgstr "Lås upp"
 
-#: src/ui/lockscreen.ui:376
+#: src/ui/lockscreen.ui:289
 msgid "Back"
 msgstr "Bakåt"
 
@@ -411,6 +409,14 @@ msgstr "Godkänn"
 msgid "Run Command"
 msgstr "Kör kommando"
 
+#: src/ui/settings.ui:317
+msgid "No notifications"
+msgstr "Inga aviseringar"
+
+#: src/ui/settings.ui:358
+msgid "Clear all"
+msgstr "Rensa alla"
+
 #: src/ui/system-prompt.ui:62
 msgid "Confirm:"
 msgstr "Bekräfta:"
@@ -423,6 +429,12 @@ msgstr "Lås skärm"
 msgid "Logout"
 msgstr "Logga ut"
 
+#. Translators: This is a time format for a date in
+#. long format
+#: src/util.c:340
+msgid "%A, %B %-e"
+msgstr "%A, %-e %B"
+
 #: src/vpn-info.c:89
 msgid "VPN"
 msgstr "VPN"
@@ -432,6 +444,6 @@ msgid "Wi-Fi"
 msgstr "Wi-Fi"
 
 #. Translators: Refers to the cellular wireless network
-#: src/wwaninfo.c:172
+#: src/wwan-info.c:200
 msgid "Cellular"
 msgstr "Mobilt nätverk"

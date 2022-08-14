@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: phosh master\n"
 "Report-Msgid-Bugs-To: https://gitlab.gnome.org/World/Phosh/phosh/issues\n"
-"POT-Creation-Date: 2022-01-20 19:23+0000\n"
-"PO-Revision-Date: 2022-01-30 17:32+0100\n"
+"POT-Creation-Date: 2022-06-01 08:28+0000\n"
+"PO-Revision-Date: 2022-06-05 17:38+0200\n"
 "Last-Translator: Florentina Mușat <florentina.musat.28@gmail.com>\n"
 "Language-Team: Romanian <gnomero-list@lists.sourceforge.net>\n"
 "Language: ro\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n==0 || (n!=1 && n%100>=1 && n"
 "%100<=19) ? 1 : 2);\n"
-"X-Generator: Gtranslator 3.30.1\n"
+"X-Generator: Gtranslator 3.38.0\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
 #. Translators: this is the session name, no need to translate it
@@ -33,7 +33,7 @@ msgstr "Shell telefon"
 msgid "Window management and application launching for mobile"
 msgstr "Gestionarea ferestrei și pornirea aplicațiilor pentru mobil"
 
-#: src/app-grid-button.c:502
+#: src/app-grid-button.c:529
 msgid "Application"
 msgstr "Aplicație"
 
@@ -45,7 +45,7 @@ msgstr "Arată toate aplicațiile"
 msgid "Show Only Mobile Friendly Apps"
 msgstr "Arată numai aplicații pentru mobil"
 
-#: src/bt-info.c:92 src/feedbackinfo.c:51 src/rotateinfo.c:103
+#: src/bt-info.c:92 src/feedbackinfo.c:78 src/rotateinfo.c:103
 msgid "On"
 msgstr "Pornit"
 
@@ -104,14 +104,14 @@ msgstr "Aplicație necunoscută"
 #. Translators: quiet and silent are fbd profiles names:
 #. see https://source.puri.sm/Librem5/feedbackd#profiles
 #. for details
-#: src/feedbackinfo.c:44
+#: src/feedbackinfo.c:69
 msgid "Quiet"
 msgstr "Liniștit"
 
 #. Translators: quiet and silent are fbd profiles names:
 #. see https://source.puri.sm/Librem5/feedbackd#profiles
 #. for details
-#: src/feedbackinfo.c:49
+#: src/feedbackinfo.c:75
 msgid "Silent"
 msgstr "Silențios"
 
@@ -132,19 +132,13 @@ msgstr "Da"
 msgid "No"
 msgstr "Nu"
 
-#: src/lockscreen.c:162 src/ui/lockscreen.ui:270
+#: src/lockscreen.c:165 src/ui/lockscreen.ui:181
 msgid "Enter Passcode"
 msgstr "Introdu codul de acces"
 
-#: src/lockscreen.c:362
+#: src/lockscreen.c:364
 msgid "Checking…"
 msgstr "Se verifică…"
-
-#. Translators: This is a time format for a date in
-#. long format
-#: src/lockscreen.c:440
-msgid "%A, %B %-e"
-msgstr "%A, %B %-e"
 
 #. Translators: Used when the title of a song is unknown
 #: src/media-player.c:322 src/ui/media-player.ui:182
@@ -335,29 +329,33 @@ msgstr "Parola nu poate fi goală"
 msgid "Torch"
 msgstr "Lanternă"
 
-#: src/ui/app-auth-prompt.ui:40
+#: src/ui/app-auth-prompt.ui:49
 msgid "Remember decision"
 msgstr "Memorează decizia"
 
-#: src/ui/app-auth-prompt.ui:53 src/ui/end-session-dialog.ui:53
+#: src/ui/app-auth-prompt.ui:62 src/ui/end-session-dialog.ui:53
 msgid "Cancel"
 msgstr "Anulează"
 
-#: src/ui/app-auth-prompt.ui:62 src/ui/end-session-dialog.ui:62
+#: src/ui/app-auth-prompt.ui:71 src/ui/end-session-dialog.ui:62
 msgid "Ok"
 msgstr "De acord"
 
-#: src/ui/app-grid-button.ui:48
+#: src/ui/app-grid-button.ui:55
 msgid "App"
 msgstr "Aplicație"
 
-#: src/ui/app-grid-button.ui:75
+#: src/ui/app-grid-button.ui:79
 msgid "Remove from _Favorites"
 msgstr "Elimină din _Favorite"
 
-#: src/ui/app-grid-button.ui:80
+#: src/ui/app-grid-button.ui:84
 msgid "Add to _Favorites"
 msgstr "Adaugă la _Favorite"
+
+#: src/ui/app-grid-button.ui:89
+msgid "View _Details"
+msgstr "Arată _detalii"
 
 #: src/ui/app-grid.ui:21
 msgid "Search apps…"
@@ -383,15 +381,15 @@ msgstr "Co_nectează"
 msgid "Slide up to unlock"
 msgstr "Trage în sus pentru a debloca"
 
-#: src/ui/lockscreen.ui:320
+#: src/ui/lockscreen.ui:231
 msgid "Emergency"
 msgstr "Urgență"
 
-#: src/ui/lockscreen.ui:336
+#: src/ui/lockscreen.ui:247
 msgid "Unlock"
 msgstr "Deblocare"
 
-#: src/ui/lockscreen.ui:376
+#: src/ui/lockscreen.ui:289
 msgid "Back"
 msgstr "Înapoi"
 
@@ -415,6 +413,14 @@ msgstr "Autentificare"
 msgid "Run Command"
 msgstr "Execută comanda"
 
+#: src/ui/settings.ui:317
+msgid "No notifications"
+msgstr "Nicio notificare"
+
+#: src/ui/settings.ui:358
+msgid "Clear all"
+msgstr "Șterge tot"
+
 #: src/ui/system-prompt.ui:62
 msgid "Confirm:"
 msgstr "Confirmă:"
@@ -427,6 +433,12 @@ msgstr "Blochează ecranul"
 msgid "Logout"
 msgstr "Deconectare"
 
+#. Translators: This is a time format for a date in
+#. long format
+#: src/util.c:340
+msgid "%A, %B %-e"
+msgstr "%A, %B %-e"
+
 #: src/vpn-info.c:89
 msgid "VPN"
 msgstr "VPN"
@@ -436,6 +448,6 @@ msgid "Wi-Fi"
 msgstr "Wi-Fi"
 
 #. Translators: Refers to the cellular wireless network
-#: src/wwaninfo.c:172
+#: src/wwan-info.c:200
 msgid "Cellular"
 msgstr "Celular"

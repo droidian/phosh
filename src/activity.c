@@ -8,7 +8,7 @@
 
 #define G_LOG_DOMAIN "phosh-activity"
 
-#include "config.h"
+#include "phosh-config.h"
 #include "activity.h"
 #include "shell.h"
 #include "swipe-away-bin.h"
@@ -32,6 +32,7 @@
 enum {
   CLICKED,
   CLOSED,
+  RESIZED,
   N_SIGNALS
 };
 static guint signals[N_SIGNALS] = { 0 };
@@ -40,6 +41,7 @@ enum {
   PROP_0,
   PROP_APP_ID,
   PROP_MAXIMIZED,
+  PROP_FULLSCREEN,
   PROP_WIN_WIDTH,
   PROP_WIN_HEIGHT,
   LAST_PROP,
@@ -57,6 +59,7 @@ typedef struct
   GtkWidget *button;
 
   gboolean maximized;
+  gboolean fullscreen;
   int win_width;
   int win_height;
 
@@ -67,6 +70,7 @@ typedef struct
 
   gboolean hovering;
   guint remove_timeout_id;
+  GtkAllocation allocation;
 } PhoshActivityPrivate;
 
 
@@ -96,10 +100,11 @@ phosh_activity_set_property (GObject *object,
       break;
     case PROP_MAXIMIZED:
       priv->maximized = g_value_get_boolean (value);
-      if (priv->maximized)
-        gtk_style_context_add_class (gtk_widget_get_style_context (GTK_WIDGET (self)), "phosh-maximized");
-      else
-        gtk_style_context_remove_class (gtk_widget_get_style_context (GTK_WIDGET (self)), "phosh-maximized");
+      phosh_util_toggle_style_class (GTK_WIDGET (self), "phosh-maximized", priv->maximized);
+      break;
+    case PROP_FULLSCREEN:
+      priv->fullscreen = g_value_get_boolean (value);
+      phosh_util_toggle_style_class (GTK_WIDGET (self), "phosh-fullscreen", priv->fullscreen);
       break;
     case PROP_WIN_WIDTH:
       width = g_value_get_int (value);
@@ -139,6 +144,9 @@ phosh_activity_get_property (GObject *object,
       break;
     case PROP_MAXIMIZED:
       g_value_set_boolean (value, priv->maximized);
+      break;
+    case PROP_FULLSCREEN:
+      g_value_set_boolean (value, priv->fullscreen);
       break;
     case PROP_WIN_WIDTH:
       g_value_set_int (value, priv->win_width);
@@ -257,6 +265,20 @@ draw_cb (PhoshActivity *self, cairo_t *cairo, GtkDrawingArea *area)
   cairo_fill (cairo);
 
   return FALSE;
+}
+
+
+static void
+size_allocate_cb (PhoshActivity *self, GtkAllocation *alloc, GtkDrawingArea *area)
+{
+  PhoshActivityPrivate *priv = phosh_activity_get_instance_private (self);
+  gboolean changed = alloc->width != priv->allocation.width ||
+                     alloc->height != priv->allocation.height;
+
+  priv->allocation = *alloc;
+
+  if (changed)
+    g_signal_emit (self, signals[RESIZED], 0, alloc);
 }
 
 
@@ -533,6 +555,14 @@ phosh_activity_class_init (PhoshActivityClass *klass)
       FALSE,
       G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
+  props[PROP_FULLSCREEN] =
+    g_param_spec_boolean (
+      "fullscreen",
+      "fullscreen",
+      "Whether the window is presented fullscreen",
+      FALSE,
+      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
   props[PROP_WIN_WIDTH] =
     g_param_spec_int (
       "win-width",
@@ -563,6 +593,10 @@ phosh_activity_class_init (PhoshActivityClass *klass)
       G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
       NULL, G_TYPE_NONE, 0);
 
+  signals[RESIZED] = g_signal_new ("resized",
+      G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
+      NULL, G_TYPE_NONE, 1, GDK_TYPE_RECTANGLE | G_SIGNAL_TYPE_STATIC_SCOPE);
+
   g_type_ensure (PHOSH_TYPE_SWIPE_AWAY_BIN);
 
   gtk_widget_class_set_template_from_resource (widget_class, "/sm/puri/phosh/ui/activity.ui");
@@ -576,6 +610,7 @@ phosh_activity_class_init (PhoshActivityClass *klass)
   gtk_widget_class_bind_template_child_private (widget_class, PhoshActivity, revealer);
   gtk_widget_class_bind_template_callback (widget_class, clicked_cb);
   gtk_widget_class_bind_template_callback (widget_class, draw_cb);
+  gtk_widget_class_bind_template_callback (widget_class, size_allocate_cb);
   gtk_widget_class_bind_template_callback (widget_class, closed_cb);
   gtk_widget_class_bind_template_callback (widget_class, removed_cb);
 
@@ -656,6 +691,7 @@ phosh_activity_get_thumbnail_allocation (PhoshActivity *self, GtkAllocation *all
 {
   PhoshActivityPrivate *priv;
   g_return_if_fail (PHOSH_IS_ACTIVITY (self));
+  g_return_if_fail (allocation);
   priv = phosh_activity_get_instance_private (self);
-  gtk_widget_get_allocation (priv->preview, allocation);
+  *allocation = priv->allocation;
 }

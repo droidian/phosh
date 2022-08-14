@@ -8,7 +8,7 @@
 
 #define G_LOG_DOMAIN "phosh-hks-manager"
 
-#include "config.h"
+#include "phosh-config.h"
 
 #include "hks-manager.h"
 #include "shell.h"
@@ -368,6 +368,7 @@ setup_rfkill (PhoshHksManager *self)
   /* Setup monitoring */
   self->channel = g_io_channel_unix_new (fd);
   g_io_channel_set_encoding (self->channel, NULL, NULL);
+  g_io_channel_set_buffered (self->channel, FALSE);
   self->watch_id = g_io_add_watch (self->channel,
                                    G_IO_IN | G_IO_HUP | G_IO_ERR,
                                    (GIOFunc) rfkill_event_cb,

@@ -1,5 +1,5 @@
 project('phosh', 'c',
-          version: '0.17.0',
+          version: '0.20.0',
           license: 'GPLv3+',
     meson_version: '>= 0.54.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
@@ -17,6 +17,7 @@ pkgdatadir = join_paths(datadir, meson.project_name())
 pkglibdir = join_paths(libdir, meson.project_name())
 systemddir = join_paths(prefix, 'lib/systemd')
 systemduserdir = join_paths(systemddir, 'user')
+plugins_dir = join_paths(prefix, libdir, 'phosh', 'plugins')
 
 glib_ver = 'GLIB_VERSION_2_62'
 
@@ -102,6 +103,7 @@ glib_dep = dependency('glib-2.0', version: glib_ver)
 gio_dep = dependency('gio-2.0', version: glib_ver)
 gobject_dep = dependency('gobject-2.0', version: glib_ver)
 gio_unix_dep =  dependency('gio-unix-2.0', version: '>=2.62')
+gmodule_dep = dependency('gmodule-2.0', version: glib_ver)
 gnome_desktop_dep = dependency('gnome-desktop-3.0', version: '>=3.26')
 gsettings_desktop_schemas_dep = dependency('gsettings-desktop-schemas')
 gtk_dep = dependency('gtk+-3.0', version: '>=3.22')
@@ -155,24 +157,27 @@ have_rfkill_event_ext = cc.compiles(code, name : 'Have rfkill_event_ext')
 config_h = configuration_data()
 config_h.set_quoted('GETTEXT_PACKAGE', 'phosh')
 config_h.set_quoted('LOCALEDIR', localedir)
+config_h.set_quoted('PHOSH_PLUGINS_DIR', plugins_dir)
 config_h.set_quoted('PHOSH_VERSION', meson.project_version())
 config_h.set('HAVE_RFKILL_EVENT_EXT', have_rfkill_event_ext)
+config_h.set('PHOSH_USES_ASAN', get_option('b_sanitize') == 'address')
 
 configure_file(
-  input: 'config.h.in',
-  output: 'config.h',
+  input: 'phosh-config.h.in',
+  output: 'phosh-config.h',
   configuration: config_h,
 )
 
 meson.add_install_script(
   join_paths('build-aux', 'post_install.py'),
-  datadir
+  [datadir, plugins_dir],
 )
 
 subdir('data')
 subdir('po')
 subdir('protocol')
 subdir('src')
+subdir('plugins')
 subdir('tests')
 subdir('tools')
 subdir('docs')

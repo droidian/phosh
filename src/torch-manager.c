@@ -8,7 +8,7 @@
 
 #define G_LOG_DOMAIN "phosh-torch-manager"
 
-#include "config.h"
+#include "phosh-config.h"
 
 #include <gudev/gudev.h>
 
@@ -46,19 +46,19 @@ enum {
 static GParamSpec *props[PROP_LAST_PROP];
 
 struct _PhoshTorchManager {
-  PhoshManager                        parent;
+  PhoshManager           parent;
 
   /* Whether we found a torch device */
-  gboolean                            present;
-  const char                         *icon_name;
-  int                                 brightness;
-  int                                 max_brightness;
-  int                                 last_brightness;
+  gboolean               present;
+  const char            *icon_name;
+  int                    brightness;
+  int                    max_brightness;
+  int                    last_brightness;
 
-  GUdevClient                        *udev_client;
-  GUdevDevice                        *udev_device;
+  GUdevClient           *udev_client;
+  GUdevDevice           *udev_device;
 
-  PhoshLogin1SessionDBusLoginSession *proxy;
+  PhoshDBusLoginSession *proxy;
   DroidianTorchDbusDroidianTorch     *droid_proxy;
 
   GCancellable                       *cancel;
@@ -95,16 +95,16 @@ apply_brightness (PhoshTorchManager *self)
 }
 
 static void
-on_brightness_set (PhoshLogin1SessionDBusLoginSession *proxy,
+on_brightness_set (PhoshDBusLoginSession *proxy,
                    GAsyncResult                       *res,
                    PhoshTorchManager                  *self)
 {
   g_autoptr (GError) err = NULL;
 
   g_return_if_fail (PHOSH_IS_TORCH_MANAGER (self));
-  g_return_if_fail (PHOSH_LOGIN1_SESSION_DBUS_IS_LOGIN_SESSION (proxy));
+  g_return_if_fail (PHOSH_DBUS_IS_LOGIN_SESSION (proxy));
 
-  if (!phosh_login1_session_dbus_login_session_call_set_brightness_finish (proxy, res, &err)) {
+  if (!phosh_dbus_login_session_call_set_brightness_finish (proxy, res, &err)) {
     g_warning ("Failed to set torch brigthness: %s", err->message);
     return;
   }
@@ -137,13 +137,13 @@ set_brightness (PhoshTorchManager *self, int brightness)
   g_debug("Setting brightness to %d", brightness);
 
   if (G_UDEV_IS_DEVICE (self->udev_device)) {
-    phosh_login1_session_dbus_login_session_call_set_brightness (self->proxy,
-                                                                 TORCH_SUBSYSTEM,
-                                                                 g_udev_device_get_name (self->udev_device),
-                                                                 (guint) brightness,
-                                                                 NULL,
-                                                                 (GAsyncReadyCallback) on_brightness_set,
-                                                                 self);
+    phosh_dbus_login_session_call_set_brightness (self->proxy,
+                                                TORCH_SUBSYSTEM,
+                                                g_udev_device_get_name (self->udev_device),
+                                                (guint) brightness,
+                                                NULL,
+                                                (GAsyncReadyCallback) on_brightness_set,
+                                                self);
   } else {
     /* Droidian Flashlightd */
     droidian_torch_dbus_droidian_torch_call_set_brightness (self->droid_proxy,
@@ -244,9 +244,9 @@ on_proxy_new_for_bus_finish (GObject           *source_object,
                              PhoshTorchManager *self)
 {
   g_autoptr (GError) err = NULL;
-  PhoshLogin1SessionDBusLoginSession *proxy;
+  PhoshDBusLoginSession *proxy;
 
-  proxy = phosh_login1_session_dbus_login_session_proxy_new_for_bus_finish (res, &err);
+  proxy = phosh_dbus_login_session_proxy_new_for_bus_finish (res, &err);
   if (!proxy) {
     phosh_async_error_warn (err, "Failed to get login1 session proxy");
     return;
@@ -303,13 +303,13 @@ phosh_torch_manager_idle_init (PhoshManager *manager)
   self->udev_client = g_udev_client_new (subsystems);
   self->cancel = g_cancellable_new ();
 
-  phosh_login1_session_dbus_login_session_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
-                                                             G_DBUS_PROXY_FLAGS_NONE,
-                                                             BUS_NAME,
-                                                             OBJECT_PATH,
-                                                             self->cancel,
-                                                             (GAsyncReadyCallback) on_proxy_new_for_bus_finish,
-                                                             self);
+  phosh_dbus_login_session_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
+                                              G_DBUS_PROXY_FLAGS_NONE,
+                                              BUS_NAME,
+                                              OBJECT_PATH,
+                                              self->cancel,
+                                              (GAsyncReadyCallback) on_proxy_new_for_bus_finish,
+                                              self);
 
   droidian_torch_dbus_droidian_torch_proxy_new_for_bus (G_BUS_TYPE_SESSION,
                                                         G_DBUS_PROXY_FLAGS_NONE,
@@ -490,6 +490,7 @@ void
 phosh_torch_manager_toggle (PhoshTorchManager *self)
 {
   g_return_if_fail (PHOSH_IS_TORCH_MANAGER (self));
+  g_return_if_fail (PHOSH_DBUS_IS_LOGIN_SESSION (self->proxy));
 
   if (self->brightness) {
     g_debug ("Disabling torch");

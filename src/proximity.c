@@ -8,7 +8,7 @@
 
 #define G_LOG_DOMAIN "phosh-proximity"
 
-#include "config.h"
+#include "phosh-config.h"
 #include "fader.h"
 #include "proximity.h"
 #include "shell.h"
@@ -29,9 +29,11 @@ enum {
   PROP_0,
   PROP_SENSOR_PROXY_MANAGER,
   PROP_CALLS_MANAGER,
+  PROP_FADER,
   LAST_PROP,
 };
 static GParamSpec *props[LAST_PROP];
+
 
 typedef struct _PhoshProximity {
   GObject parent;
@@ -43,6 +45,33 @@ typedef struct _PhoshProximity {
 } PhoshProximity;
 
 G_DEFINE_TYPE (PhoshProximity, phosh_proximity, G_TYPE_OBJECT);
+
+
+static void
+show_fader (PhoshProximity *self, PhoshMonitor *monitor)
+{
+  if (self->fader)
+    return;
+
+  self->fader = g_object_new (PHOSH_TYPE_FADER,
+                              "monitor", monitor,
+                              "style-class", "phosh-fader-proximity-fade",
+                              NULL);
+  gtk_widget_show (GTK_WIDGET (self->fader));
+
+  g_object_notify_by_pspec (G_OBJECT (self), props[PROP_FADER]);
+}
+
+
+static void
+hide_fader (PhoshProximity *self)
+{
+  if (self->fader == NULL)
+    return;
+
+  g_clear_pointer (&self->fader, phosh_cp_widget_destroy);
+  g_object_notify_by_pspec (G_OBJECT (self), props[PROP_FADER]);
+}
 
 
 static void
@@ -90,7 +119,7 @@ on_proximity_released (PhoshSensorProxyManager *sensor_proxy_manager,
   } else {
     g_warning ("Failed to release proximity sensor: %s", err->message);
   }
-  g_clear_pointer (&self->fader, phosh_cp_widget_destroy);
+  hide_fader (self);
 }
 
 
@@ -168,17 +197,10 @@ on_proximity_near_changed (PhoshProximity          *self,
     PHOSH_DBUS_SENSOR_PROXY (self->sensor_proxy_manager));
 
   g_debug ("Proximity near changed: %d", near);
-  if (near && monitor) {
-    if (!self->fader) {
-      self->fader = g_object_new (PHOSH_TYPE_FADER,
-                                  "monitor", monitor,
-                                  "style-class", "phosh-fader-proximity-fade",
-                                  NULL);
-      gtk_widget_show (GTK_WIDGET (self->fader));
-    }
-  } else {
-      g_clear_pointer (&self->fader, phosh_cp_widget_destroy);
-  }
+  if (near && monitor)
+    show_fader (self, monitor);
+  else
+    hide_fader (self);
 }
 
 static void
@@ -219,6 +241,9 @@ phosh_proximity_get_property (GObject *object,
     break;
   case PROP_CALLS_MANAGER:
     g_value_set_object (value, self->calls_manager);
+    break;
+  case PROP_FADER:
+    g_value_set_boolean (value, !!self->fader);
     break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -303,6 +328,16 @@ phosh_proximity_class_init (PhoshProximityClass *klass)
       PHOSH_TYPE_CALLS_MANAGER,
       G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
+  /* PhoshProximity:fader:
+   *
+   * %TRUE if the fader to prevent accidental user input is currently active
+   */
+  props[PROP_FADER] =
+    g_param_spec_boolean (
+      "fader", "", "",
+      FALSE,
+      G_PARAM_READABLE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
+
   g_object_class_install_properties (object_class, LAST_PROP, props);
 
 }
@@ -322,4 +357,12 @@ phosh_proximity_new (PhoshSensorProxyManager *sensor_proxy_manager,
                        "sensor-proxy-manager", sensor_proxy_manager,
                        "calls-manager", calls_manager,
                        NULL);
+}
+
+gboolean
+phosh_proximity_has_fader (PhoshProximity *self)
+{
+  g_return_val_if_fail (PHOSH_IS_PROXIMITY (self), FALSE);
+
+  return !!self->fader;
 }

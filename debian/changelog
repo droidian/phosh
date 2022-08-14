@@ -1,3 +1,695 @@
+phosh (0.20.0) experimental; urgency=medium
+
+  [ Guido Günther ]
+  * media-player: Don't forget to clear cancellable.
+    We did cancel it but didn't dispose it yet.
+  * Switch to HighContrast based on ambient sensor readings.
+    Add an automatic high contrast toggle that allows to switch
+    to HC automatically based on the current light level.
+  * settings: Drop superfluous can-focus properties
+  * shell: Move style sheet getter to seprate function.
+  * tests: Add simple test to load stylesheet.
+    Stylesheet changes trigger warnings ever so often, add a test
+    to catch these early.
+  * d/control: Bump phoc dependency.
+    Needed for
+    https://gitlab.gnome.org/World/Phosh/phosh/-/merge_requests/1115
+    (Handle draggable-layer sizing on monitor mode changes)
+  * home: Focus app search on application-view action.
+    The application-view action (triggered by
+    KEYBINDING_KEY_TOGGLE_APPLICATION_VIEW (super-a)) is supposed to focus
+    the app search. This got broken when moving to dragable layer surfaces.
+    Fixes: 22b03f7f2 ("home: Make it a draggable layer surface")
+
+  [ Sebastian Krzyszkowiak ]
+  * lockscreen: Use page-changed signal when appropriate
+    notify::position sometimes ends up sending starting event with position
+    of the page that's being switched away from, which made us execute handlers
+    that should only be called when switching into a new page. Fix that by
+    using page-changed signal when appropriate - timer handling still uses
+    notify::position since it needs to react to scrolling just being started.
+    Fixes #664
+  * lockscreen: Allow show_unlock_page to execute mid-transition.
+    Otherwise it feels like the key event is missed when the user starts typing
+    while page switch is still being animated.
+  * lockscreen: Clear input right away when pressing ESC.
+    It gets cleared by page-changed handler, but that happens only at the end
+    of the scroll animation. If the user presses ESC and then quickly starts
+    to type again, we would counter-intuitively end up appending to already
+    filled up entry.
+
+  [ Sam Hewitt ]
+  * style: Fix osd using hardcoded colors
+  * style: Fix notifications in high contrast
+
+ -- Guido Günther <agx@sigxcpu.org>  Wed, 03 Aug 2022 12:32:34 +0200
+
+phosh (0.20.0~beta3) experimental; urgency=medium
+
+  [ Guido Günther ]
+  * lockscreen: Drop am/pm from time formats (Closes: #103)
+  * data: Install and add icon to desktop file.
+    This will allow us to use it in e.g. phosh-mobile-settings panels.
+  * tests: Allow for phosh's icon.
+  * build: Adjust to polkit version changes.
+  * build: Rename config.h to phosh-config.h.
+    Otherwise we end up including config.h from elsewhere e.g. gvc.
+  * testlib: Kill compositor on SIG{ABRT,SEGV,TRAP}
+  * drag-surface: Add threshold getter. For symmetrie with the setter.
+  * drag-surface: Remove drag_surface_new (). The created object is not very
+    useful as we need to setup layer-surface too.
+  * drag-surface: Fix argument type. Fold margins are integers.
+  * tests: Add drag surface test.
+    This way we at test the setters and getters.
+    Fixes: 578a666f7fb69553bdf82ff8ab390467ab25165f
+  * tests: Don't change signal handlers when ASAN is in use.
+    ASAN wants to tweak these so don't touch them in these cases.
+  * build: Abort post-install on missing arguments.
+  * gitignore: Ignore i18n related generated files
+  * lockscreen: Avoid some keyboard filtering when not on unlock page.
+    This allows for keyboard navigation with the upcoming lockscreen plugins
+    and emergency call support.
+  * Add widget box to lock screen.
+    The widget box loads plugins that implement the phosh-lockscreen-widget
+    extension point and puts them on the lock screen.
+    Swiping to the left switches to the plugins if at least one is enabled.
+  * build: Generate module cache on install
+  * tools: Add standalone widget-box.
+    This allows to test the lock screen plugins without
+    running phosh itself.
+  * plugins: Add minimalistic calendar plugin.
+    It implements the phosh-lockscreen-widget extension point. It's
+    main purpose is to have a minimalistic example.
+  * debian: Install plugins.
+    We use an extra binary package so people can easily get rid of
+    plugins and their dependencies. It will also help splitting things
+    into a separate repo later.
+  * debian: Add trigger for plugin directory.
+    Run gio-querymodules to build the cache. Most of this copied
+    from Debian's glib package.
+  * monitor-manager: Drop useless ref.
+    We unref right away anyway (by automatic cleanup) at the end of the
+    function
+  * monitor-manager: Make different enum types explicit.
+    PhoshMonitorTransform and wl_output_transform have the same values
+    but don't convert implicitly.
+  * monitor: Add helper to detect "tilted" transforms.
+    We consider a transform to tilt the display if it changes the
+    display orientation from portrait to landscape or vice versa.
+  * head: Make header private.
+    PhoshHead should only be used by PhoshMonitorManager (and tests).  We
+    had it in the comments, reflect it in the file name too.
+  * monitor-manager: Move transform setting to PhoshHead.
+    It only affects the heads which will ease testing.
+  * monitor-manager: Adjust layout when rotating an output.
+    When rotating an output we need to adjust outputs left and below the
+    rotated output to avoids gaps or overlaps in the layout.
+    We shift all these heads whether they're currently enabled or not.
+
+  [ Sam Hewitt ]
+  * icons: Add symbolic icon for Phosh
+
+  [ Sebastian Krzyszkowiak ]
+  * tests/stubs: Add phosh_shell_get_docked
+  * overview: Raise toplevels on activity scrolling.
+  * shell: Don't fold the top panel and keyboard on unfolding home screen.
+    This isn't necessary anymore.
+  * ui/lockscreen: Set the PIN entry to be initially insensitive.
+    We change sensitivity based on carousel page in C code, but
+    the initial state stayed out of sync, which could cause
+    the keyboard to pop up right after locking the screen.
+    Fixes: 5300ba2ce ("lockscreen: Use entry focus to request OSK")
+  * stylesheet: Remove background from keypad's focused buttons.
+    Focus doesn't do much there as the lockscreen intercepts keyboard
+    input by itself, so don't display any visible focus indication
+    to not confuse users.
+  * lockscreen: Focus PIN entry on carousel page change when OSK is on.
+  * lockscreen: Focus PIN entry regardless of OSK status.
+    Won't hurt, but seems like a good idea that may help accessibility tools.
+  * stylesheet: Apply lockscreen PIN entry styles also to disabled state.
+    Otherwise caret-color may end up being animated when toggling sensitivity.
+  * home: Remove duplicated "unfold on no activities" handling.
+    It's already taken care of by PhoshShell.
+  * shell: Only fold the home screen when the first toplevel is added.
+    Folding when any window appears can get annoying if the user unfolds
+    the home screen while waiting for an app to launch (for example to launch
+    another app simultaneously).
+  * home: Don't (un)fold while being dragged.
+    Don't forcefully pull the surface out from under the user's finger.
+  * overview: Focus the activity on carousel page change.
+    Without this, we may end up scrolling back to some previously
+    focused activity on carousel focus if the active activity has
+    changed while the carousel wasn't focused.
+  * overview: Focus the activity right away when scrolling to it.
+    This fixes the same issue as the previous commit, but in cases
+    where scrolling has been invoked programmatically by phosh and
+    the animation hasn't finished before PhoshHome gained focus.
+
+  [ Alexander Mikhaylenko ]
+  * docked-manager: Update gtk4 is-phone setting too.
+    Since gtk4 needs to be parallel-installable with gtk3, it ships its own
+    schema. Change it as well.
+
+  [ Efstathios Iosifidis ]
+  * Update Greek translation
+
+  [ Vittorio Monti ]
+  * Update Italian translation
+
+  [ Мирослав Николић ]
+  * Update Serbian translation
+
+  [ Zurab Kargareteli ]
+  * Update Georgian translation
+
+ -- Guido Günther <agx@sigxcpu.org>  Tue, 19 Jul 2022 09:52:36 +0200
+
+phosh (0.20.0~beta2) experimental; urgency=medium
+
+  [ Guido Günther ]
+  * screen-saver-manager: Lock screen when suspending.
+    This avoids seeing the unlocked screen for a moment on resume.
+  * run: Add --args when using gdb.
+    This makes sure `-U` isn't parsed by gdb.
+    Thanks to Adrien Plazas for pointing this out.
+  * shell: Honor modal dialogs and full screen when raising top-bar.
+    Just handling the fader isn't enough as we want full screen windows and
+    modal dialogs to stretch over the top bar as well.
+    We have some more cases like screenshost screen flash but that needs
+    proper z-level which we can introduce once the layer-shell-effects is
+    in. Same if we want system modal dialogs on the lock screen.
+    Fixes: 55bbe5758ba947a1d77c4b75d4424ea8cf4ebac6
+    Closes: https://gitlab.gnome.org/World/Phosh/phoc/-/merge_requests/370
+  * shell: Don't try to close top-panel when not yet created.
+    On start up there's no top-panel so don't try to close it
+  * shell: Select top-panel layer based on lock state.
+    When the panel gets created we want the overlay layer in case the screen
+    is locked, otherwise top layer.
+  * idle-manager: Drop primary monitor.
+    We don't need it there and just hold a ref that we (so far) never gave
+    up again.
+  * tools: Add helper to submit a notification.
+    Makes it simpler to test notifications style from the command line.
+  * data: Indicate that we provide user feedback via audio, led and haptic.
+    This will help setting apps to configure this.
+
+  [ Evangelos Ribeiro Tzaras ]
+  * Update libcall-ui to v0.0.3.
+    Brings some UI tweaks, encryption indicator that is bound to calls
+    `encrypted` property, fixes a small issue with libcallaudio usage and
+    lots of updated or added translations.
+
+  [ Linus Walleij ]
+  * shell: Set monitor when creating rotation manager.
+    I had an annoying bug on Samsung phones such as GT-I9070,
+    GT-I8160 and GT-I8530 all using DPI displays that did not
+    properly instantiate the rotation manager, while
+    phones on the same platform using DSI would work fine.
+    If the primary monitor has already arrived when the rotation
+    manager is instantiated, the monitor does not get assigned to
+    the rotation manager.
+    This happens of phones such as Samsung GT-I9070 which use
+    DPI displays on MCDE that arrive apparently very quickly.
+    The same U8500 platforms with DSI displays does not have this
+    problem, presumably because the primary monitor arrives
+    later.
+    This fix was developed working entirely on the target,
+    compiling Phoc and Phosh natively on the GT-I9070 dual Cortex-A9
+    and iteratively editing, recompiling and testing modifications
+    to Phosh on the target itself.
+
+  [ Sebastian Krzyszkowiak ]
+  * activity: Emit "resized" signal
+    size-allocate can fire despite of allocation not changing at all,
+    so add our own signal that checks forchanges to get rid of
+    extraneous thumbnail refreshes.
+  * util: Add phosh_util_toggle_style_class
+  * activity: Add "fullscreen" property
+  * toplevel: Add "fullscreen" property
+  * overview: Don't draw grey background around fullscreen window's thumbnail
+  * top-panel: Crossfade between fold states
+  * lockscreen: Use entry focus to request OSK.
+    This allows the compositor to make informed decisions about
+    when to elevate the keyboard surface above shell.
+  * home: Reset overview at the beginning of unfolding.
+    This prevents flicker at the end of unfolding animation.
+  * overview: Request a thumbnail for foreground activity on reset.
+    This reduces the amount of flickering when the thumbnail gets
+    updated, especially when OSK hiding is involved.
+  * overview: Don't update thumbnails when overview is unfolded.
+    We don't do live updates of thumbnails yet, so having them update out of
+    sudden but only in some situations makes it look unpolished. We still want
+    to update when overview is folded in order to keep cache of thumbnails
+    in state that was seen by the user the last time when windows change focus.
+  * home: Update keyboard interactivity right away when user starts folding.
+    This gets rid of keyboard flicker when folding animation finishes and
+    an application that requested input method gets focus back.
+  * home: Use a revealer to fade in/out the keyboard button
+  * home: Hide the keyboard button right away when starting dragging
+  * home: Don't hide the arrow when the surface is being dragged.
+    Without this check, the arrow stays hidden during folding with
+    no activities until the end of that animation.
+  * top-panel: Disable keyboard interactivity while dragged.
+    This allows OSK to pop back up earlier when folding, and makes it stay
+    visible during unfolding animation or drag.
+
+  [ Pablo Barciela ]
+  * app-auth-prompt: Drop unused code
+    add_choice_to_gvariant looks at the switch state not at data
+    we store on the GObject so this code can go.
+
+  [ Gerben Jan Dijkman ]
+  * polkit-auth-agent: Scope cleanup function for PolkitAgentListener.
+    Newer polkit defines a cleanup function so avoid it for polkit >= 0.121
+
+  [ Sam Hewitt ]
+  * notifications: Layout adjustments
+    * put buttons in a horizontal alignment
+    * update some label style classes
+
+  [ Yosef Or Boczko ]
+  * Update Hebrew translation
+
+  [ Yuri Chornoivan ]
+  * Update Ukrainian translation
+
+  [ Anders Jonsson ]
+  * Update Swedish translation
+
+  [ Piotr Drąg ]
+  * Update Polish translation
+
+  [ Daniel Șerbănescu ]
+  * Update Romanian translation
+
+  [ Danial Behzadi ]
+  * Update Persian translation
+
+  [ Jiri Grönroos ]
+  * Update Finnish translation
+
+  [ Jürgen Benvenuti ]
+  * Update German translation
+
+  [ Nathan Follens ]
+  * Update Dutch translation
+
+  [ Aleksandr Melman ]
+  * Update Russian translation
+
+ -- Guido Günther <agx@sigxcpu.org>  Wed, 15 Jun 2022 14:10:41 +0200
+
+phosh (0.20.0~beta1) experimental; urgency=medium
+
+  [ Guido Günther ]
+  * This is a beta release
+  * portal-access-manager Sync dialog visibility with locked state.
+    Otherwise we can have the dialog pop up on the lock screen.
+  * settings: Make ui file match the class name.
+    Another ancient inconsistency cleaned up.
+  * Add no-notifications icon
+  * settings: Mark button label as translatable
+  * settings: Add indication when there are no notifications
+    (Closes: #744)
+  * lockscreen: Fix typo
+  * lockscreen: Remove unneeded packaging
+  * lockscreen: Name clock and date labels.
+    Rather than using a style class name this single instance.
+    This allows us to attach style classes in less confusing ways.
+  * lockscreen: Move call-ui down by top-panel's height.
+    Since the top-bar now takes up space we don't want the back
+    button to overlap the top-bar.
+    We chose that approach instead of changing the lockscreens exclusive
+    zone so that it keeps to extend below the top bar. This will make e.g. a
+    transparent top bar work as the background can shine through and also
+    make the "centered" property of GtkBoxes on the lock screen still center
+    on the screen without having to care for additional padding.
+  * top-panel: Move top-panel to overlay layer.
+    This allows to show the indicators on the lock screen.
+  * top-panel: Prevent unfold when locked.
+    We'll enable quick settings access in a separate MR. This will be a bit
+    more involved as we need to disable long press, hide notifications, etc.
+  * top-panel: Hide clock when shell is locked.
+    We have a clock on the lock screen already
+  * lockscreen: Drop indicators
+  * lockscreen: Adjust clock and data size based on notifications.
+    If notifications are present use a smaller clock. (Closes: #640)
+  * lockscreen: Add bottom margin to center clock and date
+  * lockscreen: Use revealer to show/hide notifications
+  * shell: Move lock setting to function.
+    This way we can avoid setting it multiple times
+  * shell: Use explicit notify for locked property.
+    Avoids rerunning code when there aren't any changes.
+  * proximity: Add property to track fader status.
+    This allows other parts of the shell to perform actions based on
+    that.
+    We want to move the whole fader handling out of the proximity sensor at
+    some point.
+  * shell: Hide top-panel when proximity fader is on.
+    Since the top-panel uses an exclusive zone and the fader doesn't, the
+    top-panel is arranged on top of the fader. Due to this the top-panel
+    would still accept input e.g. during phone calls which leads to odd
+    results when typing with the ear.
+    So hide the top-panel for the moment when the fader is active. Later on
+    we can move it one layer down which is a bit nicer but needs the
+    corresponding phoc patches to support that.
+  * shell: Mirror docked property.
+    Easier to access (read) in other places of the shell
+  * shell: Document `locked` property
+  * shell: Use getter for locked property.
+    For consistency.
+  * top-panel: Disconnect seat signals.
+    Otherwise we might get called after dispose (e.g. after moving
+    primary to a new output)
+  * top-panel: Show keyboard indicator only in docked mode (Closes: #206)
+  * top-panel: Remove packed from indicators box.
+    Not needed there.
+  * top-panel: Remove can-focus from indicators box.
+    Not needed there.
+  * batteryinfo: Fix indentation
+  * feedbackinfo: Add muted property.
+    This allows to hide the icon when 'full' profile is in effect.
+  * top-panel: Show feedback indicator (Closes: #284)
+  * util: Use GCC diagnostic push.
+    This makes sure we restore the old value
+  * settings: Add on-lockscreen property.
+    Indicates whether settings are currently displayed on the lock screen
+    or in the unlocked shell.
+    This eases binding bindings in templates.
+  * settings: Add a box for the elements not visible on the lock screen.
+    Toggle these by the "on-lockscreen" property.
+  * settings: Consolidate all g-c-c panel opening in a single location
+  * settings: Ignore long press that leads to g-c-c.
+    This won't work on lock screen. We can keep the long press on
+    the rotation button as this doesn't spawn anything else.
+  * settings: Reindent ui file.
+    Do this as a separate commit to ease review and rebase
+  * top-panel: Hide power button on lock screen.
+    We might support that later on but just hide it for now. This will
+    change anyway with gestures.
+  * Revert "top-panel: Prevent unfold when locked"
+    Let's allow for quick settings on the lock screen
+    This reverts commit a5beb47745a8632ec3bab3377005a68b009ef2b4.
+    (Closes: #603)
+  * top-panel: Move power button.
+    Move the power button out of the stack that has the size
+    of the top-bar. This will allow us to style it properly.
+  * top-panel: Style power button.
+    Closes: https://gitlab.gnome.org/World/Phosh/phosh/-/issues/331
+  * top-panel: Add larger clock when panel is unfolded.
+    See e.g. https://gitlab.gnome.org/World/Phosh/phosh/-/issues/331
+    Closes: https://gitlab.gnome.org/World/Phosh/phosh/-/issues/717
+  * top-panel: Use property binding for the clock.
+    Less code.
+  * top-panel: Add lock-screen button.
+    See https://gitlab.gnome.org/World/Phosh/phosh/-/issues/331
+    Closes: https://gitlab.gnome.org/World/Phosh/phosh/-/issues/331
+  * top-panel: Add arrow.
+    This makes it match the mockups more
+  * top-panel: Disable power/user button when on lockscreen.
+    We do this by introducing a "on-lockscreen" property.
+  * top-panel: Remove <packing> from network box.
+    Just use the defaults.
+    We don't have outstanding changes there so it doesn't create any merge
+    conflicts.
+  * d/control: Add libxml-utils. This allows to strip blanks.
+  * d/control: Add xwayland to test dependencies
+  * d/control: Add librsvg2-common.
+    This helps to load SVG icons in the tests
+  * tests: Disable thumbnail releated test.
+    Phoc currently doesn't support this with the headless backend.
+    See https://gitlab.gnome.org/World/Phosh/phoc/-/issues/262
+  * gitlab-ci: Only run unit test suite on alpine.
+    This is more future proof than just skipping the screenshot tests
+  * gitlab-ci: Build container without cache.
+    This makes sure the container is rebuilt instead of just refreshed.
+  * gitlab-ci: Use more caps when running docker container.
+    This allows us to run gdb, etc. and we mostly want it for debugging.
+  * gitlab-ci: Use newer docker file for builds and tests.
+    This makes sure we build against GNOME 42.
+  * layer-surface: Use namespace in debug messages.
+    This greatly simplifies figuring out which surface this is about.
+  * shell: Document phosh_get_usable_area ()
+  * shell: Add helper to get whole screen area
+  * top-panel: Fix namespace
+  * top-panel: Use the full screen height for the top panel.
+    For that we reduce the notification's scrolled window minimum height a
+    bit as it will expand by itself.
+    This prevents the settings menu from expanding beyond the lower screen
+    edge in portrait mode (which happened so far when media player and
+    notifications were shown).
+    Using the fulls screen height is also in line with the designs -
+    although it will be a bit black heavy in docked mode. We will need to
+    compensate for that e.g. by using less black (and e.g. just blur the
+    underlying screen space).
+    This is in preparation for the gesture code as the draggable surface also
+    uses the full screen height.
+  * settings: Set vexpand on the notifications list box.
+    Otherwise the initial notification might get cut off if it has multiple
+    lines and an action.
+  * top-panel: Ease UI file navigation.
+    Add some comments
+  * top-panel: Fix box_clock indentation.
+    When moving elements around we wanted to have as little diff noise as
+    possible, fix that up now.
+  * proximity: Move fader handling to separate functions.
+    Unclutters the code but also makes sure we always emit the notify
+    signal. This wasn't the case in on_proximity_claimed before which
+    resulted in the top-bar not showing up again.
+  * meson: Add default prefix
+  * dbus: Use default prefix for org.freedesktop.hostname1
+  * dbus: Use default prefix for org.freedesktop.login1
+  * top-panel: Fix inverted on-lockscreen logic
+  * top-panel: Hide lock on lock-screen
+  * gitlab-ci: Pull phoc 0.13.1 from Debian sid.
+    We need that for the tests to pass
+  * d/control: Require recent enough phoc.
+    We want one that has layer-surface v2 support
+  * protocol: Update layer-surface protocol to version 4.
+    This is from phoc as of commit e86771e1ffccf216b2c016cf93226cc77e5caab5
+  * wayland: Require layer-shell protocol version 2.
+    We want to use set_layer.
+  * layersurface: Allow to set layer
+  * shell: Lower top-panel when proximity fader is on.
+    Since the top-panel uses an exclusive zone and the fader doesn't the
+    top-panel is arranged on top of the fader. Due to this the top-panel
+    would still accept input e.g. during phone calls which leads to odd
+    results when typing with the ear.
+    Moving the top-panel to another layer is a bit nicer than just hiding
+    it since we still have the layer around on the unlocked shell in
+    case something goes wrong.
+  * gitlab-ci: Deduplicate locale generation
+  * home: Fix typo
+  * settings: Fix typo
+  * top-panel: Update doc string
+  * shell: Drop outdated comment
+  * build: Untabify tests meson build file
+  * overview: Drop properties at their default values
+  * layer-surface: Drop constructed()
+    We can do all the work in init() which is there anyway.
+  * layer-surface: Only emit configured when s.th. changed
+  * Add draggable layer surfaces.
+    They use the layer-shell-effects protocol to mark themselves draggable in
+    one direction.
+    Implementation is similar to layer-surface:
+      - configure on mapped
+      - guard all property setters so they don't fail with a NULL drag_surface
+        which is the case during object creation
+  * phosh-wayland: Require layer-shell-effects.
+    We can't do anything useful without it.
+  * phosh-wayland: Make it more clear what's missing
+  * util: Add helper to distinguish touch from non touch press/release
+  * top-panel: Remove superfluous can-focus properties from network box
+  * top-panel: Make it a draggable layer-surface.
+    Turn the top-panel into a draggable layer surface. This changes the
+    behaviour from hiding/showing certain elements based on folded/unfoleded
+    state to having all elements visible all the time having the DragSurface
+    determine which bits are currently on screen.
+    Since the DragSurfaces has folded and unfolded states by itself we can
+    use that instead of keeping track of it on our own.
+  * top-panel: Use full screen height.
+  * top-panel: Don't trigger feedback.
+    We don't want haptic feedback on swipe start and not on click either
+    as that will be mouse only.
+  * top-panel: Animate arrow
+  * top-panel: Handle mouse click via gesture.
+    We don't want to trigger fold/unfold on touch events as they'll
+    be used for drag.
+    This allows us to drop the button completely.
+  * settings: Allow to retrieve a suitable drag handle offset.
+    Based on the UI elements calculate a suitable draggable area.
+    In follow ups we can take the notifications scroll position
+    into account as well.
+  * top-panel: Update drag-handle based on settings.
+    Respect the drag area for touches settings informs us about.
+  * home: Make it a draggable layer surface.
+    Disable click related handling for now. Will be added
+    back in a later commit.
+  * home: Don't trigger feedback.
+    We don't want haptic feedback on swipe start and not on click either
+    as that will be mouse only.
+  * home: Drop some unneeded properties.
+    Eases GTK4 migration
+  * home: Handle mouse click via gesture.
+    We don't want to trigger fold/unfold on touch events as they'll
+    be used for drag.
+    Similar to what we do for the top-bar.
+  * settings: Don't close when clearing all notifications.
+    Closes: https://gitlab.gnome.org/World/Phosh/phosh/-/issues/760
+  * tests: Disable parallel tests with compositor.
+    They currently fail when run in parallel. We'll investigate when phoc
+    side is merged. Tests don't run much longer as those are quick.
+  * gitlab-ci: Use a compositor that can handle gestures.
+    Workaround the fact that the phoc side isn't merged yet by grabbing
+    a suitable package from CI.
+  * top-panel: Reindent ui file.
+    Mechanical change now that
+    https://gitlab.gnome.org/World/Phosh/phosh/-/merge_requests/934 is
+    merged.
+  * home: Reindent ui file.
+    Mechanical change now that
+    https://gitlab.gnome.org/World/Phosh/phosh/-/merge_requests/934 is
+    merged.
+  * bars: Add back 1px border in high contrast.
+    Fixes 0ea0cccfd ("home: Handle mouse click via gesture")
+  * top-panel: Drop phosh-top-bar style class.
+    We have CSS by widget class and name already , we don't need styling per
+    class too.
+  * top-panel: Emit activated signal instead of folding/unfolding.
+    Don't frees the top-panel from managing it's own state again.
+    While at that make the signal and method names match our top-panel
+    naming.
+    Fixes 0ea0cccfd ("home: Handle mouse click via gesture")
+  * top-panel: Fix comment
+  * shell: Rename panel to top_panel.
+    The "panel" term is from the times when we only had a single
+    panel at the top but no home panel.
+  * notify-manager: Move source layout closer to guidelines.
+    We want the signals above the definition and the forward declaration
+    for interface right above G_DEFINE_TYPE_WITH_CODE().
+  * notify-manager: Drop SIGNAL_ from signal names.
+    Consistent with other source files.
+  * notify-manager: Emit "notification-activated"
+    Emit a signal when a notification gets activated. This allows other
+    parts of the shell to react on this.
+  * shell: Fold top-panel on screen lock.
+    This avoids that the user doesn't look at the (almost empty) settings
+    when unblanking the screen.
+  * shell: Fold top-panel when a notification gets activated.
+    Otherwise we still cover the whole screen
+  * util: Add helper to check if gnome-software is available
+  * app-grid-button: Add "View Details" entry.
+    Helps https://gitlab.gnome.org/World/Phosh/phosh/-/issues/549 as
+    gnome-software offers an uninstall button there.
+  * d/control: Bump phoc dependency.
+    We require at least 0.20.0 due to phoc-layer-shell-effects
+  * gitlab-ci: Use phoc 0.20.0.
+    We'll update the base images once it migrated
+
+  [ Sebastian Krzyszkowiak ]
+  * hks-manager: Set rfkill IOChannel to non-buffered.
+    Part of the kernel API is that the messages are delivered as
+    separate reads. Buffering can mess it up, so disable it.
+    This has been made apparent by kernel commit
+    54f586a9153201c6cff55e1f561990c78bd99aa7,
+    which makes the reads not exceed RFKILL_EVENT_SIZE_V1 by default.
+    We are asking for more, so buffering was doing additional
+    read calls on our behalf.
+  * top-panel: Set drag theshold to 0.3 for consistency with PhoshHome
+  * top-panel: Update PhoshArrow progress during surface drag
+  * home: Update PhoshArrow progress during surface drag
+
+  [ Arnaud Ferraris ]
+  * phoc.ini: Drop no longer needed scale config.
+    As `phoc` is now able to automatically compute the scaling factor based
+    on the output's physical size, we no longer need to set this value in
+    the default config: `DSI` output should return a correct physical size,
+    while `X11` and `WL` outputs advertise a 0x0 mm size, leading phoc to
+    fall back to the default scale value (`1`).
+
+  [ Thomas ]
+  * Rename call-inbound to call-added.
+    Rename the call-inbound signal to call-added and remove the check to see
+    whether a call is inbound and display the call independent from its call
+    state. This is required for emergency calls to work in #615 and !904.
+
+  [ Sam Hewitt ]
+  * osd-window: Update to match new design
+    - changes osd window from fullscreen to top-aligned bubble
+  * settings: Polish layout when there are not notifications
+  * lockscreen: Tweak clock animations
+  * lockscreen: Tweak wwan and battery indicator style.
+    Close: #272
+  * top-panel: Style tweaks.
+    Improve clock and button styling
+
+  [ InsanePrawn ]
+  * gitlab-ci: Add networkmanager to alpine deps
+
+  [ Pablo Correa Gómez ]
+  * monitor-manager: Mark SetOutputCTM call as unimplemented
+  * monitor-manager: Implement ApplyMonitorsConfigAllowed property.
+    Otherwise the monitor configuration will be locked and not editable
+    by the user.
+  * monitor: Add "n-gamma-entries" property.
+    The gamma-size handling in wlr is inherintly asynchronous. Therefore,
+    track the value of "n_gamma_entries" in a property, so consumers
+    can be notified of changes
+  * monitor-manager: Implement NightLightSupported property.
+    Will be needed for GNOME Settings to avoid letting users modify
+    Night Light when that is not available.
+  * dbus: Pull latest org.gnome.Mutter.DisplayConfig interface
+
+  [ Nathan Sherwood ]
+  * build: Use libhandy 1.2 if used as a subproject
+
+  [ Nathan Follens ]
+  * Update Dutch translation
+
+  [ Pablo Barciela ]
+  * Update Spanish translation
+
+  [ Balázs Úr ]
+  * Update Hungarian translation
+
+  [ Yuri Chornoivan ]
+  * Update Ukrainian translation
+
+  [ Luna Jernberg ]
+  * Update Swedish translation
+
+  [ Vittorio Monti ]
+  * Update Italian translation
+
+  [ Emin Tufan Çetin ]
+  * Update Turkish translation
+
+  [ Piotr Drąg ]
+  * Update Polish translation
+
+  [ Yosef Or Boczko ]
+  * Update Hebrew translation
+
+  [ Daniel Șerbănescu ]
+  * Update Romanian translation
+
+  [ Danial Behzadi ]
+  * Update Persian translation
+
+  [ Quentin PAGÈS ]
+  * Add and update Occitan translation
+
+  [ Zurab Kargareteli ]
+  * Add Georgian translation
+
+  [ Jiri Grönroos ]
+  * Update Finnish translation
+
+  [ Hugo Carvalho ]
+  * Update Portuguese translation
+
+ -- Guido Günther <agx@sigxcpu.org>  Mon, 23 May 2022 11:11:56 +0200
+
 phosh (0.17.0) experimental; urgency=medium
 
   [ Pablo Barciela ]

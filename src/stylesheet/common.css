@@ -1,17 +1,18 @@
 /*
- * Top panel bar
+ * Top panel and bar
  */
 phosh-top-panel {
   font: 15px Cantarell;
 }
 
-.phosh-panel-btn {
-  background-image: none;
-  border-width: 0;
+#top-bar {
+  padding: 4px 9px 4px 9px;
 }
 
+.phosh-wwan-indicator,
 phosh-top-panel .indicators {
-  font-weight: bold;
+  font-size: 13px;
+  font-weight: 800;
   font-feature-settings: "tnum";
 }
 
@@ -20,9 +21,29 @@ phosh-top-panel .indicators {
   font-feature-settings: "tnum";
 }
 
-.phosh-power-button {
-  padding-top: 0;
-  padding-bottom: 0;
+phosh-top-panel .phosh-topbar-clock{
+  font-size: 16px;
+}
+phosh-top-panel .phosh-topbar-date{
+  font-size: 14px;
+}
+
+.phosh-clock-box {
+  padding: 16px;
+}
+
+.phosh-topbar-button {
+  padding: 0 12px;
+  border-radius: 32px;
+  border: 1px solid transparent;
+  border: none;
+  -gtk-icon-shadow: none;
+}
+
+.phosh-topbar-button:focus {
+  box-shadow: inset 0 0 0 2px @theme_selected_bg_color;
+  outline: none;
+  border-color: @theme_selected_bg_color;
 }
 
 /*
@@ -86,7 +107,7 @@ phosh-activity.phosh-empty {
   background-size: cover;
 }
 
-phosh-activity.phosh-maximized .phosh-drawingarea {
+phosh-activity.phosh-maximized:not(.phosh-fullscreen) .phosh-drawingarea {
   background: @phosh_activity_bg_color;
 }
 
@@ -203,19 +224,38 @@ phosh-lockscreen,
   color: @phosh_fg_color;
 }
 
-.phosh-lockscreen-clock {
-  font-size: 72px;
+/* Clock */
+#phosh-lockscreen-clock {
   font-weight: 300;
   font-feature-settings: "tnum";
   margin: 12px 0;
 }
 
-.phosh-lockscreen-date {
-  font-size: 18px;
+#phosh-lockscreen-date {
   margin: 6px 0;
   font-weight: 400;
 }
 
+.p-large #phosh-lockscreen-clock {
+  font-size: 84px;
+  transition: 200ms ease;
+}
+.p-large #phosh-lockscreen-date {
+  font-size: 18px;
+  transition: 200ms ease;
+}
+
+.p-small #phosh-lockscreen-clock {
+  font-size: 72px;
+  transition: 200ms ease;
+}
+.p-small #phosh-lockscreen-date {
+  font-size: 16px;
+  margin-top: 0;
+  transition: 200ms ease;
+}
+
+/* Lockscreen Arrow */
 .phosh-lockscreen-arrow {
   transition: 400ms linear;
   animation: pulsate 1.8s ease-out;
@@ -226,17 +266,13 @@ phosh-lockscreen,
   padding: 6px;
 }
 
-.phosh-lockscreen-pin {
+.phosh-lockscreen-pin,
+.phosh-lockscreen-pin:disabled,
+.phosh-lockscreen-pin:focus {
   font-size: 20px;
   padding: 6px;
   border-radius: 12px;
   color: inherit;
-  border: none;
-  box-shadow:none;
-  outline: none;
-}
-
-.phosh-lockscreen-pin:focus {
   border: none;
   box-shadow:none;
   outline: none;
@@ -284,7 +320,6 @@ phosh-keypad button:focus:active {
 }
 
 phosh-keypad button:focus {
-  background: alpha(@phosh_fg_color,.1);
   outline-style: none;
 }
 
@@ -297,7 +332,7 @@ phosh-keypad button:focus {
   color: inherit;
   background: alpha(@phosh_fg_color,.3);
 }
- 
+
 .text-only-button:hover,
 .text-only-button:hover:focus {
   background: alpha(@phosh_fg_color,.25);
@@ -321,6 +356,7 @@ phosh-lockscreen cui-call-display actionbar {
 
 phosh-lockscreen .phosh-notification-tray {
   margin: 0 6px;
+  transition: 200ms ease;
 }
 
 /*
@@ -448,12 +484,17 @@ phosh-notification-content .actions-area button {
   background-image: none;
   background-color: transparent;
   border-radius: 0;
+  font-weight: bold;
   box-shadow: none;
-  border-left: none;
-  border-right: none;
   text-shadow: none;
+  border-style: solid;
+  border-color: @borders;
+  border-width: 0;
+  border-top-width: 1px;
+  border-right-width: 1px;
   padding: 8px 12px;
   -gtk-icon-shadow: none;
+  color: inherit;
 }
 
 phosh-notification-content .actions-area button:focus,
@@ -462,19 +503,33 @@ phosh-notification-content .actions-area button:hover {
   outline-style: none;
 }
 
+phosh-notification-content .actions-area button:focus{
+  border-color: @theme_selected_bg_color;
+  box-shadow: inset 0 0 0 1px @theme_selected_bg_color;
+}
+
 phosh-notification-content .actions-area button:active {
   background-color: @phosh_button_active_bg_color;
 }
 
-phosh-notification-content .actions-area button:last-child {
-  border-bottom-width: 0;
+phosh-notification-content .actions-area button:only-child {
   border-bottom-left-radius: 10px;
   border-bottom-right-radius: 10px;
+  border-right-width: 0px;
+}
+
+phosh-notification-content .actions-area button:first-child {
+  border-bottom-left-radius: 10px;
+}
+phosh-notification-content .actions-area button:last-child {
+  border-bottom-right-radius: 10px;
+  border-right-width: 0px;
 }
 
 phosh-notification-frame {
   margin: 0;
   padding: 0;
+  color: @phosh_fg_color;
 }
 
 phosh-notification-frame list {
@@ -483,7 +538,6 @@ phosh-notification-frame list {
 
 phosh-notification-frame .header-area {
   padding: 12px 12px 0 12px;
-  color: @phosh_fg_color;
 }
 
 phosh-notification-frame .header-area image {
@@ -495,7 +549,6 @@ phosh-notification-frame .notification-container {
   border: none;
   background-color: @phosh_notification_bg_color;
   margin: 6px;
-  margin-bottom: 0;
 }
 
 
@@ -504,6 +557,7 @@ phosh-notification-banner {
   background: none;
   border: none;
   padding: 6px;
+  color: inherit;
 }
 
 phosh-notification-banner > phosh-notification-frame {
@@ -521,18 +575,13 @@ phosh-notification-banner .notification-container {
   background: transparent;
 }
 
-.phosh-notification-tray list row {
-}
-
 .notification-container *:focus,
 .phosh-notification-tray list row:focus {
   outline-style: none;
 }
 
 .phosh-notification-tray list row .notification-container {
-  border: 2px solid transparent;
-  margin:0;
-  margin-bottom:6px;
+  border: 2px solid @phosh_bg_color;
 }
 
 .phosh-notification-tray list row:focus .notification-container {
@@ -669,34 +718,50 @@ phosh-lockscreen phosh-media-player {
 /*
  * OSD
  */
-phosh-osd-window {
-  margin: 3em;
+
+#osd-bubble {
+  border-radius: 32px;
+  box-shadow: 0 2px 2px rgba(0,0,0,0.2),
+              0 3px 16px rgba(0,0,0,0.1);
+  background-color: shade(@phosh_notification_bg_color, 1.5);
+  color: @phosh_fg_color;
+  text-shadow: none;
+  -gtk-icon-shadow: none;
+}
+
+#osd-label {
+  font-size: 9pt;
+}
+
+phosh-osd-window.phosh-system-modal {
+  background: none;
 }
 
 phosh-osd-window levelbar block {
-  min-height: 8px;
+  min-height:4px;
   box-shadow: none;
   border: none;
-  border-radius: 8px;
+  border-radius: 2px;
 }
 
 phosh-osd-window levelbar block.low {
-  background-color: white;
+  background-color: @phosh_fg_color;
 }
 
 phosh-osd-window levelbar block.high {
-  background-color: white;
+  background-color: @phosh_fg_color;
 }
 
 phosh-osd-window levelbar block.full {
-  background-color: white;
+  background-color: @phosh_fg_color;
 }
 
 phosh-osd-window levelbar trough {
   border: none;
+  padding: 0;
   box-shadow: none;
-  background-color: alpha(white, 0.2);
-  border-radius: 8px;
+  background-color: alpha(@phosh_fg_color, 0.2);
+  border-radius: 2px;
 }
 
 /*
@@ -755,4 +820,3 @@ scale trough slider:active {
   border-color: shade(@phosh_fg_color, 0.9);
   background: shade(@phosh_fg_color, 0.9);
 }
-

@@ -23,7 +23,9 @@
 #include <gtk/gtk.h>
 #include <gdk/gdkwayland.h>
 
-#include "config.h"
+#include "phosh-config.h"
+#include "ambient.h"
+#include "drag-surface.h"
 #include "shell.h"
 #include "app-tracker.h"
 #include "batteryinfo.h"
@@ -97,6 +99,7 @@
 enum {
   PROP_0,
   PROP_LOCKED,
+  PROP_DOCKED,
   PROP_BUILTIN_MONITOR,
   PROP_PRIMARY_MONITOR,
   PROP_SHELL_STATE,
@@ -112,8 +115,8 @@ static guint signals[N_SIGNALS] = { 0 };
 
 typedef struct
 {
-  PhoshLayerSurface *panel;
-  PhoshLayerSurface *home;
+  PhoshDragSurface *top_panel;
+  PhoshDragSurface *home;
   GPtrArray *faders;              /* for final fade out */
 
   GtkWidget *notification_banner;
@@ -155,6 +158,7 @@ typedef struct
   /* sensors */
   PhoshSensorProxyManager *sensor_proxy_manager;
   PhoshProximity *proximity;
+  PhoshAmbient *ambient;
   PhoshRotationManager *rotation_manager;
 
   PhoshShellDebugFlags debug_flags;
@@ -164,6 +168,9 @@ typedef struct
 
   /* Mirrors PhoshLockscreenManager's locked property */
   gboolean locked;
+
+  /* Mirrors PhoshDockedManager's docked property */
+  gboolean docked;
 
   PhoshShellStateFlags shell_state;
 
@@ -181,13 +188,67 @@ G_DEFINE_TYPE_WITH_PRIVATE (PhoshShell, phosh_shell, G_TYPE_OBJECT)
 
 
 static void
-settings_activated_cb (PhoshShell    *self,
-                       PhoshTopPanel *window)
+on_top_panel_activated (PhoshShell    *self,
+                        PhoshTopPanel *window)
 {
   PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
 
-  g_return_if_fail (PHOSH_IS_TOP_PANEL (priv->panel));
-  phosh_top_panel_toggle_fold (PHOSH_TOP_PANEL(priv->panel));
+  g_return_if_fail (PHOSH_IS_TOP_PANEL (priv->top_panel));
+  phosh_top_panel_toggle_fold (PHOSH_TOP_PANEL(priv->top_panel));
+}
+
+
+static void
+update_top_level_layer (PhoshShell *self)
+{
+  PhoshShellStateFlags state;
+  PhoshShellPrivate *priv;
+  guint32 layer, current;
+  gboolean use_top_layer;
+
+  priv = phosh_shell_get_instance_private (self);
+
+  g_return_if_fail (PHOSH_IS_SHELL (self));
+  priv = phosh_shell_get_instance_private (self);
+
+  if (priv->top_panel == NULL)
+    return;
+
+  g_return_if_fail (PHOSH_IS_TOP_PANEL (priv->top_panel));
+  state = phosh_shell_get_state (self);
+
+  /* When the proximity fader is on we want to remove the top-panel from the
+     overlay layer since it uses an exclusive zone and hence the fader is
+     drawn below that top-panel. This can be dropped once layer-shell allows
+     to specify the z-level */
+  use_top_layer = priv->proximity && phosh_proximity_has_fader (priv->proximity);
+  if (use_top_layer)
+    goto set_layer;
+
+  /* We want the top-bar on the lock screen */
+  use_top_layer = !phosh_shell_get_locked (self);
+  if (use_top_layer)
+    goto set_layer;
+
+  /* If there's a modal dialog make sure it can extend over the top-panel */
+  use_top_layer = !!(state & PHOSH_STATE_MODAL_SYSTEM_PROMPT);
+
+ set_layer:
+  layer = use_top_layer ? ZWLR_LAYER_SHELL_V1_LAYER_TOP : ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY;
+  g_object_get (priv->top_panel, "layer", &current, NULL);
+  if (current == layer)
+    return;
+
+  g_debug ("Moving top-panel to %s layer", use_top_layer ? "top" : "overlay");
+  phosh_layer_surface_set_layer (PHOSH_LAYER_SURFACE (priv->top_panel), layer);
+  phosh_layer_surface_wl_surface_commit (PHOSH_LAYER_SURFACE (priv->top_panel));
+}
+
+
+static void
+on_proximity_fader_changed (PhoshShell *self)
+{
+  update_top_level_layer (self);
 }
 
 
@@ -203,13 +264,37 @@ on_home_state_changed (PhoshShell *self, GParamSpec *pspec, PhoshHome *home)
   priv = phosh_shell_get_instance_private (self);
 
   g_object_get (priv->home, "state", &state, NULL);
-  if (state == PHOSH_HOME_STATE_UNFOLDED) {
-    phosh_top_panel_fold (PHOSH_TOP_PANEL (priv->panel));
-    phosh_osk_manager_set_visible (priv->osk_manager, FALSE);
-  }
   phosh_shell_set_state (self, PHOSH_STATE_OVERVIEW, state == PHOSH_HOME_STATE_UNFOLDED);
 }
 
+
+static void
+on_primary_monitor_configured (PhoshShell *self, PhoshMonitor *monitor)
+{
+  PhoshShellPrivate *priv;
+  int height;
+
+  g_return_if_fail (PHOSH_IS_SHELL (self));
+  g_return_if_fail (PHOSH_IS_MONITOR (monitor));
+  priv = phosh_shell_get_instance_private (self);
+
+  phosh_shell_get_area (self, NULL, &height);
+  phosh_layer_surface_set_size (PHOSH_LAYER_SURFACE (priv->top_panel), -1, height);
+}
+
+
+static void
+setup_primary_monitor_configured_handler (PhoshShell *self)
+{
+  PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
+  g_signal_connect_object (priv->primary_monitor, "configured",
+                           G_CALLBACK (on_primary_monitor_configured),
+                           self,
+                           G_CONNECT_SWAPPED);
+
+  if (phosh_monitor_is_configured (priv->primary_monitor))
+    on_primary_monitor_configured (self, priv->primary_monitor);
+}
 
 static void
 panels_create (PhoshShell *self)
@@ -218,22 +303,31 @@ panels_create (PhoshShell *self)
   PhoshMonitor *monitor;
   PhoshWayland *wl = phosh_wayland_get_default ();
   PhoshAppGrid *app_grid;
+  int height;
+  guint32 top_layer;
 
   monitor = phosh_shell_get_primary_monitor (self);
   g_return_if_fail (monitor);
 
-  priv->panel = PHOSH_LAYER_SURFACE(phosh_top_panel_new (phosh_wayland_get_zwlr_layer_shell_v1(wl),
-                                                     monitor->wl_output));
-  gtk_widget_show (GTK_WIDGET (priv->panel));
+  top_layer = priv->locked ? ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY : ZWLR_LAYER_SHELL_V1_LAYER_TOP;
+  phosh_shell_get_area (self, NULL, &height);
+  priv->top_panel = PHOSH_DRAG_SURFACE (phosh_top_panel_new (
+                                          phosh_wayland_get_zwlr_layer_shell_v1 (wl),
+                                          phosh_wayland_get_zphoc_layer_shell_effects_v1 (wl),
+                                          monitor->wl_output,
+                                          top_layer,
+                                          height));
+  gtk_widget_show (GTK_WIDGET (priv->top_panel));
 
-  priv->home = PHOSH_LAYER_SURFACE(phosh_home_new (phosh_wayland_get_zwlr_layer_shell_v1(wl),
-                                                    monitor->wl_output));
+  priv->home = PHOSH_DRAG_SURFACE (phosh_home_new (phosh_wayland_get_zwlr_layer_shell_v1 (wl),
+                                                   phosh_wayland_get_zphoc_layer_shell_effects_v1 (wl),
+                                                   monitor->wl_output));
   gtk_widget_show (GTK_WIDGET (priv->home));
 
   g_signal_connect_swapped (
-    priv->panel,
-    "settings-activated",
-    G_CALLBACK(settings_activated_cb),
+    priv->top_panel,
+    "activated",
+    G_CALLBACK (on_top_panel_activated),
     self);
 
   g_signal_connect_swapped (
@@ -256,7 +350,7 @@ panels_dispose (PhoshShell *self)
 {
   PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
 
-  g_clear_pointer (&priv->panel, phosh_cp_widget_destroy);
+  g_clear_pointer (&priv->top_panel, phosh_cp_widget_destroy);
   g_clear_pointer (&priv->home, phosh_cp_widget_destroy);
 }
 
@@ -283,16 +377,33 @@ on_gtk_theme_name_changed (PhoshShell *self, GParamSpec *pspec, GtkSettings *set
                                                  GTK_STYLE_PROVIDER (priv->css_provider));
   }
 
-  if (g_strcmp0 (priv->theme_name, "HighContrast") == 0)
-    style = "/sm/puri/phosh/stylesheet/adwaita-hc-light.css";
-  else
-    style = "/sm/puri/phosh/stylesheet/adwaita-dark.css";
-
+  style = phosh_util_get_stylesheet (priv->theme_name);
   gtk_css_provider_load_from_resource (provider, style);
   gtk_style_context_add_provider_for_screen (gdk_screen_get_default (),
                                              GTK_STYLE_PROVIDER (provider),
                                              GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
   g_set_object (&priv->css_provider, provider);
+}
+
+
+static void
+set_locked (PhoshShell *self, gboolean locked)
+{
+  PhoshShellPrivate *priv = phosh_shell_get_instance_private(self);
+
+  if (priv->locked == locked)
+    return;
+
+  priv->locked = locked;
+  phosh_shell_set_state (self, PHOSH_STATE_LOCKED, priv->locked);
+  g_object_notify_by_pspec (G_OBJECT (self), props[PROP_LOCKED]);
+
+  /* Hide settings on screen lock, otherwise the user just sees the settigns when
+     unblanking the screen which can be confusing */
+  if (priv->top_panel)
+    phosh_top_panel_fold (PHOSH_TOP_PANEL (priv->top_panel));
+
+  update_top_level_layer (self);
 }
 
 
@@ -307,8 +418,12 @@ phosh_shell_set_property (GObject *object,
 
   switch (property_id) {
   case PROP_LOCKED:
-    priv->locked = g_value_get_boolean (value);
-    phosh_shell_set_state (self, PHOSH_STATE_LOCKED, priv->locked);
+    /* Only written by lockscreen manager on property sync */
+    set_locked (self, g_value_get_boolean (value));
+    break;
+  case PROP_DOCKED:
+    /* Only written by docked manager on property sync */
+    priv->docked = g_value_get_boolean (value);
     break;
   case PROP_PRIMARY_MONITOR:
     phosh_shell_set_primary_monitor (self, g_value_get_object (value));
@@ -331,7 +446,10 @@ phosh_shell_get_property (GObject *object,
 
   switch (property_id) {
   case PROP_LOCKED:
-    g_value_set_boolean (value, priv->locked);
+    g_value_set_boolean (value, phosh_shell_get_locked (self));
+    break;
+  case PROP_DOCKED:
+    g_value_set_boolean (value, phosh_shell_get_docked (self));
     break;
   case PROP_BUILTIN_MONITOR:
     g_value_set_object (value, phosh_shell_get_builtin_monitor (self));
@@ -421,7 +539,6 @@ on_num_toplevels_changed (PhoshShell *self, GParamSpec *pspec, PhoshToplevelMana
 
   priv = phosh_shell_get_instance_private (self);
   /* all toplevels gone, show the overview */
-  /* TODO: once we have unfoldable app-drawer unfold that too */
   if (!phosh_toplevel_manager_get_num_toplevels (toplevel_manager))
     phosh_home_set_state (PHOSH_HOME (priv->home), PHOSH_HOME_STATE_UNFOLDED);
 }
@@ -436,7 +553,8 @@ on_toplevel_added (PhoshShell *self, PhoshToplevel *unused, PhoshToplevelManager
   g_return_if_fail (PHOSH_IS_TOPLEVEL_MANAGER (toplevel_manager));
 
   priv = phosh_shell_get_instance_private (self);
-  phosh_home_set_state (PHOSH_HOME (priv->home), PHOSH_HOME_STATE_FOLDED);
+  if (phosh_toplevel_manager_get_num_toplevels (toplevel_manager) == 1)
+    phosh_home_set_state (PHOSH_HOME (priv->home), PHOSH_HOME_STATE_FOLDED);
 }
 
 
@@ -459,13 +577,26 @@ on_new_notification (PhoshShell         *self,
   }
 
   if (phosh_notify_manager_get_show_notification_banner (manager, notification) &&
-      phosh_top_panel_get_state (PHOSH_TOP_PANEL (priv->panel)) == PHOSH_TOP_PANEL_STATE_FOLDED &&
+      phosh_top_panel_get_state (PHOSH_TOP_PANEL (priv->top_panel)) == PHOSH_TOP_PANEL_STATE_FOLDED &&
       !priv->locked) {
     g_set_weak_pointer (&priv->notification_banner,
                         phosh_notification_banner_new (notification));
 
     gtk_widget_show (GTK_WIDGET (priv->notification_banner));
   }
+}
+
+
+static void
+on_notification_activated (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_if_fail (PHOSH_IS_SHELL (self));
+
+  priv = phosh_shell_get_instance_private (self);
+
+  phosh_top_panel_fold (PHOSH_TOP_PANEL (priv->top_panel));
 }
 
 
@@ -554,6 +685,11 @@ setup_idle_cb (PhoshShell *self)
                            G_CALLBACK (on_new_notification),
                            self,
                            G_CONNECT_SWAPPED);
+  g_signal_connect_object (priv->notify_manager,
+                           "notification-activated",
+                           G_CALLBACK (on_notification_activated),
+                           self,
+                           G_CONNECT_SWAPPED);
 
   phosh_shell_get_location_manager (self);
   if (priv->sensor_proxy_manager) {
@@ -561,6 +697,9 @@ setup_idle_cb (PhoshShell *self)
                                            priv->calls_manager);
     phosh_monitor_manager_set_sensor_proxy_manager (priv->monitor_manager,
                                                     priv->sensor_proxy_manager);
+    g_signal_connect_swapped (priv->proximity, "notify::fader",
+                              G_CALLBACK (on_proximity_fader_changed), self);
+    priv->ambient = phosh_ambient_new (priv->sensor_proxy_manager);
   }
 
   priv->mount_manager = phosh_mount_manager_new ();
@@ -577,6 +716,8 @@ setup_idle_cb (PhoshShell *self)
   priv->run_command_manager = phosh_run_command_manager_new();
   priv->network_auth_manager = phosh_network_auth_manager_new ();
   priv->portal_access_manager = phosh_portal_access_manager_new ();
+
+  setup_primary_monitor_configured_handler (self);
 
   /* Delay signaling the compositor a bit so that idle handlers get a
    * chance to run and the user has can unlock right away. Ideally
@@ -647,7 +788,9 @@ phosh_shell_set_builtin_monitor (PhoshShell *self, PhoshMonitor *monitor)
 
   if (priv->builtin_monitor) {
     /* Power mode listener */
-    g_signal_handlers_disconnect_by_data (priv->builtin_monitor, self);
+    g_signal_handlers_disconnect_by_func (priv->builtin_monitor,
+                                          G_CALLBACK (on_builtin_monitor_power_mode_changed),
+                                          self);
     g_clear_object (&priv->builtin_monitor);
 
     if (priv->rotation_manager)
@@ -853,12 +996,26 @@ phosh_shell_class_init (PhoshShellClass *klass)
 
   type_setup ();
 
+  /**
+   * PhoshShell:locked:
+   *
+   * Whether the screen is currently locked. This mirrors the property
+   * from #PhoshLockscreenManager for easier access.
+   */
   props[PROP_LOCKED] =
-    g_param_spec_boolean ("locked",
-                          "Locked",
-                          "Whether the screen is locked",
+    g_param_spec_boolean ("locked", "", "",
                           FALSE,
                           G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+  /**
+   * PhoshShell:docked:
+   *
+   * Whether the device is currently docked. This mirrors the property
+   * from #PhoshDockedManager for easier access.
+   */
+  props[PROP_DOCKED] =
+    g_param_spec_boolean ("docked", "", "",
+                          FALSE,
+                          G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
   /**
    * PhoshShell:builtin-monitor:
@@ -957,6 +1114,11 @@ phosh_shell_set_primary_monitor (PhoshShell *self, PhoshMonitor *monitor)
   if (monitor == priv->primary_monitor)
     return;
 
+  if (priv->primary_monitor)
+    g_signal_handlers_disconnect_by_func (priv->builtin_monitor,
+                                          G_CALLBACK (on_primary_monitor_configured),
+                                          self);
+
   if (monitor != NULL) {
     /* Make sure the new monitor exists */
     for (int i = 0; i < phosh_monitor_manager_get_num_monitors (priv->monitor_manager); i++) {
@@ -977,6 +1139,8 @@ phosh_shell_set_primary_monitor (PhoshShell *self, PhoshMonitor *monitor)
     panels_create (self);
 
   g_object_notify_by_pspec (G_OBJECT (self), props[PROP_PRIMARY_MONITOR]);
+
+  setup_primary_monitor_configured_handler (self);
 
   /* All monitors gone or disabled. See if monitor-manager finds a
    * fallback to enable. Do that in an idle callback so GTK can process
@@ -1179,8 +1343,14 @@ phosh_shell_get_docked_manager (PhoshShell *self)
   g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
   priv = phosh_shell_get_instance_private (self);
 
-  if (!priv->docked_manager)
+  if (!priv->docked_manager) {
     priv->docked_manager = phosh_docked_manager_new (priv->mode_manager);
+    g_object_bind_property (priv->docked_manager,
+                            "enabled",
+                            self,
+                            "docked",
+                            G_BINDING_SYNC_CREATE);
+  }
 
   g_return_val_if_fail (PHOSH_IS_DOCKED_MANAGER (priv->docked_manager), NULL);
   return priv->docked_manager;
@@ -1243,10 +1413,16 @@ phosh_shell_get_rotation_manager (PhoshShell *self)
   g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
   priv = phosh_shell_get_instance_private (self);
 
-  if (!priv->rotation_manager)
+  if (!priv->rotation_manager) {
     priv->rotation_manager = phosh_rotation_manager_new (priv->sensor_proxy_manager,
                                                          priv->lockscreen_manager,
                                                          priv->builtin_monitor);
+    /*
+     * Make sure rotation works even if the primary monitor has already appeared
+     * when we create the rotation manager.
+     */
+    phosh_rotation_manager_set_monitor(priv->rotation_manager, priv->primary_monitor);
+  }
 
   g_return_val_if_fail (PHOSH_IS_ROTATION_MANAGER (priv->rotation_manager), NULL);
 
@@ -1330,8 +1506,15 @@ phosh_shell_get_wwan (PhoshShell *self)
 }
 
 /**
- * Returns the usable area in pixels usable by a client on the phone
- * display
+ * phosh_shell_get_usable_area:
+ * @self: The shell
+ * @x:(out)(nullable): The x coordinate where client usable area starts
+ * @y:(out)(nullable): The y coordinate where client usable area starts
+ * @width:(out)(nullable): The width of the client usable area
+ * @height:(out)(nullable): The height of the client usable area
+ *
+ * Gives the usable area in pixels usable by a client on the primary
+ * display.
  */
 void
 phosh_shell_get_usable_area (PhoshShell *self, int *x, int *y, int *width, int *height)
@@ -1379,6 +1562,28 @@ phosh_shell_get_usable_area (PhoshShell *self, int *x, int *y, int *width, int *
     *width = w;
   if (height)
     *height = h;
+}
+
+/**
+ * phosh_shell_get_area:
+ * @self: The shell singleton
+ * @width: (nullable): The available width
+ * @height: (nullable): The available height
+ *
+ * Gives the currently available screen area on the primary display.
+ */
+void
+phosh_shell_get_area (PhoshShell *self, int *width, int *height)
+{
+  int w, h;
+
+  phosh_shell_get_usable_area (self, NULL, NULL, &w, &h);
+
+  if (width)
+    *width = w;
+
+  if (height)
+    *height = h + PHOSH_TOP_PANEL_HEIGHT + PHOSH_HOME_BUTTON_HEIGHT;
 }
 
 
@@ -1544,7 +1749,7 @@ phosh_shell_get_app_launch_context (PhoshShell *self)
   g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
   priv = phosh_shell_get_instance_private (self);
 
-  return gdk_display_get_app_launch_context (gtk_widget_get_display (GTK_WIDGET (priv->panel)));
+  return gdk_display_get_app_launch_context (gtk_widget_get_display (GTK_WIDGET (priv->top_panel)));
 }
 
 /**
@@ -1605,6 +1810,9 @@ phosh_shell_set_state (PhoshShell          *self,
            str_state, str_new_flags);
 
   g_object_notify_by_pspec (G_OBJECT (self), props[PROP_SHELL_STATE]);
+
+  if (state & PHOSH_STATE_MODAL_SYSTEM_PROMPT)
+    update_top_level_layer (self);
 }
 
 void
@@ -1688,4 +1896,22 @@ phosh_shell_get_show_splash (PhoshShell *self)
     return FALSE;
 
   return TRUE;
+}
+
+
+/**
+ * phosh_shell_get_docked:
+ * @self: The #PhoshShell singleton
+ *
+ * Returns: %TRUE if the device is currently docked, otherwise %FALSE.
+ */
+gboolean
+phosh_shell_get_docked (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), FALSE);
+  priv = phosh_shell_get_instance_private (self);
+
+  return priv->docked;
 }

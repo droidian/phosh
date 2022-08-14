@@ -8,7 +8,7 @@
 
 #define G_LOG_DOMAIN "phosh-overview"
 
-#include "config.h"
+#include "phosh-config.h"
 
 #include "activity.h"
 #include "app-grid-button.h"
@@ -130,6 +130,14 @@ find_activity_by_toplevel (PhoshOverview        *self,
 
 
 static void
+scroll_to_activity (PhoshOverview *self, PhoshActivity *activity)
+{
+  PhoshOverviewPrivate *priv = phosh_overview_get_instance_private (self);
+  hdy_carousel_scroll_to (HDY_CAROUSEL (priv->carousel_running_activities), GTK_WIDGET (activity));
+  gtk_widget_grab_focus (GTK_WIDGET (activity));
+}
+
+static void
 on_activity_clicked (PhoshOverview *self, PhoshActivity *activity)
 {
   PhoshToplevel *toplevel;
@@ -200,7 +208,7 @@ on_toplevel_activated_changed (PhoshToplevel *toplevel, GParamSpec *pspec, Phosh
   if (phosh_toplevel_is_activated (toplevel)) {
     activity = find_activity_by_toplevel (overview, toplevel);
     priv->activity = activity;
-    hdy_carousel_scroll_to (HDY_CAROUSEL (priv->carousel_running_activities), GTK_WIDGET (activity));
+    scroll_to_activity (overview, activity);
   }
 }
 
@@ -231,7 +239,7 @@ request_thumbnail (PhoshActivity *activity, PhoshToplevel *toplevel)
 
 
 static void
-on_activity_size_allocated (PhoshActivity *activity, GtkAllocation *alloc, PhoshToplevel *toplevel)
+on_activity_resized (PhoshActivity *activity, GtkAllocation *alloc, PhoshToplevel *toplevel)
 {
   request_thumbnail (activity, toplevel);
 }
@@ -272,6 +280,7 @@ add_activity (PhoshOverview *self, PhoshToplevel *toplevel)
                 "win-width", width,
                 "win-height", height,
                 "maximized", phosh_toplevel_is_maximized (toplevel),
+                "fullscreen", phosh_toplevel_is_fullscreen (toplevel),
                 NULL);
   g_object_set_data (G_OBJECT (activity), "toplevel", toplevel);
 
@@ -285,14 +294,15 @@ add_activity (PhoshOverview *self, PhoshToplevel *toplevel)
   g_signal_connect_object (toplevel, "closed", G_CALLBACK (on_toplevel_closed), self, 0);
   g_signal_connect_object (toplevel, "notify::activated", G_CALLBACK (on_toplevel_activated_changed), self, 0);
   g_object_bind_property (toplevel, "maximized", activity, "maximized", G_BINDING_DEFAULT);
+  g_object_bind_property (toplevel, "fullscreen", activity, "fullscreen", G_BINDING_DEFAULT);
 
-  g_signal_connect (activity, "size-allocate", G_CALLBACK (on_activity_size_allocated), toplevel);
+  g_signal_connect (activity, "resized", G_CALLBACK (on_activity_resized), toplevel);
   g_signal_connect_swapped (activity, "notify::has-focus", G_CALLBACK (on_activity_has_focus_changed), self);
 
   phosh_connect_feedback (activity);
 
   if (phosh_toplevel_is_activated (toplevel)) {
-    hdy_carousel_scroll_to (HDY_CAROUSEL (priv->carousel_running_activities), activity);
+    scroll_to_activity (self, PHOSH_ACTIVITY (activity));
     priv->activity = PHOSH_ACTIVITY (activity);
   }
 }
@@ -340,6 +350,9 @@ toplevel_changed_cb (PhoshOverview        *self,
   g_return_if_fail (PHOSH_IS_OVERVIEW (self));
   g_return_if_fail (PHOSH_IS_TOPLEVEL (toplevel));
   g_return_if_fail (PHOSH_IS_TOPLEVEL_MANAGER (manager));
+
+  if (phosh_shell_get_state (phosh_shell_get_default ()) & PHOSH_STATE_OVERVIEW)
+    return;
 
   activity = find_activity_by_toplevel (self, toplevel);
   g_return_if_fail (activity);
@@ -407,6 +420,29 @@ app_launched_cb (PhoshOverview *self,
 
 
 static void
+page_changed_cb (PhoshOverview *self,
+                 guint          index,
+                 HdyCarousel   *carousel)
+{
+  PhoshActivity *activity;
+  PhoshToplevel *toplevel;
+  GList *list;
+  g_return_if_fail (PHOSH_IS_OVERVIEW (self));
+  g_return_if_fail (HDY_IS_CAROUSEL (carousel));
+
+  /* don't raise on scroll in docked mode */
+  if (phosh_shell_get_docked (phosh_shell_get_default ()))
+    return;
+
+  list = gtk_container_get_children (GTK_CONTAINER (carousel));
+  activity = PHOSH_ACTIVITY (g_list_nth_data (list, index));
+  toplevel = get_toplevel_from_activity (activity);
+  phosh_toplevel_activate (toplevel, phosh_wayland_get_wl_seat (phosh_wayland_get_default ()));
+  gtk_widget_grab_focus (GTK_WIDGET (activity));
+}
+
+
+static void
 phosh_overview_constructed (GObject *object)
 {
   PhoshOverview *self = PHOSH_OVERVIEW (object);
@@ -435,6 +471,9 @@ phosh_overview_constructed (GObject *object)
 
   g_signal_connect_swapped (priv->app_grid, "app-launched",
                             G_CALLBACK (app_launched_cb), self);
+
+  g_signal_connect_swapped (priv->carousel_running_activities, "page-changed",
+                            G_CALLBACK (page_changed_cb), self);
 }
 
 
@@ -503,8 +542,10 @@ phosh_overview_reset (PhoshOverview *self)
   priv = phosh_overview_get_instance_private (self);
   phosh_app_grid_reset (PHOSH_APP_GRID (priv->app_grid));
 
-  if (priv->activity)
+  if (priv->activity) {
     gtk_widget_grab_focus (GTK_WIDGET (priv->activity));
+    request_thumbnail (priv->activity, get_toplevel_from_activity (priv->activity));
+  }
 }
 
 void

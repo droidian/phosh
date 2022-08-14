@@ -14,6 +14,7 @@ phosh_resources = gnome.compile_resources(
 
 phosh_enum_headers = files(
   'app-grid-button.h',
+  'drag-surface.h',
   'gnome-shell-manager.h',
   'home.h',
   'lockscreen.h',
@@ -55,12 +56,14 @@ phosh_layer_surface_sources = files(
   'layersurface.h',
 )
 
-# Symbols from these availabl in tools and unit tests
+# Symbols from these availabel in tools and unit tests
 libphosh_tool_sources = files(
   'app-auth-prompt.c',
   'app-auth-prompt.h',
   'activity.c',
   'activity.h',
+  'ambient.c',
+  'ambient.h',
   'animation.c',
   'animation.h',
   'app-grid.c',
@@ -83,6 +86,8 @@ libphosh_tool_sources = files(
   'clamp.h',
   'connectivity-info.c',
   'connectivity-info.h',
+  'drag-surface.c',
+  'drag-surface.h',
   'end-session-dialog.c',
   'end-session-dialog.h',
   'hks-info.c',
@@ -125,6 +130,8 @@ libphosh_tool_sources = files(
   'overview.h',
   'osd-window.c',
   'osd-window.h',
+  'plugin-loader.c',
+  'plugin-loader.h',
   'status-icon.c',
   'status-icon.h',
   'splash.c',
@@ -149,6 +156,8 @@ libphosh_tool_sources = files(
   'swipe-away-bin.h',
   'util.c',
   'util.h',
+  'widget-box.c',
+  'widget-box.h',
   'wl-buffer.c',
   'wl-buffer.h',
 ) + [
@@ -159,7 +168,7 @@ libphosh_tool_sources = files(
   phosh_notifications_sources,
 ]
 
-# Symbols from these are not availabl in tools and unit tests
+# Symbols from these are not availabel in tools and unit tests
 libphosh_sources = files(
   'arrow.c',
   'arrow.h',
@@ -268,6 +277,7 @@ phosh_deps = [
   gio_dep,
   gio_unix_dep,
   glib_dep,
+  gmodule_dep,
   gnome_desktop_dep,
   gobject_dep,
   gsettings_desktop_schemas_dep,
@@ -289,9 +299,17 @@ phosh_deps = [
   cc.find_library('rt', required: false),
 ]
 
+polkit_version = libpolkit_agent_dep.version().split('.')
+if polkit_version.length() == 1
+  polkit_major = polkit_version[0]
+  polkit_minor = '0'
+else
+  polkit_major = polkit_version[0]
+  polkit_minor = polkit_version[1]
+endif
 add_project_arguments([
-  '-DPOLKIT_AGENT_MAJOR_VERSION=' + libpolkit_agent_dep.version().split('.')[0],
-  '-DPOLKIT_AGENT_MINOR_VERSION=' + libpolkit_agent_dep.version().split('.')[1]
+  '-DPOLKIT_AGENT_MAJOR_VERSION=' + polkit_major,
+  '-DPOLKIT_AGENT_MINOR_VERSION=' + polkit_minor,
 ], language: 'c')
 
 phosh_inc = include_directories('.')

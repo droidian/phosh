@@ -1,3 +1,104 @@
+phosh 0.20.0
+------------
+Released August 2022
+* more bug fixes related to lockscreen,
+  drag surfaces and high contrast.
+* Allow to switch to high contrast theme based on
+  ambient sensor
+* Contributors:
+	Guido Günther
+	Sam Hewitt
+	Sebastian Krzyszkowiak
+
+phosh 0.20.0~beta3
+------------------
+Released July 2022
+* This is a beta release
+* Many bug fixes related to the overview, lockscreen, osk handling,
+  screen rotation, tests and drag_surfaces.
+* Support plugins on the lock screen
+* Add a symbolic icon for phosh
+* Contributors:
+	Alexander Mikhaylenko
+	Guido Günther
+	Sam Hewitt
+	Sebastian Krzyszkowiak
+* UI translations:
+	Efstathios Iosifidis (el)
+	Vittorio Monti (it)
+	Zurab Kargareteli (ka)
+	Мирослав Николић (sr)
+
+phosh 0.20.0~beta2
+-------------------
+Released June 2022
+* This is a beta release
+* Fix top-bar's layer depending on state (locked, etc.)
+* Fix multiple visual glitches related to overview and settings
+* Improve OSK handling
+* Switch to libcall-ui 0.0.3
+* Fix rotation manager not getting an output for some
+  display types
+* Style improvements for notifications
+* Contributors:
+	Evangelos Ribeiro Tzaras
+	Gerben Jan Dijkman
+	Guido Günther
+	Linus Walleij
+	Pablo Barciela
+	Sam Hewitt
+	Sebastian Krzyszkowiak
+* UI translations:
+	Aleksandr Melman (ru)
+	Anders Jonsson (sv)
+	Danial Behzadi (fa)
+	Daniel Șerbănescu (ro)
+	Jiri Grönroos (fi)
+	Jürgen Benvenuti (de)
+	Nathan Follens (nl)
+	Piotr Drąg (pl)
+	Yosef Or Boczko (he)
+	Yuri Chornoivan (uk)
+
+phosh 0.20.0~beta1
+-------------------
+Released May 2022
+* This is a beta release
+* Home- and top-bar swipe gesture support
+* Make settings and top-bar available on lock screen
+* Move settings menu closer to designs
+* Feedback indicator in top-bar
+* Allow to view app details
+* New DisplayConfig properties like
+  ApplyMonitorsConfigAllowed and NightLightSupported.
+* Another large round of cleanups and fixes
+  including a fix for the HKS indicator
+* Contributors:
+	Arnaud Ferraris
+	Guido Günther
+	InsanePrawn
+	Nathan Sherwood
+	Pablo Correa Gómez
+	Sam Hewitt
+	Sebastian Krzyszkowiak
+	Thomas
+* UI translations:
+	Balázs Úr (hu)
+	Danial Behzadi (fa)
+	Daniel Șerbănescu (ro)
+	Emin Tufan Çetin (tr)
+	Hugo Carvalho (pt)
+	Jiri Grönroos (fi)
+	Luna Jernberg (sv)
+	Nathan Follens (nl)
+	Pablo Barciela (es)
+	Piotr Drąg (pl)
+	Quentin PAGÈS (oc)
+	Vittorio Monti (it)
+	Yosef Or Boczko (he)
+	Yuri Chornoivan (uk)
+	Zurab Kargareteli (ka)
+
 phosh 0.17.0
 ------------
 Released: March 2022

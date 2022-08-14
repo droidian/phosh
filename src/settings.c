@@ -33,11 +33,21 @@
 
 #include <math.h>
 
+#define STACK_CHILD_NOTIFICATIONS    "notifications"
+#define STACK_CHILD_NO_NOTIFICATIONS "no-notifications"
+
 /**
  * SECTION:settings
  * @short_description: The settings menu
  * @Title: PhoshSettings
  */
+enum {
+  PROP_0,
+  PROP_ON_LOCKSCREEN,
+  PROP_DRAG_HANDLE_OFFSET,
+  PROP_LAST_PROP,
+};
+static GParamSpec *props[PROP_LAST_PROP];
 
 enum {
   SETTING_DONE,
@@ -48,6 +58,10 @@ static guint signals[N_SIGNALS] = { 0 };
 typedef struct _PhoshSettings
 {
   GtkBin parent;
+
+  gboolean   on_lockscreen;
+  gint       drag_handle_offset;
+  guint      debounce_handle;
 
   GtkWidget *box_settings;
   GtkWidget *quick_settings;
@@ -64,9 +78,12 @@ typedef struct _PhoshSettings
   gboolean setting_volume;
   gboolean is_headphone;
 
+  /* The area with media widget, notifications */
+  GtkWidget *box_bottom_half;
   /* Notifications */
   GtkWidget *list_notifications;
   GtkWidget *box_notifications;
+  GtkWidget *stack_notifications;
 
   /* Torch */
   PhoshTorchManager *torch_manager;
@@ -76,6 +93,104 @@ typedef struct _PhoshSettings
 
 
 G_DEFINE_TYPE (PhoshSettings, phosh_settings, GTK_TYPE_BIN)
+
+
+static void
+phosh_settings_set_property (GObject *object,
+                             guint property_id,
+                             const GValue *value,
+                             GParamSpec *pspec)
+{
+  PhoshSettings *self = PHOSH_SETTINGS (object);
+
+  switch (property_id) {
+  case PROP_ON_LOCKSCREEN:
+    self->on_lockscreen = g_value_get_boolean (value);
+    break;
+  default:
+    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+    break;
+  }
+}
+
+
+static void
+phosh_settings_get_property (GObject *object,
+                             guint property_id,
+                             GValue *value,
+                             GParamSpec *pspec)
+{
+  PhoshSettings *self = PHOSH_SETTINGS (object);
+
+  switch (property_id) {
+  case PROP_ON_LOCKSCREEN:
+    g_value_set_boolean (value, self->on_lockscreen);
+    break;
+  case PROP_DRAG_HANDLE_OFFSET:
+    g_value_set_int (value, self->drag_handle_offset);
+    break;
+  default:
+    G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
+    break;
+  }
+}
+
+
+static void
+calc_drag_handle_offset (PhoshSettings *self)
+{
+  gint h;
+  gboolean done = FALSE;
+  const gchar *stack_child;
+  GtkWidget *widget = NULL;
+
+  stack_child = gtk_stack_get_visible_child_name (GTK_STACK (self->stack_notifications));
+
+  if (self->on_lockscreen) {
+    /* On the lock screen the space below the sliders is fine */
+    widget = self->box_bottom_half;
+  } else if (g_strcmp0 (stack_child, STACK_CHILD_NO_NOTIFICATIONS) == 0) {
+    /* Without notifications the notification box is fine */
+    widget = self->stack_notifications;
+  }
+
+  /* Otherwise assume the whole area shouldn't be draggable */
+  if (!widget)
+    goto out;
+
+  done = gtk_widget_translate_coordinates (widget,
+                                           GTK_WIDGET (self),
+                                           0, 0, NULL, &h);
+ out:
+  if (!done)
+    h = gtk_widget_get_allocated_height (GTK_WIDGET (self));
+
+  if (self->drag_handle_offset == h)
+    return;
+
+  self->drag_handle_offset = h;
+  g_object_notify_by_pspec (G_OBJECT (self), props[PROP_DRAG_HANDLE_OFFSET]);
+}
+
+
+static gboolean
+delayed_update_drag_handle_offset (gpointer data)
+{
+  PhoshSettings *self = PHOSH_SETTINGS (data);
+
+  self->debounce_handle = 0;
+  calc_drag_handle_offset (self);
+  return G_SOURCE_REMOVE;
+}
+
+
+static void
+update_drag_handle_offset (PhoshSettings *self)
+{
+  g_clear_handle_id (&self->debounce_handle, g_source_remove);
+  self->debounce_handle = g_timeout_add (200, delayed_update_drag_handle_offset, self);
+  g_source_set_name_by_id (self->debounce_handle, "[phosh] delayed_update_drag_handle_offset");
+}
 
 
 static void
@@ -124,6 +239,18 @@ rotation_setting_clicked_cb (PhoshSettings *self)
     g_assert_not_reached ();
   }
 }
+
+
+static void
+open_settings_panel (PhoshSettings *self, const char *panel)
+{
+  if (self->on_lockscreen)
+    return;
+
+  phosh_quick_setting_open_settings_panel (panel);
+  close_settings_menu (self);
+}
+
 
 static void
 rotation_setting_long_pressed_cb (PhoshSettings *self)
@@ -182,8 +309,7 @@ wifi_setting_clicked_cb (PhoshSettings *self)
 static void
 wifi_setting_long_pressed_cb (PhoshSettings *self)
 {
-  phosh_quick_setting_open_settings_panel ("wifi");
-  close_settings_menu (self);
+  open_settings_panel (self, "wifi");
 }
 
 static void
@@ -205,8 +331,7 @@ wwan_setting_clicked_cb (PhoshSettings *self)
 static void
 wwan_setting_long_pressed_cb (PhoshSettings *self)
 {
-  phosh_quick_setting_open_settings_panel ("wwan");
-  close_settings_menu (self);
+  open_settings_panel (self, "wwan");
 }
 
 static void
@@ -225,25 +350,25 @@ bt_setting_clicked_cb (PhoshSettings *self)
   phosh_bt_manager_set_enabled (manager, !enabled);
 }
 
+
 static void
 bt_setting_long_pressed_cb (PhoshSettings *self)
 {
-  phosh_quick_setting_open_settings_panel ("bluetooth");
-  close_settings_menu (self);
+  open_settings_panel (self, "bluetooth");
 }
+
 
 static void
 feedback_setting_long_pressed_cb (PhoshSettings *self)
 {
-  phosh_quick_setting_open_settings_panel ("notifications");
-  close_settings_menu (self);
+  open_settings_panel (self, "notifications");
 }
+
 
 static void
 battery_setting_clicked_cb (PhoshSettings *self)
 {
-  phosh_quick_setting_open_settings_panel ("power");
-  close_settings_menu (self);
+  open_settings_panel (self, "power");
 }
 
 
@@ -280,8 +405,7 @@ docked_setting_clicked_cb (PhoshSettings *self)
 static void
 docked_setting_long_pressed_cb (PhoshSettings *self)
 {
-  phosh_quick_setting_open_settings_panel ("display");
-  close_settings_menu (self);
+  open_settings_panel (self, "display");
 }
 
 
@@ -322,8 +446,7 @@ on_vpn_setting_clicked (PhoshSettings *self)
 static void
 on_vpn_setting_long_pressed (PhoshSettings *self)
 {
-  phosh_quick_setting_open_settings_panel ("network");
-  close_settings_menu (self);
+  open_settings_panel (self, "network");
 }
 
 
@@ -585,7 +708,6 @@ on_notifications_clear_all_clicked (PhoshSettings *self)
 
   manager = phosh_notify_manager_get_default ();
   phosh_notify_manager_close_all_notifications (manager, PHOSH_NOTIFICATION_REASON_DISMISSED);
-  g_signal_emit (self, signals[SETTING_DONE], 0);
 }
 
 
@@ -654,6 +776,7 @@ on_notifcation_frames_items_changed (PhoshSettings *self,
                                      GListModel    *list)
 {
   gboolean is_empty;
+  const char *child_name;
 
   g_return_if_fail (PHOSH_IS_SETTINGS (self));
   g_return_if_fail (G_IS_LIST_MODEL (list));
@@ -661,9 +784,9 @@ on_notifcation_frames_items_changed (PhoshSettings *self,
   is_empty = !g_list_model_get_n_items (list);
   g_debug("Notification list empty: %d", is_empty);
 
-  gtk_widget_set_visible (GTK_WIDGET (self->box_notifications), !is_empty);
-  if (is_empty)
-    g_signal_emit (self, signals[SETTING_DONE], 0);
+  child_name = is_empty ? STACK_CHILD_NO_NOTIFICATIONS : STACK_CHILD_NOTIFICATIONS;
+  gtk_stack_set_visible_child_name (GTK_STACK (self->stack_notifications), child_name);
+  update_drag_handle_offset (self);
 }
 
 
@@ -776,6 +899,12 @@ phosh_settings_constructed (GObject *object)
   on_notifcation_frames_items_changed (self, -1, -1, -1,
                                        G_LIST_MODEL (phosh_notify_manager_get_list (manager)));
 
+  g_object_bind_property (phosh_shell_get_default (),
+                          "locked",
+                          self,
+                          "on-lockscreen",
+                          G_BINDING_SYNC_CREATE);
+
   G_OBJECT_CLASS (phosh_settings_parent_class)->constructed (object);
 }
 
@@ -805,6 +934,7 @@ phosh_settings_finalize (GObject *object)
   PhoshSettings *self = PHOSH_SETTINGS (object);
 
   g_clear_object (&self->mixer_control);
+  g_clear_handle_id (&self->debounce_handle, g_source_remove);
 
   G_OBJECT_CLASS (phosh_settings_parent_class)->finalize (object);
 }
@@ -820,21 +950,51 @@ phosh_settings_class_init (PhoshSettingsClass *klass)
   object_class->dispose = phosh_settings_dispose;
   object_class->finalize = phosh_settings_finalize;
   object_class->constructed = phosh_settings_constructed;
+  object_class->set_property = phosh_settings_set_property;
+  object_class->get_property = phosh_settings_get_property;
 
   gtk_widget_class_set_template_from_resource (widget_class,
-                                               "/sm/puri/phosh/ui/settings-menu.ui");
+                                               "/sm/puri/phosh/ui/settings.ui");
+
+  /* PhoshSettings:on-lockscreen:
+   *
+   * Whether settings are shown on lockscreen (%TRUE) or in the unlocked shell
+   * (%FALSE).
+   */
+  props[PROP_ON_LOCKSCREEN] =
+    g_param_spec_boolean (
+      "on-lockscreen", "", "",
+      FALSE,
+      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+
+  /* PhoshSettings:handle-offset:
+   *
+   * The offset from the top of the widget where it's safe to start
+   * dragging. Seep hosh_settings_get_drag_drag_handle_offset().
+   */
+  props[PROP_DRAG_HANDLE_OFFSET] =
+    g_param_spec_int (
+      "drag-handle-offset", "", "",
+      0,
+      G_MAXINT,
+      0,
+      G_PARAM_READABLE | G_PARAM_STATIC_STRINGS | G_PARAM_EXPLICIT_NOTIFY);
+
+  g_object_class_install_properties (object_class, PROP_LAST_PROP, props);
 
   signals[SETTING_DONE] = g_signal_new ("setting-done",
       G_TYPE_FROM_CLASS (klass), G_SIGNAL_RUN_LAST, 0, NULL, NULL,
       NULL, G_TYPE_NONE, 0);
 
+  gtk_widget_class_bind_template_child (widget_class, PhoshSettings, box_bottom_half);
+  gtk_widget_class_bind_template_child (widget_class, PhoshSettings, box_notifications);
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, box_settings);
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, list_notifications);
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, media_player);
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, quick_settings);
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, scale_brightness);
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, scale_torch);
-  gtk_widget_class_bind_template_child (widget_class, PhoshSettings, box_notifications);
+  gtk_widget_class_bind_template_child (widget_class, PhoshSettings, stack_notifications);
 
   gtk_widget_class_bind_template_callback (widget_class, battery_setting_clicked_cb);
   gtk_widget_class_bind_template_callback (widget_class, bt_setting_clicked_cb);
@@ -856,6 +1016,7 @@ phosh_settings_class_init (PhoshSettingsClass *klass)
   gtk_widget_class_bind_template_callback (widget_class, on_vpn_setting_long_pressed);
   gtk_widget_class_bind_template_callback (widget_class, on_vpn_setting_clicked);
 
+  gtk_widget_class_bind_template_callback (widget_class, update_drag_handle_offset);
 }
 
 
@@ -870,4 +1031,22 @@ GtkWidget *
 phosh_settings_new (void)
 {
   return g_object_new (PHOSH_TYPE_SETTINGS, NULL);
+}
+
+/**
+ * phosh_settings_get_drag_handle_offset:
+ * @self: The settings
+ *
+ * Get the y coordinate from the top of the widget where dragging
+ * can start. E.g. we don't want drag to work on notifications as
+ * notifications need to scroll in vertical direction.
+ *
+ * Returns: The y coordinate at which dragging the surface can start.
+ */
+gint
+phosh_settings_get_drag_handle_offset (PhoshSettings *self)
+{
+  g_return_val_if_fail (PHOSH_IS_SETTINGS (self), 0);
+
+  return self->drag_handle_offset;
 }
