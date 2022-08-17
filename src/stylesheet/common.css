@@ -123,7 +123,10 @@ phosh-home, phosh-top-panel {
   padding: 0;
 }
 
-.phosh-overview {
+.phosh-overview,
+phosh-app-carousel,
+phosh-app-carousel carousel,
+phosh-app-carousel flowbox {
   background: @phosh_bg_color;
 }
 
