@@ -23,6 +23,7 @@ enum {
   PROP_0,
   PROP_ALLOW_NEGATIVE,
   PROP_RESERVE_SIZE,
+  PROP_SWIPING,
   PROP_ORIENTATION,
 
   LAST_PROP = PROP_ORIENTATION
@@ -42,6 +43,7 @@ struct _PhoshSwipeAwayBin
   int distance;
   HdySwipeTracker *tracker;
   PhoshAnimation *animation;
+  gboolean swiping;
 };
 
 static void phosh_swipe_away_bin_swipeable_init (HdySwipeableInterface *iface);
@@ -55,10 +57,21 @@ static void
 set_progress (PhoshSwipeAwayBin *self,
               double             progress)
 {
+  gboolean swiping;
+
   self->progress = progress;
 
   gtk_widget_set_opacity (GTK_WIDGET (self), hdy_ease_out_cubic (1 - ABS (self->progress)));
   gtk_widget_queue_allocate (GTK_WIDGET (self));
+
+  swiping = progress > 0.0;
+
+  if (self->swiping == swiping)
+    return;
+
+  self->swiping = swiping;
+
+  g_object_notify_by_pspec (G_OBJECT (self), props[PROP_SWIPING]);
 }
 
 
@@ -178,6 +191,10 @@ phosh_swipe_away_bin_get_property (GObject    *object,
     g_value_set_boolean (value, phosh_swipe_away_bin_get_reserve_size (self));
     break;
 
+  case PROP_SWIPING:
+    g_value_set_boolean (value, self->swiping);
+    break;
+
   case PROP_ORIENTATION:
     g_value_set_enum (value, self->orientation);
     break;
@@ -204,6 +221,9 @@ phosh_swipe_away_bin_set_property (GObject      *object,
   case PROP_RESERVE_SIZE:
     phosh_swipe_away_bin_set_reserve_size (self, g_value_get_boolean (value));
     break;
+
+  case PROP_SWIPING:
+    g_assert_not_reached ();
 
   case PROP_ORIENTATION:
     {
@@ -350,6 +370,13 @@ phosh_swipe_away_bin_class_init (PhoshSwipeAwayBinClass *klass)
                             "Allocate larger size than the child so that the child is never clipped when animating",
                             FALSE,
                             G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS | G_PARAM_EXPLICIT_NOTIFY);
+
+  props[PROP_SWIPING] =
+      g_param_spec_boolean ("swiping",
+                            "Swiping",
+                            "Whether the bin is being swiped away",
+                            FALSE,
+                            G_PARAM_READABLE | G_PARAM_STATIC_STRINGS | G_PARAM_EXPLICIT_NOTIFY);
 
   g_object_class_install_properties (object_class, LAST_PROP, props);
 
@@ -522,6 +549,15 @@ phosh_swipe_away_bin_set_reserve_size (PhoshSwipeAwayBin *self,
   gtk_widget_queue_resize (GTK_WIDGET (self));
 
   g_object_notify_by_pspec (G_OBJECT (self), props[PROP_RESERVE_SIZE]);
+}
+
+
+gboolean
+phosh_swipe_away_bin_get_swiping (PhoshSwipeAwayBin *self)
+{
+  g_return_val_if_fail (PHOSH_IS_SWIPE_AWAY_BIN (self), FALSE);
+
+  return self->swiping;
 }
 
 

@@ -38,3 +38,5 @@ gboolean         phosh_util_gesture_is_touch (GtkGestureSingle *gesture);
 gboolean         phosh_util_have_gnome_software (gboolean scan);
 void             phosh_util_toggle_style_class (GtkWidget *widget, const char *style_class, gboolean toggle);
 const char      *phosh_util_get_stylesheet (const char *theme_name);
+gboolean         phosh_util_get_app_is_adaptive (GAppInfo           *app_info,
+                                                 const char * const *adaptive_app_ids);

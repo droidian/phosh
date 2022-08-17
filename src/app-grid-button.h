@@ -51,5 +51,8 @@ gboolean               phosh_app_grid_button_is_favorite   (PhoshAppGridButton  
 void                   phosh_app_grid_button_set_mode      (PhoshAppGridButton     *self,
                                                             PhoshAppGridButtonMode  mode);
 PhoshAppGridButtonMode phosh_app_grid_button_get_mode      (PhoshAppGridButton     *self);
+void                   phosh_app_grid_button_set_adaptive  (PhoshAppGridButton     *self,
+                                                            gboolean                adaptive);
+gboolean               phosh_app_grid_button_get_adaptive  (PhoshAppGridButton     *self);
 
 G_END_DECLS

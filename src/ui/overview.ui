@@ -3,26 +3,138 @@
   <requires lib="gtk+" version="3.20"/>
   <template class="PhoshOverview" parent="GtkBox">
     <property name="visible">True</property>
+    <property name="can-focus">True</property>
     <property name="orientation">vertical</property>
     <child>
-      <object class="HdyCarousel" id="carousel_running_activities">
+      <object class="GtkBox">
         <property name="visible">True</property>
-        <property name="orientation">horizontal</property>
-        <property name="spacing">18</property>
-        <property name="margin_bottom">6</property>
-        <property name="valign">fill</property>
-        <property name="expand">true</property>
-        <property name="reveal-duration">200</property>
-        <property name="allow-long-swipes">True</property>
+        <property name="halign">center</property>
+        <style>
+          <class name="phosh-search-bar"/>
+        </style>
+        <child>
+          <object class="GtkRevealer" id="search_close_revealer">
+            <property name="visible">True</property>
+            <property name="transition-type">crossfade</property>
+            <child>
+              <object class="GtkButton">
+                <property name="visible">True</property>
+                <property name="halign">center</property>
+                <property name="valign">center</property>
+                <signal name="clicked" handler="search_close_clicked" object="PhoshOverview" swapped="yes"/>
+                <style>
+                  <class name="circular"/>
+                  <class name="image-button"/>
+                </style>
+                <child>
+                  <object class="GtkImage">
+                    <property name="visible">True</property>
+                    <property name="icon-name">go-previous-symbolic</property>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+    <child>
+      <object class="GtkSearchEntry" id="search">
+        <property name="visible">True</property>
+        <property name="name">phosh-app-search-entry</property>
+        <property name="can_focus">True</property>
+        <property name="primary_icon_name">edit-find-symbolic</property>
+        <property name="primary_icon_activatable">False</property>
+        <property name="primary_icon_sensitive">False</property>
+        <property name="placeholder_text" translatable="yes">Search apps…</property>
+        <property name="width_request">244</property>
+        <signal name="search-changed" handler="search_changed" object="PhoshOverview" swapped="no"/>
+        <signal name="preedit-changed" handler="search_preedit_changed" object="PhoshOverview" swapped="no"/>
+        <signal name="activate" handler="search_activated" object="PhoshOverview" swapped="no"/>
+        <signal name="notify::has-focus" handler="search_focus_changed" object="PhoshOverview" swapped="yes"/>
+      </object>
+    </child>
+        <child>
+          <object class="GtkBox" id="search_close_spacer">
+            <property name="visible">True</property>
+          </object>
+        </child>
       </object>
     </child>
     <child>
-      <object class="GtkEventBox" id="evbox_app_grid">
+      <object class="GtkStack" id="stack_running_activities">
+        <property name="homogeneous">True</property>
         <property name="visible">True</property>
-        <property name="can_focus">False</property>
         <child>
-          <object class="PhoshAppGrid" id="app_grid">
+          <object class="GtkBox" id="page_empty_activities">
             <property name="visible">True</property>
+            <property name="orientation">vertical</property>
+            <child>
+              <object class="HdyStatusPage">
+                <property name="visible">True</property>
+                <property name="expand">true</property>
+                <property name="title">No Application
+Running</property>
+                <property name="description">Swipe up to see all apps.</property>
+                <property name="icon-name">multitasking-symbolic</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkImage" id="page_empty_activities_spacer">
+                <property name="visible">True</property>
+                <property name="valign">end</property>
+                <property name="icon-name">panel-drag-handle-symbolic</property>
+                <property name="pixel-size">24</property>
+                <style>
+                  <class name="dim-label"/>
+                </style>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="GtkBox" id="page_running_activities">
+            <property name="visible">True</property>
+            <property name="orientation">vertical</property>
+            <style>
+              <class name="phosh-running-activities"/>
+            </style>
+            <child>
+              <object class="GtkBox">
+                <property name="visible">True</property>
+                <style>
+                  <!-- This box works around HdyCarousel not handling CSS margins correctly. -->
+                  <class name="carousel-box"/>
+                </style>
+            <child>
+              <object class="HdyCarousel" id="carousel_running_activities">
+                <property name="visible">True</property>
+                <property name="orientation">horizontal</property>
+                <property name="spacing">18</property>
+                <property name="margin_bottom">32</property>
+                <property name="valign">fill</property>
+                <property name="expand">true</property>
+                <property name="reveal-duration">200</property>
+                <property name="allow-long-swipes">True</property>
+              </object>
+            </child>
+              </object>
+            </child>
+            <child>
+              <object class="GtkImage" id="page_running_activities_spacer">
+                <property name="visible">True</property>
+                <property name="valign">end</property>
+                <property name="icon-name">panel-drag-handle-symbolic</property>
+                <property name="pixel-size">24</property>
+                <style>
+                  <class name="dim-label"/>
+                </style>
+              </object>
+            </child>
+          </object>
+        </child>
+        <child>
+          <object class="PhoshAppSearch" id="app_search">
+            <property name="visible">True</property>
+            <signal name="notify::scrolled" handler="search_scrolled_changed" object="PhoshOverview" swapped="yes"/>
           </object>
         </child>
       </object>
@@ -31,4 +143,21 @@
       <class name="phosh-overview"/>
     </style>
   </template>
+  <!-- This helps centering vertically the runnin apps and leaves some space
+       below to drag to the apps list. -->
+  <object class="GtkSizeGroup" id="spacer_size_group">
+    <property name="mode">vertical</property>
+    <widgets>
+      <widget name="search"/>
+      <widget name="page_empty_activities_spacer"/>
+      <widget name="page_running_activities_spacer"/>
+    </widgets>
+  </object>
+  <object class="GtkSizeGroup">
+    <property name="mode">horizontal</property>
+    <widgets>
+      <widget name="search_close_revealer"/>
+      <widget name="search_close_spacer"/>
+    </widgets>
+  </object>
 </interface>

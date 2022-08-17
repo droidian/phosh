@@ -302,7 +302,7 @@ panels_create (PhoshShell *self)
   PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
   PhoshMonitor *monitor;
   PhoshWayland *wl = phosh_wayland_get_default ();
-  PhoshAppGrid *app_grid;
+  PhoshAppCarousel *app_carousel;
   int height;
   guint32 top_layer;
 
@@ -336,10 +336,10 @@ panels_create (PhoshShell *self)
     G_CALLBACK(on_home_state_changed),
     self);
 
-  app_grid = phosh_overview_get_app_grid (phosh_home_get_overview (PHOSH_HOME (priv->home)));
+  app_carousel = phosh_home_get_app_carousel (PHOSH_HOME (priv->home));
   g_object_bind_property (priv->docked_manager,
                           "enabled",
-                          app_grid,
+                          app_carousel,
                           "filter-adaptive",
                           G_BINDING_SYNC_CREATE | G_BINDING_INVERT_BOOLEAN);
 }

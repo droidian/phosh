@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <requires lib="gtk+" version="3.20"/>
+  <template class="PhoshAppCarousel" parent="GtkBox">
+    <property name="visible">True</property>
+    <property name="hexpand">True</property>
+    <property name="vexpand">True</property>
+    <property name="orientation">vertical</property>
+    <child>
+      <object class="HdyCarousel" id="carousel">
+        <property name="visible">True</property>
+        <property name="hexpand">True</property>
+        <!-- 360÷4 -->
+        <property name="spacing">90</property>
+      </object>
+      <packing>
+        <property name="expand">True</property>
+        <property name="fill">False</property>
+      </packing>
+    </child>
+    <child>
+      <object class="GtkBox">
+        <property name="visible">True</property>
+        <property name="orientation">horizontal</property>
+        <property name="valign">start</property>
+        <child type="center">
+          <object class="PhoshAppCarouselIndicator" id="indicator">
+            <property name="visible">True</property>
+            <property name="carousel">carousel</property>
+            <property name="name">phosh-app-carousel-indicator</property>
+          </object>
+        </child>
+        <child>
+          <object class="GtkToggleButton" id="btn_adaptive">
+            <property name="visible">True</property>
+            <property name="valign">start</property>
+            <property name="halign">center</property>
+            <property name="action-name">app-grid.filter-adaptive</property>
+            <property name="name">phosh-filter-adaptive-btn</property>
+            <style>
+              <class name="circular"/>
+              <class name="image-button"/>
+            </style>
+            <child>
+              <object class="GtkImage" id="btn_adaptive_img">
+                <property name="visible">True</property>
+                <property name="icon-name">phone-undocked-symbolic</property>
+              </object>
+            </child>
+          </object>
+          <packing>
+            <property name="fill">False</property>
+            <property name="pack-type">end</property>
+          </packing>
+        </child>
+      </object>
+    </child>
+  </template>
+</interface>

@@ -10,6 +10,7 @@
         <property name="visible">True</property>
         <property name="orientation">vertical</property>
         <signal name="removed" handler="removed_cb" swapped="true"/>
+        <signal name="notify::swiping" handler="swiping_cb" swapped="true"/>
         <child>
           <object class="GtkButton" id="button">
             <property name="visible">True</property>
@@ -23,7 +24,7 @@
                   <object class="GtkDrawingArea" id="preview">
                     <property name="visible">True</property>
                     <property name="can_focus">False</property>
-                    <property name="margin-bottom">20</property>
+                    <property name="margin-bottom">12</property>
                     <signal name="draw" handler="draw_cb" object="PhoshActivity" swapped="true"/>
                     <signal name="size-allocate" handler="size_allocate_cb" object="PhoshActivity" swapped="true"/>
                     <style>

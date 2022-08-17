@@ -9,6 +9,7 @@
 #define G_LOG_DOMAIN "phosh-home"
 
 #include "phosh-config.h"
+#include "app-search.h"
 #include "arrow.h"
 #include "overview.h"
 #include "home.h"
@@ -56,9 +57,13 @@ struct _PhoshHome
 {
   PhoshDragSurface parent;
 
+  GtkWidget *app_carousel;
+  GtkWidget *app_carousel_bin;
   GtkWidget *arrow_home;
   GtkWidget *revealer_osk;
+  GtkWidget *main_carousel;
   GtkWidget *overview;
+  GtkWidget *overview_page;
   guint      debounce_handle;
   gboolean   focus_app_search;
 
@@ -74,6 +79,23 @@ struct _PhoshHome
   GtkGesture     *click_gesture; /* needed so that the gesture isn't destroyed immediately */
 };
 G_DEFINE_TYPE(PhoshHome, phosh_home, PHOSH_TYPE_DRAG_SURFACE);
+
+
+static void
+update_carousel (PhoshHome *self)
+{
+  gboolean force_overview;
+
+  force_overview = self->state == PHOSH_HOME_STATE_FOLDED ||
+                   phosh_overview_search_activated (PHOSH_OVERVIEW (self->overview));
+
+  if (force_overview) {
+    hdy_carousel_scroll_to_full (HDY_CAROUSEL (self->main_carousel), self->overview_page, 0);
+    hdy_carousel_set_interactive (HDY_CAROUSEL (self->main_carousel), FALSE);
+  } else {
+    hdy_carousel_set_interactive (HDY_CAROUSEL (self->main_carousel), TRUE);
+  }
+}
 
 
 static void
@@ -101,6 +123,7 @@ phosh_home_set_property (GObject *object,
   switch (property_id) {
     case PROP_HOME_STATE:
       self->state = g_value_get_enum (value);
+      update_carousel (self);
       g_object_notify_by_pspec (G_OBJECT (self), props[PROP_HOME_STATE]);
       break;
     case PROP_OSK_ENABLED:
@@ -140,9 +163,7 @@ phosh_home_get_property (GObject *object,
 static void
 update_drag_handle (PhoshHome *self, gboolean commit)
 {
-  gboolean success;
   gint handle = 0;
-  PhoshAppGrid *app_grid;
   gboolean arrow_visible = TRUE;
   PhoshDragSurfaceDragMode drag_mode = PHOSH_DRAG_SURFACE_DRAG_MODE_HANDLE;
   PhoshDragSurfaceState drag_state = phosh_drag_surface_get_drag_state (PHOSH_DRAG_SURFACE (self));
@@ -153,18 +174,30 @@ update_drag_handle (PhoshHome *self, gboolean commit)
     arrow_visible = FALSE;
     drag_mode = PHOSH_DRAG_SURFACE_DRAG_MODE_NONE;
   }
+
+  /* Forbid dragging the surface:
+   * - when dragging the main carousel
+   * - when dragging the search results
+   * - when dragging an activity
+   */
+  if (hdy_carousel_get_position (HDY_CAROUSEL (self->main_carousel)) > 0.0 ||
+      phosh_overview_get_scrolled (PHOSH_OVERVIEW (self->overview)) ||
+      phosh_overview_get_activity_swiped (PHOSH_OVERVIEW (self->overview)))
+    drag_mode = PHOSH_DRAG_SURFACE_DRAG_MODE_NONE;
+
+  /* When starting to drag the main carousel up, the surface also enters its
+   * dragged state, making both the carousel and the surface draggable at the
+   * same time. This forces the surface back into its unfolded state. */
+  if (drag_mode == PHOSH_DRAG_SURFACE_DRAG_MODE_NONE &&
+      phosh_drag_surface_get_drag_state (PHOSH_DRAG_SURFACE (self)) == PHOSH_DRAG_SURFACE_STATE_DRAGGED)
+    phosh_drag_surface_set_drag_state (PHOSH_DRAG_SURFACE (self), PHOSH_DRAG_SURFACE_STATE_UNFOLDED);
+
   gtk_widget_set_visible (GTK_WIDGET (self->arrow_home), arrow_visible);
   phosh_drag_surface_set_drag_mode (PHOSH_DRAG_SURFACE (self), drag_mode);
 
   /* Update hande size */
-  app_grid = phosh_overview_get_app_grid (PHOSH_OVERVIEW (self->overview));
-  success = gtk_widget_translate_coordinates (GTK_WIDGET (app_grid),
-                                              GTK_WIDGET (self),
-                                              0, 0, NULL, &handle);
-  if (!success) {
-    g_warning ("Failed to get handle position");
-    handle = PHOSH_HOME_BUTTON_HEIGHT;
-  }
+  /* FIXME The search results area must be draggable. */
+  handle = gtk_widget_get_allocated_height (GTK_WIDGET (self));
 
   g_debug ("Drag Handle: %d", handle);
   phosh_drag_surface_set_drag_handle (PHOSH_DRAG_SURFACE (self), handle);
@@ -225,10 +258,9 @@ osk_clicked_cb (PhoshHome *self, GtkButton *btn)
 
 
 static void
-fold_cb (PhoshHome *self, PhoshOverview *overview)
+fold_cb (PhoshHome *self)
 {
   g_return_if_fail (PHOSH_IS_HOME (self));
-  g_return_if_fail (PHOSH_IS_OVERVIEW (overview));
 
   phosh_home_set_state (self, PHOSH_HOME_STATE_FOLDED);
 }
@@ -403,10 +435,12 @@ on_drag_state_changed (PhoshHome *self)
   case PHOSH_DRAG_SURFACE_STATE_FOLDED:
     state = PHOSH_HOME_STATE_FOLDED;
     phosh_arrow_set_progress (PHOSH_ARROW (self->arrow_home), 0.0);
+    phosh_overview_reset (PHOSH_OVERVIEW (self->overview), FALSE);
+    phosh_app_carousel_reset (PHOSH_APP_CAROUSEL (self->app_carousel));
     break;
   case PHOSH_DRAG_SURFACE_STATE_DRAGGED:
     if (self->state == PHOSH_HOME_STATE_FOLDED)
-      phosh_overview_reset (PHOSH_OVERVIEW (self->overview));
+      phosh_overview_reset (PHOSH_OVERVIEW (self->overview), TRUE);
     break;
   default:
     g_return_if_reached ();
@@ -416,13 +450,52 @@ on_drag_state_changed (PhoshHome *self)
   if (self->state != state) {
     self->state = state;
     g_object_notify_by_pspec (G_OBJECT (self), props[PROP_HOME_STATE]);
+    update_carousel (self);
   }
 
   phosh_home_update_osk_button (self);
 
   phosh_layer_surface_set_kbd_interactivity (PHOSH_LAYER_SURFACE (self), kbd_interactivity);
-  update_drag_handle (self, FALSE);
+  if (drag_state != PHOSH_DRAG_SURFACE_STATE_DRAGGED)
+    update_drag_handle (self, FALSE);
   phosh_layer_surface_wl_surface_commit (PHOSH_LAYER_SURFACE (self));
+}
+
+
+static void
+on_main_carousel_position_changed (PhoshHome *self)
+{
+  gdouble position = hdy_carousel_get_position (HDY_CAROUSEL (self->main_carousel));
+
+  update_drag_handle (self, FALSE);
+
+  if (position > 0.0)
+    /* Ensures app search is disabled, and the entry is unfocused so the OSK
+     * isn't present in the apps carousel. */
+    phosh_overview_reset (PHOSH_OVERVIEW (self->overview), FALSE);
+  else
+    phosh_app_carousel_reset (PHOSH_APP_CAROUSEL (self->app_carousel));
+}
+
+
+static void
+on_overview_scrolled_changed (PhoshHome *self)
+{
+  update_drag_handle (self, FALSE);
+}
+
+
+static void
+on_overview_activity_swiped_changed (PhoshHome *self)
+{
+  update_drag_handle (self, FALSE);
+}
+
+
+static void
+on_search_activated_changed (PhoshHome *self)
+{
+  update_carousel (self);
 }
 
 
@@ -507,18 +580,27 @@ phosh_home_class_init (PhoshHomeClass *klass)
   g_object_class_install_properties (object_class, PROP_LAST_PROP, props);
 
   g_type_ensure (PHOSH_TYPE_ARROW);
+  g_type_ensure (PHOSH_TYPE_APP_CAROUSEL);
   g_type_ensure (PHOSH_TYPE_OSK_BUTTON);
   g_type_ensure (PHOSH_TYPE_OVERVIEW);
 
   gtk_widget_class_set_template_from_resource (widget_class,
                                                "/sm/puri/phosh/ui/home.ui");
+  gtk_widget_class_bind_template_child (widget_class, PhoshHome, app_carousel);
+  gtk_widget_class_bind_template_child (widget_class, PhoshHome, app_carousel_bin);
   gtk_widget_class_bind_template_child (widget_class, PhoshHome, arrow_home);
   gtk_widget_class_bind_template_child (widget_class, PhoshHome, revealer_osk);
   gtk_widget_class_bind_template_child (widget_class, PhoshHome, click_gesture);
+  gtk_widget_class_bind_template_child (widget_class, PhoshHome, main_carousel);
   gtk_widget_class_bind_template_child (widget_class, PhoshHome, overview);
+  gtk_widget_class_bind_template_child (widget_class, PhoshHome, overview_page);
   gtk_widget_class_bind_template_callback (widget_class, fold_cb);
   gtk_widget_class_bind_template_callback (widget_class, on_home_released);
   gtk_widget_class_bind_template_callback (widget_class, on_has_activities_changed);
+  gtk_widget_class_bind_template_callback (widget_class, on_main_carousel_position_changed);
+  gtk_widget_class_bind_template_callback (widget_class, on_overview_scrolled_changed);
+  gtk_widget_class_bind_template_callback (widget_class, on_overview_activity_swiped_changed);
+  gtk_widget_class_bind_template_callback (widget_class, on_search_activated_changed);
   gtk_widget_class_bind_template_callback (widget_class, osk_clicked_cb);
   gtk_widget_class_bind_template_callback (widget_class, window_key_press_event_cb);
 
@@ -535,6 +617,9 @@ phosh_home_init (PhoshHome *self)
   gtk_widget_init_template (GTK_WIDGET (self));
 
   phosh_home_update_osk_button (self);
+  update_carousel (self);
+
+  hdy_carousel_scroll_to_full (HDY_CAROUSEL (self->main_carousel), self->app_carousel_bin, 0);
 
   /* Adjust margins and folded state on size changes */
   g_signal_connect (self, "configure-event", G_CALLBACK (on_configure_event), NULL);
@@ -603,4 +688,13 @@ phosh_home_get_overview (PhoshHome *self)
   g_return_val_if_fail (PHOSH_IS_HOME (self), NULL);
 
   return PHOSH_OVERVIEW (self->overview);
+}
+
+
+PhoshAppCarousel*
+phosh_home_get_app_carousel (PhoshHome *self)
+{
+  g_return_val_if_fail (PHOSH_IS_HOME (self), NULL);
+
+  return PHOSH_APP_CAROUSEL (self->app_carousel);
 }

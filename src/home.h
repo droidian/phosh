@@ -5,6 +5,7 @@
  */
 #pragma once
 
+#include "app-carousel.h"
 #include "drag-surface.h"
 #include "overview.h"
 
@@ -33,3 +34,4 @@ GtkWidget * phosh_home_new (struct zwlr_layer_shell_v1 *layer_shell,
                             struct wl_output *wl_output);
 void phosh_home_set_state (PhoshHome *self, PhoshHomeState state);
 PhoshOverview *phosh_home_get_overview (PhoshHome *self);
+PhoshAppCarousel *phosh_home_get_app_carousel (PhoshHome *self);
