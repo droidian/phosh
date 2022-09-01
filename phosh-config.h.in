@@ -17,3 +17,13 @@
 
 /* Whether ASAN was enabled via meson */
 #mesondefine PHOSH_USES_ASAN
+
+/* Whether we have gnome platform version header (>= 43) */
+#mesondefine PHOSH_HAVE_GNOME_PLATFORM_VERSION
+
+/* systemwide data dir */
+#mesondefine PHOSH_DATA_DIR
+
+#mesondefine PHOSH_APP_ID
+
+#mesondefine PHOSH_DBUS_PATH_PREFIX

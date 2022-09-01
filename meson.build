@@ -1,10 +1,11 @@
 project('phosh', 'c',
-          version: '0.20.0',
+          version: '0.21.0',
           license: 'GPLv3+',
     meson_version: '>= 0.54.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
 )
 
+app_id = 'sm.puri.Phosh'
 prefix = get_option('prefix')
 bindir = join_paths(prefix, get_option('bindir'))
 datadir = join_paths(prefix, get_option('datadir'))
@@ -18,11 +19,11 @@ pkglibdir = join_paths(libdir, meson.project_name())
 systemddir = join_paths(prefix, 'lib/systemd')
 systemduserdir = join_paths(systemddir, 'user')
 plugins_dir = join_paths(prefix, libdir, 'phosh', 'plugins')
+servicedir = join_paths(datadir, 'dbus-1', 'services')
 
 glib_ver = 'GLIB_VERSION_2_62'
 
 add_project_arguments([
-  '-DHAVE_CONFIG_H',
   '-DGLIB_VERSION_MIN_REQUIRED=@0@'.format(glib_ver),
   '-DGLIB_VERSION_MAX_REQUIRED=@0@'.format(glib_ver),
   '-DG_LOG_USE_STRUCTURED',
@@ -97,6 +98,8 @@ i18n  = import('i18n')
 
 glib_ver = '>= 2.62'
 
+ecal_dep = dependency('libecal-2.0', version: '>= 3.33.1')
+eds_dep = dependency('libedataserver-1.2', version: '>= 3.33.1')
 fribidi_dep = dependency('fribidi')
 gcr_dep = dependency('gcr-3', version: '>= 3.7.5')
 glib_dep = dependency('glib-2.0', version: glib_ver)
@@ -146,6 +149,8 @@ upower_glib_dep = dependency('upower-glib', version: '>=0.99.1')
 wayland_client_dep = dependency('wayland-client', version: '>=1.14')
 wayland_protos_dep = dependency('wayland-protocols', version: '>=1.12')
 
+# gnome-desktop > 43 has GNOME_PLATFORM_VERSION
+have_gnome_platform_version = dependency('gnome-desktop-3.0', version: '>=43', required: false).found()
 
 code ='''
 #include <linux/rfkill.h>
@@ -161,6 +166,16 @@ config_h.set_quoted('PHOSH_PLUGINS_DIR', plugins_dir)
 config_h.set_quoted('PHOSH_VERSION', meson.project_version())
 config_h.set('HAVE_RFKILL_EVENT_EXT', have_rfkill_event_ext)
 config_h.set('PHOSH_USES_ASAN', get_option('b_sanitize') == 'address')
+config_h.set('PHOSH_HAVE_GNOME_PLATFORM_VERSION', have_gnome_platform_version)
+config_h.set_quoted('PHOSH_DATA_DIR', datadir)
+config_h.set_quoted('PHOSH_APP_ID', app_id)
+# Work around lack of replace in meson 0.56
+m_ver = meson.version().split('.')
+if m_ver[0].to_int() > 0 or m_ver[1].to_int() >= 58
+  config_h.set_quoted('PHOSH_DBUS_PATH_PREFIX', '/' + app_id.replace('.', '/'))
+else
+  config_h.set_quoted('PHOSH_DBUS_PATH_PREFIX', '/sm/puri/Phosh')
+endif
 
 configure_file(
   input: 'phosh-config.h.in',
@@ -181,6 +196,7 @@ subdir('plugins')
 subdir('tests')
 subdir('tools')
 subdir('docs')
+subdir('calendar-server')
 
 summary = [
   '',

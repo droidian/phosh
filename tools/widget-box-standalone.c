@@ -28,7 +28,8 @@ css_setup (void)
     return;
   }
   gtk_style_context_add_provider_for_screen (gdk_screen_get_default (),
-                                             GTK_STYLE_PROVIDER (provider), 600);
+                                             GTK_STYLE_PROVIDER (provider),
+                                             GTK_STYLE_PROVIDER_PRIORITY_APPLICATION);
 }
 
 
@@ -38,7 +39,7 @@ get_plugin_dirs (GStrv plugins)
   g_autoptr (GPtrArray) dirs = g_ptr_array_new_with_free_func (g_free);
 
   for (int i = 0; i < g_strv_length (plugins); i++) {
-    char *dir = g_strdup_printf ("%s/plugins/%s", BUILD_DIR, plugins[i]);
+    char *dir = g_strdup_printf (BUILD_DIR "/plugins/%s", plugins[i]);
     g_ptr_array_add (dirs, dir);
   }
   g_ptr_array_add (dirs, NULL);
@@ -52,7 +53,7 @@ main (int argc, char *argv[])
 {
   GtkWidget *win;
   GtkWidget *box;
-  char *plugins[] = { "calendar", NULL };
+  char *plugins[] = { "calendar", "upcoming-events", "doesnotexist", NULL };
   GStrv plugin_dirs = NULL;
 
   gtk_init (&argc, &argv);
