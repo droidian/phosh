@@ -20,6 +20,11 @@
 #include <fcntl.h>
 
 
+#if !GLIB_CHECK_VERSION(2, 73, 2)
+#define G_REGEX_DEFAULT 0
+#endif
+
+
 static gboolean have_gnome_software = -1;
 
 
@@ -441,7 +446,7 @@ phosh_util_escape_markup (const char *markup, gboolean allow_markup)
     /* Escape &whatever; */
     /* Support &amp;, &quot;, &apos;, &lt; and &gt;, escape all other occurrences of '&'. */
     amp_re = g_regex_new ("&(?!amp;|quot;|apos;|lt;|gt;)",
-                          G_REGEX_JAVASCRIPT_COMPAT,
+                          G_REGEX_DEFAULT,
                           0,
                           &err);
     if (!amp_re) {
@@ -466,7 +471,7 @@ phosh_util_escape_markup (const char *markup, gboolean allow_markup)
      * https://specifications.freedesktop.org/notification-spec/latest/ar01s04.html
      */
     elem_re = g_regex_new ("<(?!/?[biu]>)",
-                           G_REGEX_JAVASCRIPT_COMPAT,
+                           G_REGEX_DEFAULT,
                            0,
                            &err);
     if (!elem_re) {
