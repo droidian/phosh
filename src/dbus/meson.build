@@ -32,7 +32,7 @@ generated_dbus_sources += gnome.gdbus_codegen('login1-session-dbus',
 generated_dbus_sources += gnome.gdbus_codegen('login1-manager-dbus',
 					      'org.freedesktop.login1.Manager.xml',
 					      interface_prefix: 'org.freedesktop.login1',
-					      namespace: 'PhoshLogin1ManagerDBus')
+					      namespace: dbus_prefix)
 
 generated_dbus_sources +=  gnome.gdbus_codegen('phosh-wwan-mm-dbus',
                                                'org.freedesktop.ModemManager1.xml',
@@ -110,7 +110,7 @@ generated_dbus_sources += gnome.gdbus_codegen('phosh-idle-dbus',
 generated_dbus_sources += gnome.gdbus_codegen('phosh-screen-saver-dbus',
                                               'org.gnome.ScreenSaver.xml',
 					      interface_prefix: 'org.gnome',
-					      namespace: 'PhoshScreenSaverDBus')
+					      namespace: dbus_prefix)
 
 generated_dbus_sources += gnome.gdbus_codegen('phosh-screenshot-dbus',
                                               'org.gnome.Shell.Screenshot.xml',
