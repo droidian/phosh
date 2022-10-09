@@ -27,3 +27,6 @@ debian/tmp/
 po/messages.mo
 po/missing
 po/notexist
+
+# Added by Droidian
+!.circleci/
