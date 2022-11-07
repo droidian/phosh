@@ -1,5 +1,5 @@
 project('phosh', 'c',
-          version: '0.21.1',
+          version: '0.22.0',
           license: 'GPLv3+',
     meson_version: '>= 0.54.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
@@ -20,8 +20,9 @@ systemddir = join_paths(prefix, 'lib/systemd')
 systemduserdir = join_paths(systemddir, 'user')
 plugins_dir = join_paths(prefix, libdir, 'phosh', 'plugins')
 servicedir = join_paths(datadir, 'dbus-1', 'services')
+schemasdir = datadir / 'glib-2.0/schemas'
 
-glib_ver = 'GLIB_VERSION_2_62'
+glib_ver = 'GLIB_VERSION_2_66'
 
 add_project_arguments([
   '-DGLIB_VERSION_MIN_REQUIRED=@0@'.format(glib_ver),
@@ -96,7 +97,7 @@ configure_file(
 gnome = import('gnome')
 i18n  = import('i18n')
 
-glib_ver = '>= 2.62'
+glib_ver = '>= 2.66'
 
 ecal_dep = dependency('libecal-2.0', version: '>= 3.33.1')
 eds_dep = dependency('libedataserver-1.2', version: '>= 3.33.1')
@@ -105,7 +106,7 @@ gcr_dep = dependency('gcr-3', version: '>= 3.7.5')
 glib_dep = dependency('glib-2.0', version: glib_ver)
 gio_dep = dependency('gio-2.0', version: glib_ver)
 gobject_dep = dependency('gobject-2.0', version: glib_ver)
-gio_unix_dep =  dependency('gio-unix-2.0', version: '>=2.62')
+gio_unix_dep =  dependency('gio-unix-2.0', version: glib_ver)
 gmodule_dep = dependency('gmodule-2.0', version: glib_ver)
 gnome_desktop_dep = dependency('gnome-desktop-3.0', version: '>=3.26')
 gsettings_desktop_schemas_dep = dependency('gsettings-desktop-schemas')
@@ -141,6 +142,13 @@ libcall_ui = subproject('libcall-ui',
     'install-i18n=@0@'.format(get_option('callui-i18n')),
   ])
 libcall_ui_dep = libcall_ui.get_variable('libcall_ui_dep')
+libgmobile = subproject('gmobile',
+  default_options: [
+    'examples=false',
+    'gtk_doc=false',
+    'tests=false',
+  ])
+libgmobile_dep = libgmobile.get_variable('libgmobile_dep')
 libnm_dep = dependency('libnm', version: '>= 1.14')
 libpolkit_agent_dep = dependency('polkit-agent-1', version: '>= 0.105')
 libsystemd_dep = dependency('libsystemd', version: '>= 241')
