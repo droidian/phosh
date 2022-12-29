@@ -8,7 +8,7 @@
 
 #define G_LOG_DOMAIN "phosh-ambient"
 
-#include "config.h"
+#include "phosh-config.h"
 #include "fader.h"
 #include "ambient.h"
 #include "shell.h"
@@ -27,9 +27,9 @@
 #define NUM_VALUES              3
 
 /**
- * SECTION:ambient
- * @short_description: Ambient light sensor handling
- * @Title: PhoshAmbient
+ * PhoshAmbient:
+ *
+ * Ambient light sensor handling
  *
  * #PhoshAmbient handles enabling and disabling the ambient detection
  * based and toggles related actions.

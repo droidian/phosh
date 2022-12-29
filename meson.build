@@ -1,5 +1,5 @@
 project('phosh', 'c',
-          version: '0.22.0',
+          version: '0.23.0',
           license: 'GPLv3+',
     meson_version: '>= 0.54.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
@@ -19,6 +19,7 @@ pkglibdir = join_paths(libdir, meson.project_name())
 systemddir = join_paths(prefix, 'lib/systemd')
 systemduserdir = join_paths(systemddir, 'user')
 plugins_dir = join_paths(prefix, libdir, 'phosh', 'plugins')
+plugin_prefs_dir = join_paths(prefix, libdir, 'phosh', 'plugins', 'prefs')
 servicedir = join_paths(datadir, 'dbus-1', 'services')
 schemasdir = datadir / 'glib-2.0/schemas'
 
@@ -96,6 +97,7 @@ configure_file(
 
 gnome = import('gnome')
 i18n  = import('i18n')
+pkgconfig = import ('pkgconfig')
 
 glib_ver = '>= 2.66'
 
@@ -208,16 +210,17 @@ subdir('calendar-server')
 
 summary = [
   '',
-  '-----------',
+  '---------------------------',
   'Phosh @0@'.format(meson.project_version()),
   '',
-  '        Tests: @0@'.format(get_option('tests')),
-  '   Phoc Tests: @0@'.format(run_phoc_tests),
-  '   Compositor: @0@'.format(get_option('compositor')),
-  '      Systemd: @0@'.format(get_option('systemd')),
-  'Documentation: @0@'.format(get_option('gtk_doc')),
-  '        tools: @0@'.format(get_option('tools')),
-  '-----------',
+  '               Tests: @0@'.format(get_option('tests')),
+  '          Phoc Tests: @0@'.format(run_phoc_tests),
+  '          Compositor: @0@'.format(get_option('compositor')),
+  '             Systemd: @0@'.format(get_option('systemd')),
+  '       Documentation: @0@'.format(get_option('gtk_doc')),
+  '               Tools: @0@'.format(get_option('tools')),
+  '  Lockscreen Plugins: @0@'.format(get_option('lockscreen-plugins')),
+  '----------------------------',
 ]
 
 message('\n'.join(summary))

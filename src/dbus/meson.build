@@ -1,5 +1,8 @@
+dbus_inc = include_directories('.')
+
 # DBus client interfaces
 generated_dbus_sources = []
+dbus_doc_targets = []
 
 dbus_prefix = 'PhoshDBus'
 
@@ -76,9 +79,12 @@ generated_dbus_sources += gnome.gdbus_codegen('phosh-wwan-ofono-dbus',
                                               namespace: 'PhoshOfonoDBus',
                                               interface_prefix: 'org.ofono')
 
-generated_dbus_sources += gnome.gdbus_codegen('phosh-osk0-dbus',
-                                              'sm.puri.OSK0.xml',
-                                              namespace: 'PhoshOsk0')
+sm_puri_OSK0_deps = gnome.gdbus_codegen('phosh-osk0-dbus',
+                                        'sm.puri.OSK0.xml',
+					docbook: 'phosh-dbus',
+                                        namespace: 'PhoshOsk0')
+generated_dbus_sources += sm_puri_OSK0_deps
+dbus_doc_targets += sm_puri_OSK0_deps[2]
 
 # DBus server protocols
 generated_dbus_sources += gnome.gdbus_codegen('geoclue-agent-dbus',
@@ -132,3 +138,5 @@ generated_dbus_sources += gnome.gdbus_codegen('droidian-flashlightd-dbus',
 					      'org.droidian.Flashlightd.xml',
 					      interface_prefix: 'org.droidian.Flashlightd',
 					      namespace: 'DroidianTorchDbus')
+
+dbus_doc_dep = declare_dependency(sources: dbus_doc_targets)

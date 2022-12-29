@@ -3,12 +3,14 @@
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
- * BUILDDIR $ ./tools/run_tool ./tools/widget-box-standalone
+ * BUILDDIR $ ./tools/run_tool ./tools/widget-box
  *
- * PhoshWidgetBox in a simple wrapper
+ * widget-box is a simple wrapper to run phosh's lockscreen widgets
  */
 
-#include "config.h"
+#include "phosh-config.h"
+
+#include <handy.h>
 
 #include <widget-box.h>
 #include <plugin-loader.h>
@@ -53,10 +55,11 @@ main (int argc, char *argv[])
 {
   GtkWidget *win;
   GtkWidget *box;
-  char *plugins[] = { "calendar", "upcoming-events", "ticket-box", "doesnotexist", NULL };
+  char *plugins[] = { "calendar", "upcoming-events", "emergency-info", "ticket-box", "doesnotexist", NULL };
   GStrv plugin_dirs = NULL;
 
   gtk_init (&argc, &argv);
+  hdy_init ();
 
   css_setup ();
 
