@@ -15,6 +15,11 @@
 #include "util.h"
 #include "dbus/hostname1-dbus.h"
 
+/* HACK: remove this once in stated */
+#include "dbus/upower-kbdbacklight-dbus.h"
+#define KBDBACKLIGHT_BUS_NAME "org.freedesktop.UPower"
+#define KBDBACKLIGHT_OBJECT_PATH "/org/freedesktop/UPower/KbdBacklight"
+
 #define BUS_NAME "org.freedesktop.hostname1"
 #define OBJECT_PATH "/org/freedesktop/hostname1"
 
@@ -47,9 +52,12 @@ struct _PhoshModeManager {
   PhoshModeDeviceType          mimicry;
   PhoshModeHwFlags             hw_flags;
 
+  gboolean                     keypad_open;
+
   PhoshMonitorManager         *monitor_manager;
 
   PhoshDBusHostname1          *proxy;
+  PhoshUPowerDBusKbdBacklight *kbdbacklight_proxy; /* TODO: Remove once implemented in stated */
   GCancellable                *cancel;
   gchar                       *chassis;
   PhoshWaylandSeatCapabilities wl_caps;
@@ -144,12 +152,18 @@ update_props (PhoshModeManager *self)
   if (self->wl_caps & PHOSH_WAYLAND_SEAT_CAPABILITY_POINTER)
     hw |= PHOSH_MODE_HW_POINTER;
 
+  if (self->keypad_open)
+    hw |= PHOSH_MODE_BUILTIN_KEYPAD_OPEN;
+
   /* Mimicries */
   if (device_type == PHOSH_MODE_DEVICE_TYPE_PHONE &&
       (hw & PHOSH_MODE_DOCKED_PHONE_MASK) == PHOSH_MODE_DOCKED_PHONE_MASK) {
     mimicry = PHOSH_MODE_DEVICE_TYPE_DESKTOP;
   } else if (device_type == PHOSH_MODE_DEVICE_TYPE_TABLET &&
       (hw & PHOSH_MODE_DOCKED_TABLET_MASK) == PHOSH_MODE_DOCKED_TABLET_MASK) {
+    mimicry = PHOSH_MODE_DEVICE_TYPE_DESKTOP;
+  } else if (device_type == PHOSH_MODE_DEVICE_TYPE_PHONE &&
+      (hw & PHOSH_MODE_PHONE_WITH_BUILTIN_KEYBOARD_OPEN_MASK) == PHOSH_MODE_PHONE_WITH_BUILTIN_KEYBOARD_OPEN_MASK) {
     mimicry = PHOSH_MODE_DEVICE_TYPE_DESKTOP;
   }
 
@@ -269,6 +283,27 @@ on_proxy_new_for_bus_finish (GObject          *source_object,
 }
 
 
+/* TODO: Remove once implemented in stated */
+static void
+on_kbdbacklight_proxy_new_for_bus_finish (GObject          *source_object,
+                                          GAsyncResult     *res,
+                                          PhoshModeManager *self)
+{
+  g_autoptr (GError) err = NULL;
+
+  g_return_if_fail (PHOSH_IS_MODE_MANAGER (self));
+
+  self->kbdbacklight_proxy = phosh_upower_dbus_kbd_backlight_proxy_new_for_bus_finish (res, &err);
+
+  if (!self->kbdbacklight_proxy) {
+    g_warning ("Unable to get upower kbdbacklight proxy: %s", err->message);
+    return;
+  }
+
+  
+}
+
+
 static void
 phosh_mode_manager_idle_init (PhoshManager *manager)
 {
@@ -281,16 +316,116 @@ phosh_mode_manager_idle_init (PhoshManager *manager)
                                           self->cancel,
                                           (GAsyncReadyCallback) on_proxy_new_for_bus_finish,
                                           self);
+
+  /* TODO: Remove once implemented in stated */
+  phosh_upower_dbus_kbd_backlight_proxy_new_for_bus (G_BUS_TYPE_SYSTEM,
+                                                    G_DBUS_PROXY_FLAGS_NONE,
+                                                    KBDBACKLIGHT_BUS_NAME,
+                                                    KBDBACKLIGHT_OBJECT_PATH,
+                                                    NULL,
+                                                    (GAsyncReadyCallback) on_kbdbacklight_proxy_new_for_bus_finish,
+                                                    g_object_ref (self));
 }
+
+
+/* TODO: Remove once implemented in stated */
+static void
+on_kbdbacklight_set (PhoshUPowerDBusKbdBacklight *kbdbacklight_proxy,
+                     GAsyncResult                *res,
+                     PhoshModeManager            *self)
+{
+  g_autoptr (GError) err = NULL;
+
+  if (!phosh_upower_dbus_kbd_backlight_call_set_brightness_finish (kbdbacklight_proxy, res, &err)) {
+    g_warning ("Unable to set keyboard brigthness: %s", err->message);
+  }
+
+  g_object_unref (self);
+}
+
+
+static void
+update_keypad_state (PhoshModeManager *self,
+                     uint32_t state)
+{
+  PhoshShell *shell = phosh_shell_get_default ();
+  PhoshRotationManager *rotation_manager = phosh_shell_get_rotation_manager (shell);
+
+  switch (state) {
+  case 0:
+    /* Keypad open */
+    self->keypad_open = TRUE;
+    phosh_rotation_manager_set_mode (rotation_manager, PHOSH_ROTATION_MANAGER_MODE_OFF);
+    phosh_rotation_manager_set_transform (rotation_manager, PHOSH_MONITOR_TRANSFORM_270);
+    break;
+  default:
+    /* Keypad closed or switch not available */
+    phosh_rotation_manager_set_transform (phosh_shell_get_rotation_manager (shell), PHOSH_MONITOR_TRANSFORM_NORMAL);
+    phosh_rotation_manager_set_mode (rotation_manager, PHOSH_ROTATION_MANAGER_MODE_SENSOR);
+    self->keypad_open = FALSE;
+    break;
+  }
+
+  /* TODO: Remove once implemented in stated */
+  if (self->kbdbacklight_proxy) {
+      phosh_upower_dbus_kbd_backlight_call_set_brightness (self->kbdbacklight_proxy,
+                                                          self->keypad_open ? 1 : 0,
+                                                          NULL,
+                                                          (GAsyncReadyCallback) on_kbdbacklight_set,
+                                                          g_object_ref (self));
+  }
+}
+
+static gboolean
+update_props_idle (PhoshModeManager *self)
+{
+  g_return_val_if_fail (PHOSH_IS_MODE_MANAGER (self), G_SOURCE_REMOVE);
+
+  update_props (self);
+  return G_SOURCE_REMOVE;
+}
+
+static void
+on_switch_event (void *data,
+                 struct phosh_private *phosh_private,
+                 uint32_t event,
+                 uint32_t state)
+{
+  PhoshModeManager *self = data;
+
+  g_return_if_fail (PHOSH_IS_MODE_MANAGER (self));
+
+  switch (event) {
+  case 3: /* KEYPAD_SLIDE */
+    update_keypad_state (self, state);
+    g_idle_add ((GSourceFunc) update_props_idle, self);
+    break;
+  }
+}
+
+static const struct phosh_private_listener phoc_switch_event_listener = {
+  on_switch_event,
+};
 
 static void
 phosh_mode_manager_constructed (GObject *object)
 {
   PhoshModeManager *self = PHOSH_MODE_MANAGER (object);
 
+  PhoshWayland *wl = phosh_wayland_get_default();
+
   G_OBJECT_CLASS (phosh_mode_manager_parent_class)->constructed (object);
 
   self->monitor_manager = phosh_shell_get_monitor_manager (phosh_shell_get_default ());
+
+  self->keypad_open = FALSE;
+
+  self->kbdbacklight_proxy = NULL; /* TODO: Remove once implemented in stated */
+
+  phosh_private_add_listener (phosh_wayland_get_phosh_private (wl),
+                              &phoc_switch_event_listener,
+                              self);
+
 }
 
 
@@ -303,6 +438,7 @@ phosh_mode_manager_dispose (GObject *object)
   g_clear_object (&self->cancel);
 
   g_clear_object (&self->proxy);
+  g_clear_object (&self->kbdbacklight_proxy); /* TODO: Remove once implemented in stated */
 
   G_OBJECT_CLASS (phosh_mode_manager_parent_class)->dispose (object);
 }
