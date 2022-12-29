@@ -139,4 +139,10 @@ generated_dbus_sources += gnome.gdbus_codegen('droidian-flashlightd-dbus',
 					      interface_prefix: 'org.droidian.Flashlightd',
 					      namespace: 'DroidianTorchDbus')
 
+# org.freedesktop.UPower.KbdBacklight.xml
+generated_dbus_sources += gnome.gdbus_codegen('upower-kbdbacklight-dbus',
+                                              'org.freedesktop.UPower.KbdBacklight.xml',
+                                              interface_prefix: 'org.freedesktop.UPower',
+                                              namespace: 'PhoshUPowerDBus')
+
 dbus_doc_dep = declare_dependency(sources: dbus_doc_targets)
