@@ -47,12 +47,14 @@ typedef enum {
   PHOSH_MODE_HW_EXT_DISPLAY = (1 << 1),
   PHOSH_MODE_HW_KEYBOARD    = (1 << 2),
   PHOSH_MODE_HW_POINTER     = (1 << 3),
+  PHOSH_MODE_BUILTIN_KEYPAD_OPEN = (1 << 4),
 } PhoshModeHwFlags;
 
 /* TODO: keyboard is hard to detect due to gpio keys, etc */
 #define PHOSH_MODE_DOCKED_PHONE_MASK (PHOSH_MODE_HW_EXT_DISPLAY \
                                       | PHOSH_MODE_HW_POINTER)
 #define PHOSH_MODE_DOCKED_TABLET_MASK (PHOSH_MODE_HW_POINTER)
+#define PHOSH_MODE_PHONE_WITH_BUILTIN_KEYBOARD_OPEN_MASK (PHOSH_MODE_BUILTIN_KEYPAD_OPEN)
 
 #define PHOSH_TYPE_MODE_MANAGER (phosh_mode_manager_get_type ())
 

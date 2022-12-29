@@ -135,9 +135,14 @@ mode_changed_cb (PhoshDockedManager *self, GParamSpec *pspec, PhoshModeManager *
   g_object_notify_by_pspec (G_OBJECT (self), props[PROP_CAN_DOCK]);
 
   /* Automatically enable/disable docked mode */
-  phosh_docked_manager_set_enabled (self, can_dock);
+  PhoshModeHwFlags flags;
+  g_object_get (G_OBJECT (manager), "hw-flags", &flags, NULL);
+  if ((flags & PHOSH_MODE_BUILTIN_KEYPAD_OPEN) == PHOSH_MODE_BUILTIN_KEYPAD_OPEN)
+    /* Forcibly disable keyboard */
+    g_settings_set_boolean (self->a11y_settings, A11Y_KEY_OSK, FALSE);
+  else
+    phosh_docked_manager_set_enabled (self, can_dock);
 }
-
 
 static void
 phosh_docked_manager_constructed (GObject *object)
@@ -284,12 +289,21 @@ void
 phosh_docked_manager_set_enabled (PhoshDockedManager *self, gboolean enable)
 {
   const gchar *icon_name;
+  PhoshModeHwFlags flags;
 
   g_return_if_fail (PHOSH_IS_DOCKED_MANAGER (self));
   g_return_if_fail ((enable && self->can_dock) || !enable);
 
-  if (self->enabled == enable)
+  if (self->enabled == enable) {
+    if (!enable)
+      /* Ensure keyboard is always shown */
+      g_settings_set_boolean (self->a11y_settings, A11Y_KEY_OSK, TRUE);
+
     return;
+  }
+
+  /* FIXME? Avoid doing that two times */
+  g_object_get (G_OBJECT (self->mode_manager), "hw-flags", &flags, NULL);
 
   g_object_freeze_notify (G_OBJECT (self));
 
@@ -304,7 +318,11 @@ phosh_docked_manager_set_enabled (PhoshDockedManager *self, gboolean enable)
   /* we could bind one boolean property via g_settings_bind but that would spread
    * mode setup over several places */
   g_settings_set_boolean (self->phoc_settings, PHOC_KEY_MAXIMIZE, !enable);
-  g_settings_set_boolean (self->a11y_settings, A11Y_KEY_OSK, !enable);
+  if ((flags & PHOSH_MODE_BUILTIN_KEYPAD_OPEN) == PHOSH_MODE_BUILTIN_KEYPAD_OPEN)
+    /* Always disable software keyboard if the builtin one is open */
+    g_settings_set_boolean (self->a11y_settings, A11Y_KEY_OSK, FALSE);
+  else
+    g_settings_set_boolean (self->a11y_settings, A11Y_KEY_OSK, !enable);
   if (self->gtk_settings)
     g_settings_set_boolean (self->gtk_settings, GTK_KEY_IS_PHONE, !enable);
   if (self->gtk4_settings)
