@@ -1,5 +1,5 @@
 project('phosh', 'c',
-          version: '0.23.0',
+          version: '0.24.0',
           license: 'GPLv3+',
     meson_version: '>= 0.54.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
@@ -144,13 +144,13 @@ libcall_ui = subproject('libcall-ui',
     'install-i18n=@0@'.format(get_option('callui-i18n')),
   ])
 libcall_ui_dep = libcall_ui.get_variable('libcall_ui_dep')
-libgmobile = subproject('gmobile',
+gmobile = subproject('gmobile',
   default_options: [
     'examples=false',
     'gtk_doc=false',
     'tests=false',
   ])
-libgmobile_dep = libgmobile.get_variable('libgmobile_dep')
+gmobile_dep = gmobile.get_variable('gmobile_dep')
 libnm_dep = dependency('libnm', version: '>= 1.14')
 libpolkit_agent_dep = dependency('polkit-agent-1', version: '>= 0.105')
 libsystemd_dep = dependency('libsystemd', version: '>= 241')
@@ -169,6 +169,30 @@ struct rfkill_event_ext e;
 '''
 have_rfkill_event_ext = cc.compiles(code, name : 'Have rfkill_event_ext')
 
+have_polkit_subject_cleanup = cc.compiles('''
+#define POLKIT_AGENT_I_KNOW_API_IS_SUBJECT_TO_CHANGE
+#include <polkitagent/polkitagent.h>
+
+int main()
+{
+   g_autoptr (PolkitSubject) *subj = NULL;
+}''',
+  name : 'Have PolkitSubject cleanup',
+  dependencies: libpolkit_agent_dep)
+
+
+have_polkit_agent_listener_cleanup = cc.compiles('''
+#define POLKIT_AGENT_I_KNOW_API_IS_SUBJECT_TO_CHANGE
+#include <polkitagent/polkitagent.h>
+
+int main()
+{
+   g_autoptr (PolkitAgentListener) *listener = NULL;
+}''',
+  name : 'Have PolkitAgentListener cleanup',
+  dependencies: libpolkit_agent_dep)
+
+
 config_h = configuration_data()
 config_h.set_quoted('GETTEXT_PACKAGE', 'phosh')
 config_h.set_quoted('LOCALEDIR', localedir)
@@ -186,6 +210,8 @@ if m_ver[0].to_int() > 0 or m_ver[1].to_int() >= 58
 else
   config_h.set_quoted('PHOSH_DBUS_PATH_PREFIX', '/sm/puri/Phosh')
 endif
+config_h.set('PHOSH_HAVE_POLKIT_SUBJECT_CLEANUP', have_polkit_subject_cleanup)
+config_h.set('PHOSH_HAVE_POLKIT_AGENT_LISTENER_CLEANUP', have_polkit_agent_listener_cleanup)
 
 configure_file(
   input: 'phosh-config.h.in',
@@ -208,19 +234,22 @@ subdir('tools')
 subdir('docs')
 subdir('calendar-server')
 
-summary = [
-  '',
-  '---------------------------',
-  'Phosh @0@'.format(meson.project_version()),
-  '',
-  '               Tests: @0@'.format(get_option('tests')),
-  '          Phoc Tests: @0@'.format(run_phoc_tests),
-  '          Compositor: @0@'.format(get_option('compositor')),
-  '             Systemd: @0@'.format(get_option('systemd')),
-  '       Documentation: @0@'.format(get_option('gtk_doc')),
-  '               Tools: @0@'.format(get_option('tools')),
-  '  Lockscreen Plugins: @0@'.format(get_option('lockscreen-plugins')),
-  '----------------------------',
-]
+summary({
+    'Tests': get_option('tests'),
+    'Phoc tests': run_phoc_tests,
+    'Documentation': get_option('gtk_doc'),
+    'Manual pages': get_option('man'),
+    'Tools': get_option('tools'),
+    'Lockscreen Plugins': get_option('lockscreen-plugins'),
+  },
+  bool_yn: true,
+  section: 'Build',
+)
 
-message('\n'.join(summary))
+summary({
+    'Compositor:': get_option('compositor'),
+    'Systemd for session': get_option('systemd'),
+  },
+  bool_yn: true,
+  section: 'Runtime',
+)
