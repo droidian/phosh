@@ -3,10 +3,12 @@
  */
 phosh-top-panel {
   font: 15px Cantarell;
+  background: none;
 }
 
 #top-bar {
   padding: 4px 9px 4px 9px;
+  background: none;
 }
 
 .phosh-wwan-indicator,
@@ -143,9 +145,16 @@ phosh-activity.phosh-empty {
   background-size: cover;
 }
 
-phosh-home, phosh-top-panel {
-  background: @phosh_bg_color;
+phosh-home /*, phosh-top-panel */ {
+  background: none;
   color: @phosh_fg_color;
+}
+
+phosh-top-panel > box > widget > clamp {
+    background-color: @phosh_bg_color;
+    border-radius: 24px;
+    margin-left: 6px;
+    margin-right: 6px;
 }
 
 .phosh-activity-close-button {
@@ -157,7 +166,7 @@ phosh-home, phosh-top-panel {
 }
 
 .phosh-overview {
-  background: @phosh_bg_color;
+  background: none;
   color: @phosh_fg_color;
 }
 
@@ -199,7 +208,7 @@ phosh-home, phosh-top-panel {
 }
 
 phosh-app-grid {
-  background: @phosh_bg_color;
+  background: none;
   color: @phosh_fg_color;
 }
 
@@ -829,3 +838,4 @@ scale trough slider:active {
   border-color: shade(@phosh_fg_color, 0.9);
   background: shade(@phosh_fg_color, 0.9);
 }
+
