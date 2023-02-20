@@ -43,7 +43,8 @@ create_background_for_monitor (PhoshBackgroundManager *self, PhoshMonitor *monit
   background = phosh_background_new (phosh_wayland_get_zwlr_layer_shell_v1 (wl),
                                      monitor->wl_output,
                                      MAX(1.0, phosh_monitor_get_fractional_scale (monitor)),
-                                     monitor == self->primary_monitor);
+                                     monitor == self->primary_monitor,
+                                     ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND);
   g_hash_table_insert (self->backgrounds,
                        g_object_ref (monitor),
                        background);
