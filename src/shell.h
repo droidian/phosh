@@ -132,4 +132,6 @@ gboolean             phosh_shell_get_show_splash (PhoshShell *self);
 gboolean             phosh_shell_get_docked      (PhoshShell *self);
 gboolean             phosh_shell_get_blanked     (PhoshShell *self);
 
+void                 phosh_shell_set_bg_alpha    (PhoshShell *self, double alpha);
+
 G_END_DECLS
