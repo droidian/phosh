@@ -268,6 +268,10 @@ on_home_state_changed (PhoshShell *self, GParamSpec *pspec, PhoshHome *home)
 
   g_object_get (priv->home, "state", &state, NULL);
   phosh_shell_set_state (self, PHOSH_STATE_OVERVIEW, state == PHOSH_HOME_STATE_UNFOLDED);
+
+  if (state == PHOSH_HOME_STATE_FOLDED) {
+    phosh_layer_surface_set_empty_input_region (PHOSH_LAYER_SURFACE (priv->top_bg));
+  }
 }
 
 

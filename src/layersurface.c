@@ -9,6 +9,7 @@
 #define G_LOG_DOMAIN "phosh-layer-surface"
 
 #include "phosh-config.h"
+#include "phosh-wayland.h"
 #include "layersurface.h"
 #include "phoc-layer-shell-effects-unstable-v1-client-protocol.h"
 
@@ -849,4 +850,19 @@ phosh_layer_surface_set_alpha (PhoshLayerSurface *self,
 
   zphoc_alpha_layer_surface_v1_set_alpha (priv->alpha_surface, wl_fixed_from_double (alpha));
   wl_surface_commit (priv->wl_surface);
+}
+
+void
+phosh_layer_surface_set_empty_input_region (PhoshLayerSurface *self)
+{
+  PhoshLayerSurfacePrivate *priv;
+  struct wl_region *empty;
+
+  g_return_if_fail (PHOSH_IS_LAYER_SURFACE (self));
+  priv = phosh_layer_surface_get_instance_private (self);
+
+  empty = wl_compositor_create_region (phosh_wayland_get_compositor (phosh_wayland_get_default()));
+  wl_surface_set_input_region (priv->wl_surface, empty);
+  wl_surface_commit (priv->wl_surface);
+  wl_region_destroy (empty);
 }

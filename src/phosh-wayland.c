@@ -53,6 +53,7 @@ struct _PhoshWayland {
   struct zwlr_screencopy_manager_v1 *zwlr_screencopy_manager_v1;
   struct zphoc_layer_shell_effects_v1 *zphoc_layer_shell_effects_v1;
   struct wl_shm *wl_shm;
+  struct wl_compositor *wl_compositor;
   GHashTable *wl_outputs;
   PhoshWaylandSeatCapabilities seat_capabilities;
 };
@@ -111,6 +112,8 @@ registry_handle_global (void *data,
     self->wl_shm = wl_registry_bind(
       registry, name, &wl_shm_interface,
       1);
+  } else if (!strcmp(interface, "wl_compositor")) {
+    self->wl_compositor = wl_registry_bind(registry, name, &wl_compositor_interface, 3);
   } else if (!strcmp(interface, zwlr_input_inhibit_manager_v1_interface.name)) {
     self->input_inhibit_manager = wl_registry_bind(
       registry,
@@ -571,4 +574,13 @@ phosh_wayland_get_zphoc_layer_shell_effects_v1 (PhoshWayland *self)
   g_return_val_if_fail (PHOSH_IS_WAYLAND (self), NULL);
 
   return self->zphoc_layer_shell_effects_v1;
+}
+
+
+struct wl_compositor *
+phosh_wayland_get_compositor (PhoshWayland *self)
+{
+  g_return_val_if_fail (PHOSH_IS_WAYLAND (self), NULL);
+
+  return self->wl_compositor;
 }

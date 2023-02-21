@@ -60,4 +60,6 @@ void                              phosh_layer_surface_set_alpha (PhoshLayerSurfa
                                                                  double alpha);
 void                              phosh_layer_surface_handle_alpha (PhoshLayerSurface *self,
                                                                     gpointer           layer_shell_effects);
+void                              phosh_layer_surface_set_empty_input_region (PhoshLayerSurface *self);
+
 G_END_DECLS

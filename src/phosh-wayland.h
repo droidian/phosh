@@ -76,5 +76,6 @@ struct zwp_virtual_keyboard_manager_v1 *phosh_wayland_get_zwp_virtual_keyboard_m
 void                                  phosh_wayland_roundtrip (PhoshWayland *self);
 PhoshWaylandSeatCapabilities          phosh_wayland_get_seat_capabilities (PhoshWayland *self);
 struct zphoc_layer_shell_effects_v1  *phosh_wayland_get_zphoc_layer_shell_effects_v1 (PhoshWayland *self);
+struct wl_compositor                 *phosh_wayland_get_compositor (PhoshWayland *self);
 
 G_END_DECLS
