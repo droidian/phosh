@@ -151,7 +151,7 @@ phosh-home /*, phosh-top-panel */ {
   color: @phosh_fg_color;
 }
 
-phosh-top-panel > box > widget > clamp {
+phosh-top-panel > box > widget > scrolledwindow {
     background-color: @phosh_bg_color;
     border-radius: 24px;
     margin-left: 6px;
