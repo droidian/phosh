@@ -8,18 +8,25 @@
 
 #define G_LOG_DOMAIN "phosh-util"
 
+#define _GNU_SOURCE
+
+#include "phosh-config.h"
+
 #include "util.h"
 #include <gtk/gtk.h>
 
 #include <locale.h>
 #include <glib/gi18n.h>
+#include <glib/gstdio.h>
 
 #include <systemd/sd-login.h>
 
+#ifdef PHOSH_HAVE_MEMFD_CREATE
 #include <sys/mman.h>
-#include <sys/stat.h>
+#include <linux/memfd.h>
+#include <linux/mman.h>
 #include <fcntl.h>
-
+#endif
 
 #if !GLIB_CHECK_VERSION(2, 73, 2)
 #define G_REGEX_DEFAULT 0
@@ -46,7 +53,7 @@ phosh_cp_widget_destroy (void *widget)
  * with X11 and non-GTK applications that may not report the exact same
  * string as their app-id and in their desktop file.
  *
- * Returns: (transfer full): GDesktopAppInfo for requested app_id
+ * Returns: (transfer full)(nullable): GDesktopAppInfo for requested app_id
  */
 GDesktopAppInfo *
 phosh_get_desktop_app_info_for_app_id (const char *app_id)
@@ -254,11 +261,23 @@ static int
 anonymous_shm_open (void)
 {
   char name[] = "/phosh-XXXXXX";
+  int fd = -1;
+
+#ifdef PHOSH_HAVE_MEMFD_CREATE
+  /* name is only for debugging, collisions don't matter */
+  randname (name + strlen (name) - 6);
+  fd = memfd_create (name, MFD_CLOEXEC | MFD_ALLOW_SEALING);
+  if (fd >= 0) {
+    fcntl (fd, F_ADD_SEALS, F_SEAL_SHRINK);
+    return fd;
+  }
+#else
   int retries = 100;
 
+#ifdef __linux__
+  g_warning_once ("Falling back to shm_open for shared memory buffers.");
+#endif
   do {
-    int fd;
-
     randname (name + strlen (name) - 6);
     --retries;
     /* shm_open guarantees that O_CLOEXEC is set */
@@ -268,6 +287,7 @@ anonymous_shm_open (void)
       return fd;
     }
   } while (retries > 0 && errno == EEXIST);
+#endif
 
   return -1;
 }
@@ -432,13 +452,27 @@ phosh_util_escape_markup (const char *markup, gboolean allow_markup)
   return g_markup_escape_text (markup, -1);
 }
 
-
+/**
+ * phosh_util_gesture_is_touch:
+ * @gesture: The gesture
+ *
+ * Allow to check whether a gesture's last event was a touch press or
+ * release.  This can be used to distinguish mouse and touchpad clicks
+ * from touch press/release.
+ *
+ * Returns: %TRUE if this is a touch press or release event, otherwise %FALSE
+ */
 gboolean
 phosh_util_gesture_is_touch (GtkGestureSingle *gesture)
 {
   GdkEventSequence *seq;
   const GdkEvent *event;
   GdkDevice *device;
+
+#define PHOSH_BUTTON_MASK (GDK_BUTTON_PRESS  |   \
+                           GDK_2BUTTON_PRESS |   \
+                           GDK_3BUTTON_PRESS |   \
+                           GDK_BUTTON_RELEASE)
 
   g_return_val_if_fail (GTK_IS_GESTURE_SINGLE (gesture), FALSE);
 
@@ -448,7 +482,7 @@ phosh_util_gesture_is_touch (GtkGestureSingle *gesture)
   if (event == NULL)
     return FALSE;
 
-  if (event->type != GDK_BUTTON_PRESS && event->type != GDK_BUTTON_RELEASE)
+  if ((event->type & PHOSH_BUTTON_MASK) == 0)
     return FALSE;
 
   device = gdk_event_get_source_device (event);
@@ -460,8 +494,9 @@ phosh_util_gesture_is_touch (GtkGestureSingle *gesture)
     return FALSE;
 
   return TRUE;
-}
 
+#undef PHOSH_BUTTON_MASK
+}
 
 /**
  * phosh_util_have_gnome_software:
@@ -518,4 +553,26 @@ phosh_util_get_stylesheet (const char *theme_name)
     style = "/sm/puri/phosh/stylesheet/adwaita-dark.css";
 
   return style;
+}
+
+
+gboolean
+phosh_clear_fd (int *fd, GError **err)
+{
+  gboolean success;
+
+  g_return_val_if_fail (fd, FALSE);
+
+#if GLIB_CHECK_VERSION(2, 75, 1)
+  success = g_clear_fd (fd, err);
+#else
+  if (*fd >= 0) {
+    success = g_close (*fd, err);
+    *fd = -1;
+  } else {
+    success = TRUE;
+  }
+#endif
+
+  return success;
 }
