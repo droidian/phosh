@@ -64,6 +64,7 @@ typedef struct _PhoshSettings
   guint      debounce_handle;
 
   GtkWidget *scrolled_window;
+  GtkWidget *box_sliders;
   GtkWidget *box_settings;
   GtkWidget *quick_settings;
   GtkWidget *scale_brightness;
@@ -827,8 +828,8 @@ setup_volume_bar (PhoshSettings *self)
   gtk_widget_set_sensitive (self->output_vol_bar, TRUE);
   gtk_widget_show (self->output_vol_bar);
 
-  gtk_box_pack_start (GTK_BOX (self->box_settings), self->output_vol_bar, FALSE, FALSE, 0);
-  gtk_box_reorder_child (GTK_BOX (self->box_settings), self->output_vol_bar, 1);
+  gtk_box_pack_start (GTK_BOX (self->box_sliders), self->output_vol_bar, FALSE, FALSE, 0);
+  gtk_box_reorder_child (GTK_BOX (self->box_sliders), self->output_vol_bar, 2);
 
   self->phone_vol_bar = gvc_channel_bar_new_with_icon ("call-start-symbolic");
   gtk_widget_set_sensitive (self->phone_vol_bar, TRUE);
@@ -986,6 +987,7 @@ phosh_settings_class_init (PhoshSettingsClass *klass)
 
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, box_bottom_half);
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, box_notifications);
+  gtk_widget_class_bind_template_child (widget_class, PhoshSettings, box_sliders);
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, box_settings);
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, list_notifications);
   gtk_widget_class_bind_template_child (widget_class, PhoshSettings, media_player);
