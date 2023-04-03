@@ -153,7 +153,7 @@ screen_saver_set_active (PhoshScreenSaverManager *self, gboolean active, gboolea
   if (self->active == active)
     return;
 
-  g_debug ("Activiting screen saver: %d, lock: %d, lock_delay: %d", active, lock,
+  g_debug ("Activating screen saver: %d, lock: %d, lock_delay: %d", active, lock,
     self->lock_delay);
 
   /* on_primary_monitor_power_mode_changed will update self->active once the power mode is set  */
@@ -166,12 +166,28 @@ screen_saver_set_active (PhoshScreenSaverManager *self, gboolean active, gboolea
 
 
 static void
-toggle_blank (GSimpleAction *action, GVariant *param, gpointer data)
+on_power_button_pressed (GSimpleAction *action, GVariant *param, gpointer data)
 {
   PhoshScreenSaverManager *self = PHOSH_SCREEN_SAVER_MANAGER (data);
+  static gboolean state_on_press;
+  gboolean press = g_variant_get_boolean (param);
 
-  g_debug ("Power button press, toggling screensaver %d", !self->active);
-  screen_saver_set_active (self, !self->active, TRUE);
+  /* Press already unblanks since presence status changes due to key press so nothing to do here */
+  if (press) {
+    state_on_press = self->active;
+    return;
+  }
+
+  /* If state changed during press, we're done (unblank) */
+  if (self->active != state_on_press)
+    return;
+
+  /* screen already blanked, no need to do anything on key release */
+  if (self->active)
+    return;
+
+  g_debug ("Power button released, activating screensaver");
+  screen_saver_set_active (self, TRUE, TRUE);
 }
 
 
@@ -783,7 +799,7 @@ static void
 add_keybindings (PhoshScreenSaverManager *self)
 {
   GActionEntry entries[] = {
-    { "XF86PowerOff", toggle_blank },
+    { "XF86PowerOff", on_power_button_pressed, "b" },
   };
 
   /* g-s-manager's grab_single_accelerator makes sure g-s-d doesn't bind it */
