@@ -13,6 +13,7 @@
 #include "bt-manager.h"
 #include "calls-manager.h"
 #include "docked-manager.h"
+#include "emergency-calls-manager.h"
 #include "feedback-manager.h"
 #include "gtk-mount-manager.h"
 #include "hks-manager.h"
@@ -24,6 +25,7 @@
 #include "rotation-manager.h"
 #include "session-manager.h"
 #include "screen-saver-manager.h"
+#include "screenshot-manager.h"
 #include "toplevel-manager.h"
 #include "torch-manager.h"
 #include "vpn-manager.h"
@@ -101,6 +103,7 @@ PhoshMonitorManager    *phosh_shell_get_monitor_manager    (PhoshShell *self);
 PhoshToplevelManager   *phosh_shell_get_toplevel_manager   (PhoshShell *self);
 PhoshSessionManager    *phosh_shell_get_session_manager    (PhoshShell *self);
 PhoshScreenSaverManager *phosh_shell_get_screen_saver_manager (PhoshShell *self);
+PhoshScreenshotManager *phosh_shell_get_screenshot_manager (PhoshShell *self);
 /* Created on the fly */
 PhoshBtManager         *phosh_shell_get_bt_manager         (PhoshShell *self);
 PhoshDockedManager     *phosh_shell_get_docked_manager     (PhoshShell *self);
@@ -112,6 +115,7 @@ PhoshTorchManager      *phosh_shell_get_torch_manager      (PhoshShell *self);
 PhoshVpnManager        *phosh_shell_get_vpn_manager        (PhoshShell *self);
 PhoshWifiManager       *phosh_shell_get_wifi_manager       (PhoshShell *self);
 PhoshWWan              *phosh_shell_get_wwan               (PhoshShell *self);
+PhoshEmergencyCallsManager *phosh_shell_get_emergency_calls_manager (PhoshShell *self);
 
 void                 phosh_shell_fade_out (PhoshShell *self, guint timeout);
 void                 phosh_shell_enable_power_save (PhoshShell *self, gboolean enable);

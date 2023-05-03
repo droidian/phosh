@@ -30,7 +30,7 @@
  * Manages notifications
  *
  * #PhoshNotifyManager manages notifications sent from the shell
- * iself and via the org.freedesktop.Notification DBus interface.
+ * itself and via the org.freedesktop.Notification DBus interface.
  * See https://developer.gnome.org/notification-spec/
  *
  * It maintains a list of notifications via a #PhoshNotificationList.
@@ -89,7 +89,7 @@ handle_close_notification (PhoshNotifyDBusNotifications *skeleton,
   notification = phosh_notification_list_get_by_id (self->list, arg_id);
 
   /*
-   * ignore errors when closing non-existent notifcation, at least qt 5.11 is not
+   * ignore errors when closing non-existent notification, at least qt 5.11 is not
    * happy about it.
    */
   if (notification && PHOSH_IS_NOTIFICATION (notification)) {
@@ -930,4 +930,61 @@ phosh_notify_manager_close_all_notifications (PhoshNotifyManager      *self,
       phosh_notification_close (notification, PHOSH_NOTIFICATION_REASON_DISMISSED);
     }
   }
+}
+
+/**
+ * phosh_notify_manager_shell_notification_new:
+ * @self: The #PhoshNotifyManager
+ * @summary: The notification summary
+ * @body:(nullable): The notification body
+ * @icon_name:(nullable): The icon to be used
+ *
+ * Creates a new notification and adds it to the list of notifications
+ * (filling in then notification id) and displaying it (if
+ * notifications aren't disabled by other means). The returned id
+ * can be used to retract the notification.
+ *
+ * Returns: The id of the notification
+ */
+guint
+phosh_notify_manager_add_shell_notification (PhoshNotifyManager *self,
+                                             const char         *summary,
+                                             const char         *body,
+                                             const char         *icon_name,
+                                             int                 expire_timeout)
+{
+  g_autoptr (GIcon) app_icon = NULL;
+  g_autoptr (GIcon) icon = NULL;
+  g_autoptr (PhoshNotification) notification = NULL;
+  GDesktopAppInfo *desktop_info;
+  g_autoptr (GAppInfo) info = NULL;
+  guint id;
+
+  id = phosh_notify_manager_get_notification_id (self);
+
+  app_icon = g_themed_icon_new ("applications-system-symbolic");
+  desktop_info = g_desktop_app_info_new (PHOSH_APP_ID ".desktop");
+  if (desktop_info)
+    info = G_APP_INFO (desktop_info);
+
+  if (icon_name)
+    icon = g_themed_icon_new (icon_name);
+
+  notification =  g_object_new (PHOSH_TYPE_NOTIFICATION,
+                                "id", id,
+                                "summary", summary,
+                                "body", body,
+                                "app-info", info,
+                                "app-icon", app_icon,
+                                "image", icon,
+                                "urgency", PHOSH_NOTIFICATION_URGENCY_NORMAL,
+                                "actions", NULL,
+                                "transient", !!expire_timeout,
+                                "resident", FALSE,
+                                NULL);
+
+  phosh_notify_manager_add_notification (self, PHOSH_APP_ID ".desktop",
+                                         expire_timeout,
+                                         PHOSH_NOTIFICATION (notification));
+  return id;
 }

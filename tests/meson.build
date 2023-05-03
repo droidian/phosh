@@ -66,9 +66,11 @@ test_link_args = [
 testlib_sources = [
   'testlib.c',
   'testlib-head-stub.c',
+  'testlib-compositor.c',
   'testlib-full-shell.c',
   'testlib-calls-mock.c',
   'testlib-mpris-mock.c',
+  'testlib-emergency-calls.c'
 ]
 
 testlib = static_library('phoshtest', testlib_sources,
@@ -100,6 +102,7 @@ tests = [
   'plugin-loader',
   'quick-setting',
   'status-icon',
+  'timestamp-label',
   'util',
 ]
 
@@ -114,13 +117,13 @@ tests_phoc = [
   'osd-window',
   'system-modal',
   'system-modal-dialog',
-  'timestamp-label',
+  'power-menu',
 ]
 
 tests_manager = [
   [ 'calls-manager', true, ],
-  [ 'gtk-mount-manager', false, ],
-  [ 'idle-manager', false, ],
+  [ 'gtk-mount-manager', true, ],
+  [ 'idle-manager', true, ],
   [ 'monitor-manager', true, ],
   [ 'notify-manager', true, ],
   [ 'screenshot-manager', true, ],
@@ -155,7 +158,7 @@ if run_phoc_tests
     test(test, t,
          suite: ['unit', 'phoc'],
          env: test_env_phoc,
-         is_parallel: false)
+         is_parallel: true)
   endforeach
 
   # Integration tests using the full libphosh
@@ -168,7 +171,7 @@ if run_phoc_tests
   test('shell', t,
        env: test_env_phoc,
        suite: ['integration'],
-       is_parallel : false)
+       is_parallel : true)
   foreach item : tests_manager
     test = item.get(0)
     parallel = item.get(1)
@@ -199,8 +202,10 @@ if run_phoc_tests
     lang_env.set('PHOSH_TEST_TYPE', lang)
     lang_env.set('XDG_DATA_HOME', '@0@/user/share/'.format(meson.current_source_dir()))
     test('screenshots-@0@'.format(lang), t,
-       env: lang_env,
-       suite: ['screenshots'])
+         env: lang_env,
+         suite: ['screenshots'],
+         timeout: 60,
+        )
   endforeach
 
   what='high-contrast'
@@ -213,7 +218,9 @@ if run_phoc_tests
   test('screenshots-@0@'.format(what), t,
        env: hc_env,
        depends: copy_keyfile_hc,
-       suite: ['screenshots'])
+       suite: ['screenshots'],
+       timeout: 120,
+      )
 
   what='landscape'
   landscape_env = test_env_phoc
@@ -223,8 +230,9 @@ if run_phoc_tests
   landscape_env.set('XDG_DATA_HOME', '@0@/user/share/'.format(meson.current_source_dir()))
   test('screenshots-@0@'.format(what), t,
        env: landscape_env,
-       suite: ['screenshots'])
-  
+       suite: ['screenshots'],
+       timeout: 60,
+      )
 endif
 
 endif # tests

@@ -61,7 +61,6 @@ typedef struct _PhoshTopPanel {
 
   /* Top row above settings */
   GtkWidget *btn_power;
-  GtkWidget *menu_power;
   GtkWidget *btn_lock;
   GtkWidget *lbl_clock2;
   GtkWidget *lbl_date;
@@ -163,36 +162,6 @@ on_settings_drag_handle_offset_changed (PhoshTopPanel *self, GParamSpec   *pspec
 
 
 static void
-on_shutdown_action (GSimpleAction *action,
-                    GVariant      *parameter,
-                    gpointer       data)
-{
-  PhoshTopPanel *self = PHOSH_TOP_PANEL(data);
-  PhoshSessionManager *sm = phosh_shell_get_session_manager (phosh_shell_get_default ());
-
-  g_return_if_fail (PHOSH_IS_TOP_PANEL (self));
-  phosh_session_manager_shutdown (sm);
-  phosh_top_panel_fold (self);
-}
-
-
-static void
-on_restart_action (GSimpleAction *action,
-                   GVariant      *parameter,
-                   gpointer       data)
-{
-  PhoshTopPanel *self = PHOSH_TOP_PANEL(data);
-  PhoshSessionManager *sm = phosh_shell_get_session_manager (phosh_shell_get_default ());
-
-  g_return_if_fail (PHOSH_IS_TOP_PANEL (self));
-  g_return_if_fail (PHOSH_IS_SESSION_MANAGER (sm));
-
-  phosh_session_manager_reboot (sm);
-  phosh_top_panel_fold (self);
-}
-
-
-static void
 on_lockscreen_action (GSimpleAction *action,
                       GVariant      *parameter,
                       gpointer      data)
@@ -206,17 +175,16 @@ on_lockscreen_action (GSimpleAction *action,
 
 
 static void
-on_logout_action (GSimpleAction *action,
-                  GVariant      *parameter,
-                  gpointer      data)
+on_power_menu_activated (GSimpleAction *action,
+                         GVariant      *parameter,
+                         gpointer       data)
 {
-  PhoshTopPanel *self = PHOSH_TOP_PANEL(data);
-  PhoshSessionManager *sm = phosh_shell_get_session_manager (phosh_shell_get_default ());
+  PhoshTopPanel *self = PHOSH_TOP_PANEL (data);
 
-  g_return_if_fail (PHOSH_IS_TOP_PANEL (self));
-  g_return_if_fail (PHOSH_IS_SESSION_MANAGER (sm));
-  phosh_session_manager_logout (sm);
   phosh_top_panel_fold (self);
+  g_action_group_activate_action (G_ACTION_GROUP (phosh_shell_get_default ()),
+                                  "power.toggle-menu",
+                                  NULL);
 }
 
 
@@ -357,15 +325,6 @@ on_key_press_event (PhoshTopPanel *self, GdkEventKey *event, gpointer data)
 static void
 released_cb (PhoshTopPanel *self, int n_press, double x, double y, GtkGestureMultiPress *gesture)
 {
-  /*
-   * The popover has to be popdown manually as it doesn't happen
-   * automatically when the power button is tapped with touch
-   */
-  if (gtk_widget_is_visible (self->menu_power)) {
-    gtk_popover_popdown (GTK_POPOVER (self->menu_power));
-    return;
-  }
-
   if (phosh_util_gesture_is_touch (GTK_GESTURE_SINGLE (gesture)) == FALSE)
     g_signal_emit (self, signals[ACTIVATED], 0);
 }
@@ -435,9 +394,6 @@ on_drag_state_changed (PhoshTopPanel *self)
   gboolean kbd_interactivity = FALSE;
   double arrow = -1.0;
 
-  /* Close the popover on any drag */
-  gtk_widget_hide (self->menu_power);
-
   switch (phosh_drag_surface_get_drag_state (PHOSH_DRAG_SURFACE (self))) {
   case PHOSH_DRAG_SURFACE_STATE_UNFOLDED:
     state = PHOSH_TOP_PANEL_STATE_UNFOLDED;
@@ -470,10 +426,8 @@ on_drag_state_changed (PhoshTopPanel *self)
 
 
 static GActionEntry entries[] = {
-  { .name = "poweroff", .activate = on_shutdown_action },
-  { .name = "restart", .activate = on_restart_action },
   { .name = "lockscreen", .activate = on_lockscreen_action },
-  { .name = "logout", .activate = on_logout_action },
+  { .name = "power-menu", .activate = on_power_menu_activated },
 };
 
 
@@ -551,11 +505,6 @@ phosh_top_panel_constructed (GObject *object)
   g_action_map_add_action_entries (G_ACTION_MAP (self->actions),
                                    entries, G_N_ELEMENTS (entries),
                                    self);
-  if (!phosh_shell_started_by_display_manager (phosh_shell_get_default ())) {
-    GAction *action = g_action_map_lookup_action (G_ACTION_MAP (self->actions),
-                                                  "logout");
-    g_simple_action_set_enabled (G_SIMPLE_ACTION(action), FALSE);
-  }
 
   self->interface_settings = g_settings_new ("org.gnome.desktop.interface");
   g_settings_bind (self->interface_settings,
@@ -682,7 +631,6 @@ phosh_top_panel_class_init (PhoshTopPanelClass *klass)
   gtk_widget_class_set_template_from_resource (widget_class,
                                                "/sm/puri/phosh/ui/top-panel.ui");
   gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, arrow);
-  gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, menu_power);
   gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, btn_power);
   gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, btn_lock);
   gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, batteryinfo);

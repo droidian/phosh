@@ -8,8 +8,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: phosh\n"
 "Report-Msgid-Bugs-To: https://gitlab.gnome.org/World/Phosh/phosh/issues\n"
-"POT-Creation-Date: 2023-03-07 10:28+0000\n"
-"PO-Revision-Date: 2023-03-07 21:00+0200\n"
+"POT-Creation-Date: 2023-04-21 10:33+0000\n"
+"PO-Revision-Date: 2023-04-22 21:27+0300\n"
 "Last-Translator: Yuri Chornoivan <yurchor@ukr.net>\n"
 "Language-Team: Ukrainian <trans-uk@lists.fedoraproject.org>\n"
 "Language: uk\n"
@@ -91,6 +91,19 @@ msgstr "Зафіксовано"
 msgid "Undocked"
 msgstr "Від'єднано"
 
+#: src/emergency-menu.c:97 src/ui/app-auth-prompt.ui:71
+#: src/ui/end-session-dialog.ui:62
+msgid "Ok"
+msgstr "Гаразд"
+
+#: src/emergency-menu.c:100
+msgid "Unable to place emergency call"
+msgstr "Не вдалося розмістити екстрений виклик"
+
+#: src/emergency-menu.c:105
+msgid "Internal error"
+msgstr "Внутрішня помилка"
+
 #: src/end-session-dialog.c:162
 msgid "Log Out"
 msgstr "Вийти"
@@ -103,7 +116,7 @@ msgstr[0] "Вихід з системи %s буде здійснено авто�
 msgstr[1] "Вихід з системи %s буде здійснено автоматично за %d секунди."
 msgstr[2] "Вихід з системи %s буде здійснено автоматично за %d секунд."
 
-#: src/end-session-dialog.c:171 src/ui/top-panel.ui:36
+#: src/end-session-dialog.c:171
 msgid "Power Off"
 msgstr "Вимкнути"
 
@@ -115,7 +128,7 @@ msgstr[0] "Система автоматично вимкнеться за %d с
 msgstr[1] "Система автоматично вимкнеться за %d секунди."
 msgstr[2] "Система автоматично вимкнеться за %d секунд."
 
-#: src/end-session-dialog.c:178 src/ui/top-panel.ui:29
+#: src/end-session-dialog.c:178
 msgid "Restart"
 msgstr "Перезапустити"
 
@@ -176,6 +189,14 @@ msgstr "Уведіть пароль"
 msgid "Checking…"
 msgstr "Звіряю…"
 
+#: src/screenshot-manager.c:212
+msgid "Screenshot"
+msgstr "Знімок вікна"
+
+#: src/screenshot-manager.c:213
+msgid "Screenshot copied to clipboard"
+msgstr "Знімок вікна скопійовано до буфера"
+
 #. Translators: Used when the title of a song is unknown
 #: src/media-player.c:322 src/ui/media-player.ui:182
 msgid "Unknown Title"
@@ -220,7 +241,7 @@ msgstr "Підтримки типу розпізнавання у мережі w
 msgid "Enter password for the wifi network “%s”"
 msgstr "Введіть пароль до мережі wifi «%s»"
 
-#: src/notifications/mount-notification.c:122
+#: src/notifications/mount-notification.c:121
 msgid "Open"
 msgstr "Відкрити"
 
@@ -379,10 +400,6 @@ msgstr "Запам'ятати вибір"
 msgid "Cancel"
 msgstr "Скасувати"
 
-#: src/ui/app-auth-prompt.ui:71 src/ui/end-session-dialog.ui:62
-msgid "Ok"
-msgstr "Гаразд"
-
 #: src/ui/app-grid-button.ui:55
 msgid "App"
 msgstr "Програма"
@@ -402,6 +419,39 @@ msgstr "Пере_глянути подробиці"
 #: src/ui/app-grid.ui:21
 msgid "Search apps…"
 msgstr "Шукати серед програм…"
+
+#: src/ui/emergency-menu.ui:26
+msgid "Close the emergency call dialog"
+msgstr "Закрити вікно екстреного виклику"
+
+#: src/ui/emergency-menu.ui:52
+#| msgid "Emergency Contacts"
+msgid "Emergency _Contacts"
+msgstr "Екстрені _контакти"
+
+#: src/ui/emergency-menu.ui:59
+#| msgid "Emergency Contacts"
+msgid "Go to the emergency contacts page"
+msgstr "Перейти до сторінки екстрених контактів"
+
+#: src/ui/emergency-menu.ui:83
+msgid "Go back to the emergency dialpad page"
+msgstr "Повернутися до сторінки набору екстреного виклику"
+
+#: src/ui/emergency-menu.ui:106
+#| msgid "Unknown"
+msgid "Owner unknown"
+msgstr "Невідомий власник"
+
+#: src/ui/emergency-menu.ui:124 plugins/emergency-info/emergency-info.ui:195
+#: plugins/emergency-info/prefs/emergency-info-prefs.ui:230
+msgid "Emergency Contacts"
+msgstr "Екстрені контакти"
+
+#: src/ui/emergency-menu.ui:148
+#| msgid "Emergency Contacts"
+msgid "No emergency contacts available."
+msgstr "Немає доступних екстрених контактів."
 
 #: src/ui/end-session-dialog.ui:31
 msgid "Some applications are busy or have unsaved work"
@@ -452,29 +502,37 @@ msgstr "З'_єднатися"
 msgid "Authenticate"
 msgstr "Автентифікуватися"
 
+#: src/ui/power-menu.ui:37
+msgid "_Power Off"
+msgstr "Ви_мкнути"
+
+#: src/ui/power-menu.ui:78
+msgid "_Lock"
+msgstr "За_мкнути"
+
+#: src/ui/power-menu.ui:119
+msgid "_Screenshot"
+msgstr "З_німок вікна"
+
+#: src/ui/power-menu.ui:160
+msgid "_Emergency"
+msgstr "_Екстрений виклик"
+
 #: src/ui/run-command-dialog.ui:6
 msgid "Run Command"
 msgstr "Виконати команду"
 
-#: src/ui/settings.ui:319
+#: src/ui/settings.ui:320
 msgid "No notifications"
 msgstr "Немає сповіщень"
 
-#: src/ui/settings.ui:359
+#: src/ui/settings.ui:360
 msgid "Clear all"
 msgstr "Очистити все"
 
 #: src/ui/system-prompt.ui:62
 msgid "Confirm:"
 msgstr "Підтвердіть:"
-
-#: src/ui/top-panel.ui:15
-msgid "Lock Screen"
-msgstr "Заблокувати екран"
-
-#: src/ui/top-panel.ui:22
-msgid "Logout"
-msgstr "Вийти"
 
 #. Translators: This is a time format for a date in
 #. long format
@@ -562,11 +620,6 @@ msgstr "Препарати і стан здоров'я"
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:213
 msgid "Other Information"
 msgstr "Інші відомості"
-
-#: plugins/emergency-info/emergency-info.ui:195
-#: plugins/emergency-info/prefs/emergency-info-prefs.ui:230
-msgid "Emergency Contacts"
-msgstr "Екстрені контакти"
 
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:6
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:19
@@ -689,6 +742,12 @@ msgstr "Завершується"
 #: plugins/upcoming-events/upcoming-event.c:398
 msgid "Untitled event"
 msgstr "Подія без назви"
+
+#~ msgid "Lock Screen"
+#~ msgstr "Заблокувати екран"
+
+#~ msgid "Logout"
+#~ msgstr "Вийти"
 
 #, c-format
 #~ msgid "On %A"

@@ -63,7 +63,7 @@ phosh_layer_surface_sources = files(
   'layersurface.h',
 )
 
-# Symbols from these availabel in tools and unit tests
+# Symbols from these available in tools and unit tests
 libphosh_tool_sources = files(
   'app-auth-prompt.c',
   'app-auth-prompt.h',
@@ -97,6 +97,12 @@ libphosh_tool_sources = files(
   'drag-surface.h',
   'end-session-dialog.c',
   'end-session-dialog.h',
+  'emergency-contact-row.c',
+  'emergency-contact-row.h',
+  'emergency-contact.c',
+  'emergency-contact.h',
+  'emergency-menu.c',
+  'emergency-menu.h',
   'hks-info.c',
   'hks-info.h',
   'hks-manager.c',
@@ -139,6 +145,10 @@ libphosh_tool_sources = files(
   'osd-window.h',
   'plugin-loader.c',
   'plugin-loader.h',
+  'power-menu.c',
+  'power-menu.h',
+  'power-menu-manager.c',
+  'power-menu-manager.h',
   'revealer.c',
   'revealer.h',
   'status-icon.c',
@@ -177,7 +187,7 @@ libphosh_tool_sources = files(
   phosh_notifications_sources,
 ]
 
-# Symbols from these are not availabel in tools and unit tests
+# Symbols from these are not available in tools and unit tests
 # Prefer adding to libphosh_tool_sources
 libphosh_sources = files(
   'arrow.c',
@@ -196,6 +206,8 @@ libphosh_sources = files(
   'bt-manager.h',
   'contrib/shell-network-agent.c',
   'contrib/shell-network-agent.h',
+  'emergency-calls-manager.c',
+  'emergency-calls-manager.h',
   'fader.c',
   'fader.h',
   'feedbackinfo.c',

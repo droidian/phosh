@@ -15,6 +15,7 @@
 #include "testlib-full-shell.h"
 #include "testlib-calls-mock.h"
 #include "testlib-mpris-mock.h"
+#include "testlib-emergency-calls.h"
 
 #include "phosh-screen-saver-dbus.h"
 
@@ -265,7 +266,7 @@ screenshot_end_session_dialog (GMainLoop                       *loop,
 {
   g_autoptr (PhoshDBusEndSessionDialog) proxy = NULL;
   g_autoptr (GError) err = NULL;
-  const char *inhibitors[] = { "/org/exampl/foo1", "/org/example/foo2", NULL };
+  g_autoptr (GPtrArray) inhibitors = g_ptr_array_new_with_free_func (g_free);
 
   proxy = phosh_dbus_end_session_dialog_proxy_new_for_bus_sync (
     G_BUS_TYPE_SESSION,
@@ -276,11 +277,17 @@ screenshot_end_session_dialog (GMainLoop                       *loop,
     &err);
   g_assert_no_error (err);
 
+  for (int i = 0; i < 10; i++) {
+    char *sym = g_strdup_printf ("/org/example/foo%d", i);
+    g_ptr_array_add (inhibitors, sym);
+  }
+  g_ptr_array_add (inhibitors, NULL);
+
   phosh_dbus_end_session_dialog_call_open (proxy,
                                            0,
                                            0,
                                            30,
-                                           inhibitors,
+                                           (const gchar * const*)inhibitors->pdata,
                                            NULL,
                                            on_end_session_dialog_open_finish,
                                            NULL);
@@ -438,6 +445,40 @@ screenshot_mount_prompt (GMainLoop                       *loop,
   return num;
 }
 
+static int
+screenshot_emergency_calls (GMainLoop                      *loop,
+                            const char                     *locale,
+                            int                             num,
+                            struct zwp_virtual_keyboard_v1 *keyboard,
+                            GTimer                         *timer)
+{
+  g_autoptr (PhoshTestEmergencyCallsMock) emergency_calls_mock = NULL;
+
+  emergency_calls_mock = phosh_test_emergency_calls_mock_new ();
+  phosh_test_emergency_calls_mock_export (emergency_calls_mock);
+
+  phosh_test_keyboard_press_timeout (keyboard, timer, KEY_POWER, 3000);
+  wait_a_bit (loop, 1);
+  take_screenshot (locale, num++, "power-menu");
+
+  phosh_test_keyboard_press_modifiers (keyboard, KEY_LEFTALT);
+  phosh_test_keyboard_press_keys (keyboard, timer, KEY_E, NULL);
+  phosh_test_keyboard_release_modifiers (keyboard);
+  wait_a_bit (loop, 1);
+  take_screenshot (locale, num++, "emergency-dialpad");
+
+  phosh_test_keyboard_press_modifiers (keyboard, KEY_LEFTALT);
+  phosh_test_keyboard_press_keys (keyboard, timer, KEY_C, NULL);
+  phosh_test_keyboard_release_modifiers (keyboard);
+  wait_a_bit (loop, 1);
+  take_screenshot (locale, num++, "emergency-contacts");
+
+  phosh_test_keyboard_press_keys (keyboard, timer, KEY_ESC, NULL);
+  wait_a_bit (loop, 1);
+
+  return num;
+}
+
 
 static void
 test_take_screenshots (PhoshTestFullShellFixture *fixture, gconstpointer unused)
@@ -525,6 +566,8 @@ test_take_screenshots (PhoshTestFullShellFixture *fixture, gconstpointer unused)
   wait_a_bit (loop, 1);
   take_screenshot (what, i++, "lockscreen-keypad");
 
+  i = screenshot_emergency_calls (loop, what, i, keyboard, timer);
+
   calls_mock = phosh_test_calls_mock_new ();
   phosh_calls_mock_export (calls_mock);
   wait_a_bit (loop, 1);
@@ -538,6 +581,7 @@ int
 main (int argc, char *argv[])
 {
   g_autoptr (PhoshTestFullShellFixtureCfg) cfg = NULL;
+  g_autoptr (GSettings) settings = NULL;
 
   g_test_init (&argc, &argv, NULL);
 
@@ -545,8 +589,11 @@ main (int argc, char *argv[])
   bind_textdomain_codeset (GETTEXT_PACKAGE, "UTF-8");
   bindtextdomain (GETTEXT_PACKAGE, TEST_INSTALLED LOCALEDIR);
 
-  /* Preserve DISPLAY for wlroots x11 backend */
-  cfg = phosh_test_full_shell_fixture_cfg_new (g_getenv ("DISPLAY"), "phosh-keyboard-events,phosh-media-player");
+  /* Enable emergency-calls until it's on by default */
+  settings = g_settings_new ("sm.puri.phosh.emergency-calls");
+  g_settings_set_boolean (settings, "enabled", TRUE);
+
+  cfg = phosh_test_full_shell_fixture_cfg_new (NULL, "phosh-keyboard-events,phosh-media-player");
 
   g_test_add ("/phosh/tests/take-screenshots", PhoshTestFullShellFixture, cfg,
               phosh_test_full_shell_setup, test_take_screenshots, phosh_test_full_shell_teardown);
