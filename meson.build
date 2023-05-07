@@ -1,5 +1,5 @@
 project('phosh', 'c',
-          version: '0.26.0',
+          version: '0.27.0',
           license: 'GPL-3.0-or-later',
     meson_version: '>= 0.54.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
@@ -116,6 +116,7 @@ gtk_dep = dependency('gtk+-3.0', version: '>=3.22')
 gtk_wayland_dep = dependency('gtk+-wayland-3.0', version: '>=3.22')
 gudev_dep = dependency('gudev-1.0')
 libfeedback_dep = dependency('libfeedback-0.0',
+  version: '>= 0.2.0',
   fallback: ['libfeedback', 'libfeedback_dep'],
   default_options: ['introspection=disabled', 'daemon=false', 'gtk_doc=false']
   )
@@ -245,6 +246,14 @@ summary({
   },
   bool_yn: true,
   section: 'Build',
+)
+
+summary({
+    'Recent GNOME (>= 43)': have_gnome_platform_version,
+    'Recent glib (>= 2.74)': glib_dep.version().version_compare('>= 2.74')
+  },
+  bool_yn: true,
+  section: 'Versions',
 )
 
 summary({

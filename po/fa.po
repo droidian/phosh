@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: phosh master\n"
 "Report-Msgid-Bugs-To: https://gitlab.gnome.org/World/Phosh/phosh/issues\n"
-"POT-Creation-Date: 2023-03-07 10:28+0000\n"
-"PO-Revision-Date: 2023-03-18 04:49+0330\n"
+"POT-Creation-Date: 2023-04-21 10:33+0000\n"
+"PO-Revision-Date: 2023-04-24 01:47+0330\n"
 "Last-Translator: Danial Behzadi <dani.behzi@ubuntu.com>\n"
 "Language-Team: Persian <fa@li.org>\n"
 "Language: fa\n"
@@ -89,6 +89,19 @@ msgstr "داک شده"
 msgid "Undocked"
 msgstr "داک نشده"
 
+#: src/emergency-menu.c:97 src/ui/app-auth-prompt.ui:71
+#: src/ui/end-session-dialog.ui:62
+msgid "Ok"
+msgstr "قبول"
+
+#: src/emergency-menu.c:100
+msgid "Unable to place emergency call"
+msgstr "ناتوان در برقراری تماس اضطراری"
+
+#: src/emergency-menu.c:105
+msgid "Internal error"
+msgstr "خطای داخلی"
+
 #: src/end-session-dialog.c:162
 msgid "Log Out"
 msgstr "خروج"
@@ -100,7 +113,7 @@ msgid_plural "%s will be logged out automatically in %d seconds."
 msgstr[0] "%s به طور خودکار در %Id ثانیه از سامانه خارج خواهد شد."
 msgstr[1] "%s به طور خودکار در %Id ثانیه از سامانه خارج خواهد شد."
 
-#: src/end-session-dialog.c:171 src/ui/top-panel.ui:36
+#: src/end-session-dialog.c:171
 msgid "Power Off"
 msgstr "خاموش کردن"
 
@@ -111,7 +124,7 @@ msgid_plural "The system will power off automatically in %d seconds."
 msgstr[0] "سامانه پس از %Id ثانیه به طور خودکار خاموش می‌شود."
 msgstr[1] "سامانه پس از %Id ثانیه به طور خودکار خاموش می‌شود."
 
-#: src/end-session-dialog.c:178 src/ui/top-panel.ui:29
+#: src/end-session-dialog.c:178
 msgid "Restart"
 msgstr "راه‌اندازی دوباره"
 
@@ -171,6 +184,14 @@ msgstr "ورود رمز عبور"
 msgid "Checking…"
 msgstr "در حال بررسی…"
 
+#: src/screenshot-manager.c:212
+msgid "Screenshot"
+msgstr "نماگرفت"
+
+#: src/screenshot-manager.c:213
+msgid "Screenshot copied to clipboard"
+msgstr "نماگرفت در تخته‌گیره رونوشت شد"
+
 #. Translators: Used when the title of a song is unknown
 #: src/media-player.c:322 src/ui/media-player.ui:182
 msgid "Unknown Title"
@@ -215,7 +236,7 @@ msgstr "گونهٔ تأییدیهٔ شبکهٔ وای‌فای %s پشتیبان
 msgid "Enter password for the wifi network “%s”"
 msgstr "ورود گذرواژه برای شبکهٔ وای‌فای %s"
 
-#: src/notifications/mount-notification.c:122
+#: src/notifications/mount-notification.c:121
 msgid "Open"
 msgstr "گشودن"
 
@@ -374,10 +395,6 @@ msgstr "به‌خاطر سپردن تصمیم"
 msgid "Cancel"
 msgstr "لغو"
 
-#: src/ui/app-auth-prompt.ui:71 src/ui/end-session-dialog.ui:62
-msgid "Ok"
-msgstr "قبول"
-
 #: src/ui/app-grid-button.ui:55
 msgid "App"
 msgstr "کاره"
@@ -397,6 +414,35 @@ msgstr "دیدن _جزییات"
 #: src/ui/app-grid.ui:21
 msgid "Search apps…"
 msgstr "جست‌وجوی کاره‌ها…"
+
+#: src/ui/emergency-menu.ui:26
+msgid "Close the emergency call dialog"
+msgstr "بستن گفت‌وگوی تماس اضطراری"
+
+#: src/ui/emergency-menu.ui:52
+msgid "Emergency _Contacts"
+msgstr "_تماس‌های اضطراری"
+
+#: src/ui/emergency-menu.ui:59
+msgid "Go to the emergency contacts page"
+msgstr "رفتن به صفحهٔ تماس‌های اضطراری"
+
+#: src/ui/emergency-menu.ui:83
+msgid "Go back to the emergency dialpad page"
+msgstr "بازگشت به صفحهٔ شماره‌گیر اضطراری"
+
+#: src/ui/emergency-menu.ui:106
+msgid "Owner unknown"
+msgstr "مالک ناشناخته"
+
+#: src/ui/emergency-menu.ui:124 plugins/emergency-info/emergency-info.ui:195
+#: plugins/emergency-info/prefs/emergency-info-prefs.ui:230
+msgid "Emergency Contacts"
+msgstr "تماس‌های اضطراری"
+
+#: src/ui/emergency-menu.ui:148
+msgid "No emergency contacts available."
+msgstr "هیچ تماس اضطراری‌ای موجود نیست."
 
 #: src/ui/end-session-dialog.ui:31
 msgid "Some applications are busy or have unsaved work"
@@ -447,29 +493,37 @@ msgstr "_وصل شدن"
 msgid "Authenticate"
 msgstr "تأیید هویت"
 
+#: src/ui/power-menu.ui:37
+msgid "_Power Off"
+msgstr "_خاموش"
+
+#: src/ui/power-menu.ui:78
+msgid "_Lock"
+msgstr "_قفل"
+
+#: src/ui/power-menu.ui:119
+msgid "_Screenshot"
+msgstr "_نماگرفت"
+
+#: src/ui/power-menu.ui:160
+msgid "_Emergency"
+msgstr "_اضطراری"
+
 #: src/ui/run-command-dialog.ui:6
 msgid "Run Command"
 msgstr "اجرای فرمان"
 
-#: src/ui/settings.ui:319
+#: src/ui/settings.ui:320
 msgid "No notifications"
 msgstr "بدون آگاهی"
 
-#: src/ui/settings.ui:359
+#: src/ui/settings.ui:360
 msgid "Clear all"
 msgstr "پاک‌سازی همه"
 
 #: src/ui/system-prompt.ui:62
 msgid "Confirm:"
 msgstr "تأیید:"
-
-#: src/ui/top-panel.ui:15
-msgid "Lock Screen"
-msgstr "قفل کردن صفحه"
-
-#: src/ui/top-panel.ui:22
-msgid "Logout"
-msgstr "خروج"
 
 #. Translators: This is a time format for a date in
 #. long format
@@ -557,11 +611,6 @@ msgstr "داروها و شرایط"
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:213
 msgid "Other Information"
 msgstr "دیگر اطّلاعات"
-
-#: plugins/emergency-info/emergency-info.ui:195
-#: plugins/emergency-info/prefs/emergency-info-prefs.ui:230
-msgid "Emergency Contacts"
-msgstr "تماس‌های اضطراری"
 
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:6
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:19
@@ -683,6 +732,12 @@ msgstr "پایان"
 #: plugins/upcoming-events/upcoming-event.c:398
 msgid "Untitled event"
 msgstr "رویداد بی‌عنوان"
+
+#~ msgid "Lock Screen"
+#~ msgstr "قفل کردن صفحه"
+
+#~ msgid "Logout"
+#~ msgstr "خروج"
 
 #, c-format
 #~ msgid "On %A"

@@ -11,6 +11,7 @@
 #include "phosh-config.h"
 #include "fader.h"
 #include "phosh-wayland.h"
+#include "notifications/notify-manager.h"
 #include "screenshot-manager.h"
 #include "shell.h"
 #include "util.h"
@@ -199,10 +200,20 @@ show_fader (PhoshScreenshotManager *self)
 static void
 screenshot_done (PhoshScreenshotManager *self, gboolean success)
 {
-  phosh_dbus_screenshot_complete_screenshot (PHOSH_DBUS_SCREENSHOT (self),
-                                             self->frames->invocation,
-                                             success,
-                                             self->frames->filename ?: "");
+  if (self->frames->invocation) {
+    phosh_dbus_screenshot_complete_screenshot (PHOSH_DBUS_SCREENSHOT (self),
+                                               self->frames->invocation,
+                                               success,
+                                               self->frames->filename ?: "");
+  } else {
+    PhoshNotifyManager *nm = phosh_notify_manager_get_default ();
+
+    phosh_notify_manager_add_shell_notification (nm,
+                                                 _("Screenshot"),
+                                                 _("Screenshot copied to clipboard"),
+                                                 "screenshot-portrait-symbolic",
+                                                 5000);
+  }
 
   g_clear_pointer (&self->frames, screencopy_frames_dispose);
 }
@@ -544,7 +555,7 @@ screencopy_frame_handle_failed (void                            *data,
                                 struct zwlr_screencopy_frame_v1 *frame)
 {
   ScreencopyFrame *screencopy_frame = data;
-  const char *name = screencopy_frame->monitor ? screencopy_frame->monitor->name : "<unknonwn>";
+  const char *name = screencopy_frame->monitor ? screencopy_frame->monitor->name : "<unknown>";
 
   screencopy_frame->state = FRAME_STATE_FAILURE;
   g_warning ("Failed to copy output '%s'\n", name);
@@ -605,11 +616,11 @@ build_screenshot_filename (const char *pattern)
  * @self: The screenshot maanger
  * @area: The area to capture or %NULL to capture all outputs
  *
- * Initiate a screenshot of the all outputs or the given area.
+ * Initiate a screenshot of all outputs or the given area.
  *
  * Returns: -errno on failure, otherwise 0
  */
-static gboolean
+gboolean
 phosh_screenshot_manager_do_screenshot (PhoshScreenshotManager *self,
                                         GdkRectangle           *area,
                                         const char             *filename,

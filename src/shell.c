@@ -36,6 +36,7 @@
 #include "calls-manager.h"
 #include "docked-info.h"
 #include "docked-manager.h"
+#include "emergency-calls-manager.h"
 #include "fader.h"
 #include "feedbackinfo.h"
 #include "feedback-manager.h"
@@ -53,6 +54,7 @@
 #include "monitor-manager.h"
 #include "monitor/monitor.h"
 #include "mount-manager.h"
+#include "power-menu-manager.h"
 #include "revealer.h"
 #include "settings.h"
 #include "system-modal-dialog.h"
@@ -157,6 +159,8 @@ typedef struct
   PhoshVpnManager *vpn_manager;
   PhoshPortalAccessManager *portal_access_manager;
   PhoshSuspendManager *suspend_manager;
+  PhoshEmergencyCallsManager *emergency_calls_manager;
+  PhoshPowerMenuManager *power_menu_manager;
 
   /* sensors */
   PhoshSensorProxyManager *sensor_proxy_manager;
@@ -168,6 +172,7 @@ typedef struct
   gboolean             startup_finished;
   guint                startup_finished_id;
 
+  GSimpleActionGroup  *action_map;
 
   /* Mirrors PhoshLockscreenManager's locked property */
   gboolean locked;
@@ -187,8 +192,15 @@ typedef struct _PhoshShell
   GObject parent;
 } PhoshShell;
 
-G_DEFINE_TYPE_WITH_PRIVATE (PhoshShell, phosh_shell, G_TYPE_OBJECT)
 
+static void phosh_shell_action_group_iface_init (GActionGroupInterface *iface);
+static void phosh_shell_action_map_iface_init (GActionMapInterface *iface);
+
+G_DEFINE_TYPE_WITH_CODE (PhoshShell, phosh_shell, G_TYPE_OBJECT,
+                         G_ADD_PRIVATE (PhoshShell)
+                         G_IMPLEMENT_INTERFACE (G_TYPE_ACTION_GROUP, phosh_shell_action_group_iface_init)
+                         G_IMPLEMENT_INTERFACE (G_TYPE_ACTION_MAP, phosh_shell_action_map_iface_init)
+  )
 
 static void
 on_top_panel_activated (PhoshShell    *self,
@@ -421,7 +433,7 @@ set_locked (PhoshShell *self, gboolean locked)
   phosh_shell_set_state (self, PHOSH_STATE_LOCKED, priv->locked);
   g_object_notify_by_pspec (G_OBJECT (self), props[PROP_LOCKED]);
 
-  /* Hide settings on screen lock, otherwise the user just sees the settigns when
+  /* Hide settings on screen lock, otherwise the user just sees the settings when
      unblanking the screen which can be confusing */
   if (priv->top_panel)
     phosh_top_panel_fold (PHOSH_TOP_PANEL (priv->top_panel));
@@ -504,6 +516,8 @@ phosh_shell_dispose (GObject *object)
   g_clear_object (&priv->notification_banner);
 
   /* dispose managers in opposite order of declaration */
+  g_clear_object (&priv->power_menu_manager);
+  g_clear_object (&priv->emergency_calls_manager);
   g_clear_object (&priv->portal_access_manager);
   g_clear_object (&priv->vpn_manager);
   g_clear_object (&priv->network_auth_manager);
@@ -548,6 +562,8 @@ phosh_shell_dispose (GObject *object)
 
   g_clear_pointer (&priv->theme_name, g_free);
   g_clear_object (&priv->css_provider);
+
+  g_clear_object (&priv->action_map);
 
   G_OBJECT_CLASS (phosh_shell_parent_class)->dispose (object);
 }
@@ -608,6 +624,15 @@ on_new_notification (PhoshShell         *self,
 
     gtk_widget_show (GTK_WIDGET (priv->notification_banner));
   }
+}
+
+
+static void
+on_pb_long_press (PhoshShell *self)
+{
+  g_return_if_fail (PHOSH_IS_SHELL (self));
+
+  g_action_group_activate_action (G_ACTION_GROUP (self), "power.toggle-menu", NULL);
 }
 
 
@@ -700,8 +725,11 @@ setup_idle_cb (PhoshShell *self)
                            G_CONNECT_SWAPPED);
 
   /* Screen saver manager needs lock screen manager */
-  priv->screen_saver_manager = phosh_screen_saver_manager_new (
-    priv->lockscreen_manager);
+  priv->screen_saver_manager = phosh_screen_saver_manager_new (priv->lockscreen_manager);
+  g_signal_connect_swapped (priv->screen_saver_manager,
+                            "pb-long-press",
+                            G_CALLBACK (on_pb_long_press),
+                            self);
 
   priv->notify_manager = phosh_notify_manager_get_default ();
   g_signal_connect_object (priv->notify_manager,
@@ -741,7 +769,9 @@ setup_idle_cb (PhoshShell *self)
   priv->network_auth_manager = phosh_network_auth_manager_new ();
   priv->portal_access_manager = phosh_portal_access_manager_new ();
   priv->suspend_manager = phosh_suspend_manager_new ();
-
+  priv->emergency_calls_manager = phosh_emergency_calls_manager_new ();
+  priv->power_menu_manager = phosh_power_menu_manager_new ();
+  
   setup_primary_monitor_signal_handlers (self);
 
   /* Delay signaling the compositor a bit so that idle handlers get a
@@ -977,6 +1007,132 @@ phosh_shell_constructed (GObject *object)
   g_idle_add ((GSourceFunc) setup_idle_cb, self);
 }
 
+/* {{{ Action Map/Group */
+
+static gchar **
+phosh_shell_list_actions (GActionGroup *group)
+{
+  PhoshShell *self = PHOSH_SHELL (group);
+  PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
+
+  /* may be NULL after dispose has run */
+  if (!priv->action_map)
+    return g_new0 (char *, 0 + 1);
+
+  return g_action_group_list_actions (G_ACTION_GROUP (priv->action_map));
+}
+
+static gboolean
+phosh_shell_query_action (GActionGroup        *group,
+                          const gchar         *action_name,
+                          gboolean            *enabled,
+                          const GVariantType **parameter_type,
+                          const GVariantType **state_type,
+                          GVariant           **state_hint,
+                          GVariant           **state)
+{
+  PhoshShell *self = PHOSH_SHELL (group);
+  PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
+
+  if (!priv->action_map)
+    return FALSE;
+
+  return g_action_group_query_action (G_ACTION_GROUP (priv->action_map),
+                                      action_name,
+                                      enabled,
+                                      parameter_type,
+                                      state_type,
+                                      state_hint,
+                                      state);
+}
+
+
+static void
+phosh_shell_activate_action (GActionGroup *group,
+                             const gchar  *action_name,
+                             GVariant     *parameter)
+{
+  PhoshShell *self = PHOSH_SHELL (group);
+  PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
+
+  if (!priv->action_map)
+    return;
+
+  g_action_group_activate_action (G_ACTION_GROUP (priv->action_map), action_name, parameter);
+}
+
+
+static void
+phosh_shell_change_action_state (GActionGroup *group,
+                                 const gchar  *action_name,
+                                 GVariant     *state)
+{
+  PhoshShell *self = PHOSH_SHELL (group);
+  PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
+
+  if (!priv->action_map)
+    return;
+
+  g_action_group_change_action_state (G_ACTION_GROUP (priv->action_map), action_name, state);
+}
+
+
+static void
+phosh_shell_action_group_iface_init (GActionGroupInterface *iface)
+{
+  iface->list_actions = phosh_shell_list_actions;
+  iface->query_action = phosh_shell_query_action;
+  iface->activate_action = phosh_shell_activate_action;
+  iface->change_action_state = phosh_shell_change_action_state;
+}
+
+
+static GAction *
+phosh_shell_lookup_action (GActionMap *action_map, const gchar *action_name)
+{
+  PhoshShell *self = PHOSH_SHELL (action_map);
+  PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
+
+  if (!priv->action_map)
+    return NULL;
+
+  return g_action_map_lookup_action (G_ACTION_MAP (priv->action_map), action_name);
+}
+
+static void
+phosh_shell_add_action (GActionMap *action_map, GAction *action)
+{
+  PhoshShell *self = PHOSH_SHELL (action_map);
+  PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
+
+  if (!priv->action_map)
+    return;
+
+  g_action_map_add_action (G_ACTION_MAP (priv->action_map), action);
+}
+
+static void
+phosh_shell_remove_action (GActionMap *action_map, const gchar *action_name)
+{
+  PhoshShell *self = PHOSH_SHELL (action_map);
+  PhoshShellPrivate *priv = phosh_shell_get_instance_private (self);
+
+  if (!priv->action_map)
+    return;
+
+  g_action_map_remove_action (G_ACTION_MAP (priv->action_map), action_name);
+}
+
+
+static void phosh_shell_action_map_iface_init (GActionMapInterface *iface)
+{
+  iface->lookup_action = phosh_shell_lookup_action;
+  iface->add_action = phosh_shell_add_action;
+  iface->remove_action = phosh_shell_remove_action;
+}
+
+/* }}} */
+/* {{{ GObject init */
 
 static void
 phosh_shell_class_init (PhoshShellClass *klass)
@@ -1079,8 +1235,10 @@ phosh_shell_init (PhoshShell *self)
   on_gtk_theme_name_changed (self, NULL, gtk_settings);
 
   priv->shell_state = PHOSH_STATE_NONE;
+  priv->action_map = g_simple_action_group_new ();
 }
 
+/* }}} */
 
 static gboolean
 select_fallback_monitor (gpointer data)
@@ -1094,6 +1252,7 @@ select_fallback_monitor (gpointer data)
   return G_SOURCE_REMOVE;
 }
 
+/* {{{ Public functions */
 
 void
 phosh_shell_set_primary_monitor (PhoshShell *self, PhoshMonitor *monitor)
@@ -1226,6 +1385,27 @@ phosh_shell_get_calls_manager (PhoshShell *self)
 }
 
 
+/**
+ * phosh_shell_get_emergency_contact_manager:
+ * @self: The shell singleton
+ *
+ * Get the emergency contact manager.
+ *
+ * Returns: (transfer none): The emergency contact manager
+ */
+PhoshEmergencyCallsManager*
+phosh_shell_get_emergency_calls_manager (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
+  priv = phosh_shell_get_instance_private (self);
+  g_return_val_if_fail (PHOSH_IS_EMERGENCY_CALLS_MANAGER (priv->emergency_calls_manager), NULL);
+
+  return priv->emergency_calls_manager;
+}
+
+
 PhoshFeedbackManager *
 phosh_shell_get_feedback_manager (PhoshShell *self)
 {
@@ -1314,6 +1494,19 @@ phosh_shell_get_screen_saver_manager (PhoshShell *self)
 
   g_return_val_if_fail (PHOSH_IS_SCREEN_SAVER_MANAGER (self), NULL);
   return priv->screen_saver_manager;
+}
+
+
+PhoshScreenshotManager *
+phosh_shell_get_screenshot_manager (PhoshShell *self)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_val_if_fail (PHOSH_IS_SHELL (self), NULL);
+  priv = phosh_shell_get_instance_private (self);
+
+  g_return_val_if_fail (PHOSH_IS_SCREENSHOT_MANAGER (priv->screenshot_manager), NULL);
+  return priv->screenshot_manager;
 }
 
 
@@ -1942,3 +2135,5 @@ phosh_shell_get_blanked (PhoshShell *self)
 
   return phosh_shell_get_state (self) & PHOSH_STATE_BLANKED;
 }
+
+/* }}} */
