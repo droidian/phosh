@@ -691,10 +691,18 @@ void
 phosh_rotation_manager_set_transform (PhoshRotationManager   *self,
                                       PhoshMonitorTransform  transform)
 {
+  PhoshShell *shell = phosh_shell_get_default ();
+  PhoshModeManager *mode_manager = phosh_shell_get_mode_manager (shell);
+
   g_return_if_fail (PHOSH_IS_ROTATION_MANAGER (self));
   g_return_if_fail (self->mode == PHOSH_ROTATION_MANAGER_MODE_OFF);
 
-  apply_transform (self, transform);
+  if (!(phosh_shell_get_state (shell) & PHOSH_STATE_LOCKED) || (
+      phosh_mode_manager_get_device_type(mode_manager) != PHOSH_MODE_DEVICE_TYPE_PHONE &&
+      phosh_mode_manager_get_device_type(mode_manager) != PHOSH_MODE_DEVICE_TYPE_UNKNOWN))
+    apply_transform (self, transform);
+  else
+    self->prelock_transform = transform;
 }
 
 PhoshMonitorTransform
