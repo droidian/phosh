@@ -186,7 +186,7 @@ on_long_press (gpointer data)
   g_signal_emit (self, signals[PB_LONG_PRESS], 0);
 
   self->long_press_id = 0;
-  return FALSE;
+  return G_SOURCE_REMOVE;
 }
 
 
@@ -465,6 +465,17 @@ phosh_screen_saver_manager_wakeup_screen (PhoshScreenSaverManager *self)
                                  NULL,
                                  NULL);
 }
+
+
+static void
+on_wakeup_screen_activated (GSimpleAction *action, GVariant *param, gpointer data)
+{
+  PhoshScreenSaverManager *self = PHOSH_SCREEN_SAVER_MANAGER (data);
+
+  g_return_if_fail (PHOSH_IS_SCREEN_SAVER_MANAGER (self));
+  phosh_screen_saver_manager_wakeup_screen (self);
+}
+
 
 static void
 on_lockscreen_manager_wakeup_outputs (PhoshScreenSaverManager *self,
@@ -960,9 +971,18 @@ phosh_screen_saver_manager_class_init (PhoshScreenSaverManagerClass *klass)
 static void
 phosh_screen_saver_manager_init (PhoshScreenSaverManager *self)
 {
+  const GActionEntry entries[] = {
+    { .name = "screensaver.wakeup-screen", .activate = on_wakeup_screen_activated },
+  };
+
   self->cancel = g_cancellable_new ();
   self->inhibit_suspend_fd = -1;
   self->inhibit_pwr_btn_fd = -1;
+
+  g_action_map_add_action_entries (G_ACTION_MAP (phosh_shell_get_default ()),
+                                   entries,
+                                   G_N_ELEMENTS (entries),
+                                   self);
 }
 
 
