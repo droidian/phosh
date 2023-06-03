@@ -1,5 +1,5 @@
 project('phosh', 'c',
-          version: '0.27.0',
+          version: '0.28.0',
           license: 'GPL-3.0-or-later',
     meson_version: '>= 0.54.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
@@ -23,7 +23,7 @@ plugin_prefs_dir = join_paths(prefix, libdir, 'phosh', 'plugins', 'prefs')
 servicedir = join_paths(datadir, 'dbus-1', 'services')
 schemasdir = datadir / 'glib-2.0/schemas'
 
-glib_ver = 'GLIB_VERSION_2_66'
+glib_ver = 'GLIB_VERSION_2_72'
 
 add_project_arguments([
   '-DGLIB_VERSION_MIN_REQUIRED=@0@'.format(glib_ver),
@@ -99,7 +99,7 @@ gnome = import('gnome')
 i18n  = import('i18n')
 pkgconfig = import ('pkgconfig')
 
-glib_ver = '>= 2.66'
+glib_ver = '>= 2.72'
 
 ecal_dep = dependency('libecal-2.0', version: '>= 3.33.1')
 eds_dep = dependency('libedataserver-1.2', version: '>= 3.33.1')
@@ -111,7 +111,7 @@ gobject_dep = dependency('gobject-2.0', version: glib_ver)
 gio_unix_dep =  dependency('gio-unix-2.0', version: glib_ver)
 gmodule_dep = dependency('gmodule-2.0', version: glib_ver)
 gnome_desktop_dep = dependency('gnome-desktop-3.0', version: '>=3.26')
-gsettings_desktop_schemas_dep = dependency('gsettings-desktop-schemas')
+gsettings_desktop_schemas_dep = dependency('gsettings-desktop-schemas', version: '>=42')
 gtk_dep = dependency('gtk+-3.0', version: '>=3.22')
 gtk_wayland_dep = dependency('gtk+-wayland-3.0', version: '>=3.22')
 gudev_dep = dependency('gudev-1.0')
@@ -201,6 +201,7 @@ config_h.set_quoted('GETTEXT_PACKAGE', 'phosh')
 config_h.set_quoted('LOCALEDIR', localedir)
 config_h.set_quoted('PHOSH_PLUGINS_DIR', plugins_dir)
 config_h.set_quoted('PHOSH_VERSION', meson.project_version())
+config_h.set('PHOSH_ANIMATION_SLOWDOWN', get_option('animation-slowdown'))
 config_h.set('HAVE_RFKILL_EVENT_EXT', have_rfkill_event_ext)
 config_h.set('PHOSH_HAVE_MEMFD_CREATE', have_memfd_create,
              description: 'Whether we have memdfd_create on Linux')
@@ -243,6 +244,7 @@ summary({
     'Manual pages': get_option('man'),
     'Tools': get_option('tools'),
     'Lockscreen Plugins': get_option('lockscreen-plugins'),
+    'Animation slowdown': get_option('animation-slowdown'),
   },
   bool_yn: true,
   section: 'Build',

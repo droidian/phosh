@@ -54,10 +54,14 @@ static guint signals[N_SIGNALS];
  *     Gio told us it spawned the process
  * PHOSH_APP_TRACKER_STATE_FLAG_DBUS_LAUNCH: app launch seen on DBus via
  *     org.gtk.gio.DesktopAppInfo
- * PHOSH_APP_TRACKER_STATE_FLAG_WL_LAUNCH: startup id seen via gtk_shell1's notify_launch
- *     Sent by launcher to indicate launch. GTK specific.
- * PHOSH_APP_TRACKER_STATE_FLAG_WL_STARTUP_ID: startup id seen via gtk_shell1's set_startup_id
- *     Sent by launchee. This indicates startup is complete. GTK specific.
+ * PHOSH_APP_TRACKER_STATE_FLAG_WL_LAUNCH: Startup id sent by launcher seen.
+ *     The compositor got notified by the launcher about the launchee's startup id.
+ *     This happens via the xdg-activation or the GTK specific gtk_shell1 protocol.
+ *     The compositor then notifies phosh via the phosh-private wayland protocol.
+ * PHOSH_APP_TRACKER_STATE_FLAG_WL_STARTUP_ID: Startup id sent by launchee seen.
+ *     The launchee is up and notified the compositor via it's startup id.
+ *     This happens via the xdg-activation or the GTK specific gtk_shell1 protocol.
+ *     The compositor then notifies phosh via the phosh-private wayland protocol.
  */
 typedef enum {
   PHOSH_APP_TRACKER_STATE_FLAG_UNKNOWN         = 0,
@@ -306,17 +310,9 @@ on_app_launched (PhoshAppTracker   *self,
 {
   g_autofree gchar *startup_id = NULL;
   PhoshAppState *state;
-  const char *msg;
   gint32 pid;
 
   g_return_if_fail (G_IS_DESKTOP_APP_INFO (info));
-
-  /* Older glib don't have "launch-started" so fake this until we can require 2.72.0 */
-  msg = glib_check_version (2, 71, 0);
-  if (msg) {
-    g_debug ("Faking `launch-started` signal: %s", msg);
-    on_app_launch_started (self, info, platform_data, context);
-  }
 
   /* Application doesn't handle startup notifications */
   if (!g_desktop_app_info_get_boolean (info, "StartupNotify"))
@@ -667,12 +663,10 @@ phosh_app_tracker_launch_app_info (PhoshAppTracker *self, GAppInfo *info)
   context = gdk_display_get_app_launch_context (gdk_display_get_default ());
   g_object_ref (context);
 
-  if (glib_check_version (2, 71, 0) == NULL) {
-    g_signal_connect_swapped (G_APP_LAUNCH_CONTEXT (context),
-                              "launch-started",
-                              G_CALLBACK (on_app_launch_started),
-                              self);
-  }
+  g_signal_connect_swapped (G_APP_LAUNCH_CONTEXT (context),
+                            "launch-started",
+                            G_CALLBACK (on_app_launch_started),
+                            self);
   g_signal_connect_swapped (G_APP_LAUNCH_CONTEXT (context),
                             "launched",
                             G_CALLBACK (on_app_launched),
