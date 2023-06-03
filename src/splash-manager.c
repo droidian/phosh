@@ -200,16 +200,6 @@ gsettings_color_scheme_changed_cb (PhoshSplashManager *self)
 
 
 static void
-gsettings_gtk_theme_changed_cb (PhoshSplashManager *self)
-{
-  g_autofree char *theme = NULL;
-
-  theme = g_settings_get_string (self->interface_settings, "gtk-theme");
-  self->prefer_dark = (g_strcmp0 (theme, "Adwaita-dark") == 0);
-}
-
-
-static void
 phosh_splash_manager_constructed (GObject *object)
 {
   PhoshSplashManager *self = PHOSH_SPLASH_MANAGER (object);
@@ -284,22 +274,13 @@ phosh_splash_manager_init (PhoshSplashManager *self)
 
   schema = g_settings_schema_source_lookup (source, "org.gnome.desktop.interface", TRUE);
   /* Treat value as optional until we can depend on released gsettings-desktop-schmeas */
-  if (schema) {
-      self->interface_settings = g_settings_new ("org.gnome.desktop.interface");
-
-      if (g_settings_schema_has_key (schema, "color-scheme")) {
-        gsettings_color_scheme_changed_cb (self);
-        g_signal_connect_swapped (self->interface_settings,
-                                  "changed::color-scheme",
-                                  G_CALLBACK (gsettings_color_scheme_changed_cb),
-                                  self);
-      } else if (G_LIKELY (g_settings_schema_has_key (schema, "gtk-theme"))) {
-        gsettings_gtk_theme_changed_cb (self);
-        g_signal_connect_swapped (self->interface_settings,
-                                  "changed::gtk-theme",
-                                  G_CALLBACK (gsettings_gtk_theme_changed_cb),
-                                  self);
-      }
+  if (schema && g_settings_schema_has_key (schema, "color-scheme")) {
+    self->interface_settings = g_settings_new ("org.gnome.desktop.interface");
+    gsettings_color_scheme_changed_cb (self);
+    g_signal_connect_swapped (self->interface_settings,
+                              "changed::color-scheme",
+                              G_CALLBACK (gsettings_color_scheme_changed_cb),
+                              self);
   }
 
 }
