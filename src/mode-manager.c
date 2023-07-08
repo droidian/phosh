@@ -401,6 +401,19 @@ on_kbdbacklight_set (PhoshDBusKbdBacklight *kbdbacklight_proxy,
   g_object_unref (self);
 }
 
+static void
+update_keypad_backlight_enabled (PhoshModeManager *self,
+                                 gboolean         enabled)
+{
+  /* TODO: Remove once implemented in stated */
+  if (self->kbdbacklight_proxy) {
+    phosh_dbus_kbd_backlight_call_set_brightness (self->kbdbacklight_proxy,
+                                                  enabled,
+                                                  NULL,
+                                                  (GAsyncReadyCallback) on_kbdbacklight_set,
+                                                  g_object_ref (self));
+  }
+}
 
 static void
 update_keypad_state (PhoshModeManager *self,
@@ -424,14 +437,7 @@ update_keypad_state (PhoshModeManager *self,
     break;
   }
 
-  /* TODO: Remove once implemented in stated */
-  if (self->kbdbacklight_proxy) {
-      phosh_dbus_kbd_backlight_call_set_brightness (self->kbdbacklight_proxy,
-                                                    self->keypad_open ? 1 : 0,
-                                                    NULL,
-                                                    (GAsyncReadyCallback) on_kbdbacklight_set,
-                                                    g_object_ref (self));
-  }
+  update_keypad_backlight_enabled (self, self->keypad_open);
 }
 
 static gboolean
@@ -461,6 +467,23 @@ on_switch_event (void *data,
   }
 }
 
+static void
+on_shell_state_changed (PhoshModeManager *self,
+                        GParamSpec       *pspec,
+                        PhoshShell       *shell)
+{
+  PhoshShellStateFlags state;
+
+  g_return_if_fail (PHOSH_IS_MODE_MANAGER (self));
+  g_return_if_fail (PHOSH_IS_SHELL (shell));
+
+  state = phosh_shell_get_state (shell);
+
+  if (self->keypad_open) {
+    update_keypad_backlight_enabled (self, !(state & PHOSH_STATE_BLANKED));
+  }
+}
+
 static const struct phosh_private_listener phoc_switch_event_listener = {
   on_switch_event,
 };
@@ -479,6 +502,11 @@ phosh_mode_manager_constructed (GObject *object)
   self->keypad_open = FALSE;
 
   self->kbdbacklight_proxy = NULL; /* TODO: Remove once implemented in stated */
+  g_signal_connect_object (phosh_shell_get_default (),
+                           "notify::shell-state",
+                           G_CALLBACK (on_shell_state_changed),
+                           self,
+                           G_CONNECT_SWAPPED);
 
   phosh_private_add_listener (phosh_wayland_get_phosh_private (wl),
                               &phoc_switch_event_listener,
