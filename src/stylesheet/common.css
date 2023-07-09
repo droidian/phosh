@@ -21,10 +21,21 @@ phosh-top-panel .indicators {
   font-feature-settings: "tnum";
 }
 
-phosh-top-panel .phosh-topbar-clock{
+phosh-top-panel .phosh-topbar-clock {
   font-size: 16px;
 }
-phosh-top-panel .phosh-topbar-date{
+
+/* When moved to the left because of a cutout */
+phosh-top-panel .phosh-topbar-clock.left {
+  padding-right: 6px;
+}
+
+/* When moved to the right because of a cutout */
+phosh-top-panel .phosh-topbar-clock.right {
+  padding-left: 6px;
+}
+
+phosh-top-panel .phosh-topbar-date {
   font-size: 14px;
 }
 
@@ -108,6 +119,50 @@ phosh-top-panel .phosh-topbar-date{
 
 #phosh_quick_settings flowboxchild:focus {
   outline: none;
+}
+
+/*
+ * Volume slider in settings
+ */
+phosh-gvc-channel-bar image {
+  -gtk-icon-style: symbolic;
+}
+
+phosh-gvc-channel-bar scale {
+  padding-right: 4px;
+}
+
+/* Toggle buttions to open details in settings */
+button.phosh-settings-details,
+button.phosh-settings-details:focus {
+  background: none;
+}
+
+/* Listboxes in settings */
+.phosh-settings-list-box {
+  border-radius: 18px;
+  padding: 12px;
+  border: none;
+  background-color: @phosh_notification_bg_color;
+}
+
+.phosh-settings-list-box list {
+  background-color: transparent;
+}
+
+.phosh-settings-list-box separator {
+  background: @phosh_borders_color;
+}
+
+/*
+ * Audio devices listbox
+ */
+.phosh-gear-button {
+  border-radius: 99px;
+}
+
+phosh-audio-device-row image {
+  -gtk-icon-style: symbolic;
 }
 
 /*
@@ -262,11 +317,11 @@ phosh-lockscreen,
   font-weight: 400;
 }
 
-.p-large #phosh-lockscreen-clock {
+#phosh-lockscreen-clock {
   font-size: 84px;
   transition: 200ms ease;
 }
-.p-large #phosh-lockscreen-date {
+#phosh-lockscreen-date {
   font-size: 18px;
   transition: 200ms ease;
 }
@@ -551,7 +606,7 @@ phosh-notification-banner .notification-container {
 
 /* Notification Tray */
 .phosh-notification-tray {
-  padding-bottom: 48px;
+  padding-bottom: 12px;
 }
 
 .phosh-notification-tray,
@@ -582,6 +637,15 @@ phosh-notification-banner .notification-container {
 /* Clear notifications button */
 #phosh-notifications-clear-all-btn {
   border-radius: 99px;
+}
+
+/* Call notifications */
+phosh-call-notification {
+  padding: 12px;
+  color: @phosh_fg_color;
+  border-radius: 12px;
+  border: none;
+  background-color: @phosh_notification_bg_color;
 }
 
 /*
@@ -626,6 +690,33 @@ phosh-notification-banner .notification-container {
 
 .phosh-fader-screenshot-opaque {
   background: rgba(255, 255, 255, 0);
+}
+
+/* Theme change fader */
+@keyframes phosh-fader-theme-to-hc-keyframe {
+  from {background:rgba(0, 0, 0, 0);}
+  to {background:rgba(255, 255, 255, 1.0);}
+}
+
+.phosh-fader-theme-to-hc {
+  animation-name: phosh-fader-theme-to-hc-keyframe;
+  animation-duration: 100ms;
+  animation-timing-function: ease-out;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
+}
+
+@keyframes phosh-fader-theme-from-hc-keyframe {
+  from {background:rgba(255, 255, 255, 0);}
+  to {background:rgba(0, 0, 0, 1.0);}
+}
+
+.phosh-fader-theme-from-hc {
+  animation-name: phosh-fader-theme-from-hc-keyframe;
+  animation-duration: 100ms;
+  animation-timing-function: ease-out;
+  animation-iteration-count: 1;
+  animation-fill-mode: forwards;
 }
 
 /*

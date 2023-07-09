@@ -14,6 +14,7 @@
 
 #include "phosh-config.h"
 
+#include "layout-manager.h"
 #include "shell.h"
 #include "session-manager.h"
 #include "settings.h"
@@ -59,18 +60,23 @@ typedef struct _PhoshTopPanel {
   PhoshTopPanelState state;
   gboolean           on_lockscreen;
 
+  GtkWidget *box;            /* main content box */
+
   /* Top row above settings */
   GtkWidget *btn_power;
   GtkWidget *menu_system;
+  GtkWidget *box_clock;
   GtkWidget *btn_lock;
   GtkWidget *lbl_clock2;
   GtkWidget *lbl_date;
 
   GtkWidget *stack;
   GtkWidget *arrow;
-  GtkWidget *box;            /* main content box */
+
+  GtkWidget *box_top_bar;
   GtkWidget *lbl_clock;      /* top-bar clock */
   GtkWidget *lbl_lang;
+
   GtkWidget *settings;       /* settings menu */
   GtkWidget *batteryinfo;
 
@@ -188,6 +194,19 @@ on_restart_action (GSimpleAction *action,
   g_return_if_fail (PHOSH_IS_SESSION_MANAGER (sm));
 
   phosh_session_manager_reboot (sm);
+  phosh_top_panel_fold (self);
+}
+
+
+static void
+on_suspend_action (GSimpleAction *action,
+                    GVariant      *parameter,
+                    gpointer       data)
+{
+  PhoshTopPanel *self = PHOSH_TOP_PANEL(data);
+  g_return_if_fail (PHOSH_IS_TOP_PANEL (self));
+  g_action_group_activate_action (G_ACTION_GROUP (phosh_shell_get_default ()),
+                                  "suspend.trigger-suspend", NULL);
   phosh_top_panel_fold (self);
 }
 
@@ -472,6 +491,7 @@ on_drag_state_changed (PhoshTopPanel *self)
 static GActionEntry entries[] = {
   { .name = "poweroff", .activate = on_shutdown_action },
   { .name = "restart", .activate = on_restart_action },
+  { .name = "suspend", .activate = on_suspend_action },
   { .name = "lockscreen", .activate = on_lockscreen_action },
   { .name = "logout", .activate = on_logout_action },
 };
@@ -482,6 +502,7 @@ phosh_top_panel_constructed (GObject *object)
 {
   PhoshTopPanel *self = PHOSH_TOP_PANEL (object);
   GdkDisplay *display = gdk_display_get_default ();
+  g_autoptr (GSettings) phosh_settings = g_settings_new ("sm.puri.phosh");
 
   G_OBJECT_CLASS (phosh_top_panel_parent_class)->constructed (object);
 
@@ -540,10 +561,6 @@ phosh_top_panel_constructed (GObject *object)
                     "key-press-event",
                     G_CALLBACK (on_key_press_event),
                     NULL);
-  g_signal_connect_swapped (self->settings,
-                            "setting-done",
-                            G_CALLBACK (phosh_top_panel_fold),
-                            self);
 
   self->actions = g_simple_action_group_new ();
   gtk_widget_insert_action_group (GTK_WIDGET (self), "panel",
@@ -556,6 +573,13 @@ phosh_top_panel_constructed (GObject *object)
                                                   "logout");
     g_simple_action_set_enabled (G_SIMPLE_ACTION(action), FALSE);
   }
+
+  g_settings_bind (phosh_settings,
+                   "enable-suspend",
+                   g_action_map_lookup_action(G_ACTION_MAP (self->actions), "suspend"),
+                   "enabled",
+                   G_SETTINGS_BIND_GET);
+                   
 
   self->interface_settings = g_settings_new ("org.gnome.desktop.interface");
   g_settings_bind (self->interface_settings,
@@ -682,31 +706,91 @@ phosh_top_panel_class_init (PhoshTopPanelClass *klass)
   gtk_widget_class_set_template_from_resource (widget_class,
                                                "/sm/puri/phosh/ui/top-panel.ui");
   gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, arrow);
-  gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, menu_system);
-  gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, btn_power);
-  gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, btn_lock);
   gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, batteryinfo);
+  gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, box);
+  gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, box_clock);
+  gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, box_top_bar);
+  gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, btn_lock);
+  gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, btn_power);
+  gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, click_gesture);
   gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, lbl_clock);
   gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, lbl_clock2);
   gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, lbl_date);
   gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, lbl_lang);
-  gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, box);
-  gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, stack);
+  gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, menu_system);
   gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, settings);
-  gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, click_gesture);
+  gtk_widget_class_bind_template_child (widget_class, PhoshTopPanel, stack);
   gtk_widget_class_bind_template_callback (widget_class, on_settings_drag_handle_offset_changed);
+  gtk_widget_class_bind_template_callback (widget_class, phosh_top_panel_fold);
   gtk_widget_class_bind_template_callback (widget_class, released_cb);
+}
+
+
+static void
+set_clock_position (PhoshTopPanel *self, PhoshLayoutManager *layout_manager)
+{
+  PhoshLayoutClockPosition pos;
+  guint top_margin = 0;
+
+  pos = phosh_layout_manager_get_clock_pos (layout_manager);
+
+  /* Top-bar clock */
+  gtk_container_remove (GTK_CONTAINER (self->box_top_bar), self->lbl_clock);
+  phosh_util_toggle_style_class (self->lbl_clock, "left", FALSE);
+  phosh_util_toggle_style_class (self->lbl_clock, "right", FALSE);
+
+  switch (pos) {
+  case PHOSH_LAYOUT_CLOCK_POS_LEFT:
+    gtk_box_pack_start (GTK_BOX (self->box_top_bar), self->lbl_clock, FALSE, FALSE, 0);
+    gtk_box_reorder_child (GTK_BOX (self->box_top_bar), self->lbl_clock, 0);
+    phosh_util_toggle_style_class (self->lbl_clock, "left", TRUE);
+    top_margin = phosh_layout_manager_get_clock_shift (layout_manager);
+    break;
+  case PHOSH_LAYOUT_CLOCK_POS_RIGHT:
+    gtk_box_pack_end (GTK_BOX (self->box_top_bar), self->lbl_clock, FALSE, FALSE, 0);
+    gtk_box_reorder_child (GTK_BOX (self->box_top_bar), self->lbl_clock, 1);
+    phosh_util_toggle_style_class (self->lbl_clock, "right", TRUE);
+    top_margin = phosh_layout_manager_get_clock_shift (layout_manager);
+    break;
+  case PHOSH_LAYOUT_CLOCK_POS_CENTER:
+    gtk_box_set_center_widget (GTK_BOX (self->box_top_bar), self->lbl_clock);
+    break;
+  default:
+    g_assert_not_reached ();
+  }
+
+  /* Shift down settings menu clock */
+  gtk_widget_set_margin_top (self->box_clock, top_margin);
+}
+
+static void
+on_layout_changed (PhoshTopPanel *self, PhoshLayoutManager *layout_manager)
+{
+  g_return_if_fail (PHOSH_IS_TOP_PANEL (self));
+  g_return_if_fail (PHOSH_IS_LAYOUT_MANAGER (layout_manager));
+
+  set_clock_position (self, layout_manager);
 }
 
 
 static void
 phosh_top_panel_init (PhoshTopPanel *self)
 {
+  PhoshLayoutManager *layout_manager;
+
   gtk_widget_init_template (GTK_WIDGET (self));
 
   self->state = PHOSH_TOP_PANEL_STATE_FOLDED;
   self->kb_settings = g_settings_new (KEYBINDINGS_SCHEMA_ID);
   g_signal_connect (self, "configure-event", G_CALLBACK (on_configure_event), NULL);
+
+  layout_manager = phosh_shell_get_layout_manager (phosh_shell_get_default ());
+  g_signal_connect_object (layout_manager,
+                           "layout-changed",
+                           G_CALLBACK (on_layout_changed),
+                           self,
+                           G_CONNECT_SWAPPED);
+  on_layout_changed (self, layout_manager);
 }
 
 
@@ -714,14 +798,13 @@ GtkWidget *
 phosh_top_panel_new (struct zwlr_layer_shell_v1          *layer_shell,
                      struct zphoc_layer_shell_effects_v1 *layer_shell_effects,
                      struct wl_output                    *wl_output,
-                     guint32                              layer,
-                     int                                  height)
+                     guint32                              layer)
 {
   return g_object_new (PHOSH_TYPE_TOP_PANEL,
                        /* layer-surface */
                        "layer-shell", layer_shell,
                        "wl-output", wl_output,
-                       "height", height,
+                       "height", PHOSH_TOP_PANEL_HEIGHT,
                        "anchor", ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP |
                                  ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT |
                                  ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT,
