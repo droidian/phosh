@@ -13,6 +13,7 @@ phosh_resources = gnome.compile_resources(
 )
 
 phosh_enum_headers = files(
+  'animation.h',
   'app-grid-button.h',
   'drag-surface.h',
   'gnome-shell-manager.h',
@@ -89,6 +90,8 @@ libphosh_tool_sources = files(
   'call.h',
   'calls-manager.c',
   'calls-manager.h',
+  'call-notification.c',
+  'call-notification.h',
   'clamp.c',
   'clamp.h',
   'connectivity-info.c',
@@ -218,6 +221,8 @@ libphosh_sources = files(
   'keyboard-events.h',
   'idle-manager.c',
   'idle-manager.h',
+  'layout-manager.c',
+  'layout-manager.h',
   'location-info.c',
   'location-info.h',
   'location-manager.c',
@@ -300,6 +305,7 @@ phosh_deps = [
   gio_unix_dep,
   glib_dep,
   gmodule_dep,
+  gmobile_dep,
   gnome_desktop_dep,
   gobject_dep,
   gsettings_desktop_schemas_dep,

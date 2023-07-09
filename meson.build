@@ -1,5 +1,5 @@
 project('phosh', 'c',
-          version: '0.28.0',
+          version: '0.29.0',
           license: 'GPL-3.0-or-later',
     meson_version: '>= 0.54.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
@@ -128,7 +128,6 @@ libgvc = subproject('gvc',
     'pkglibdir=' + pkglibdir,
     'static=true',
     'introspection=false',
-    'with-droidian-extensions=true',
     'alsa=false'
   ])
 libgvc_dep = libgvc.get_variable('libgvc_dep')
