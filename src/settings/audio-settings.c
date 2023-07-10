@@ -545,6 +545,9 @@ phosh_audio_settings_init (PhoshAudioSettings *self)
   g_object_bind_property (self->phone_vol_bar, "visible",
                           self->output_vol_bar, "visible",
                           G_BINDING_INVERT_BOOLEAN);
+  g_object_bind_property (self->phone_vol_bar, "visible",
+                          self->toggle_audio_details, "sensitive",
+                          G_BINDING_INVERT_BOOLEAN);
   /* End phone stream handling */
 }
 
