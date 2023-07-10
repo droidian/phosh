@@ -190,6 +190,7 @@ libgvc = subproject(
     'static=true',
     'introspection=false',
     'alsa=false',
+    'with-droidian-extensions=true',
   ],
 )
 libgvc_dep = libgvc.get_variable('libgvc_dep')
