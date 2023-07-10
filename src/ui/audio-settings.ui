@@ -16,6 +16,12 @@
               </object>
             </child>
             <child>
+              <object class="GvcChannelBar" id="phone_vol_bar">
+                <property name="visible">False</property>
+                <property name="icon-name">call-start-symbolic</property>
+              </object>
+            </child>
+            <child>
               <object class="GtkToggleButton" id="toggle_audio_details">
                 <property name="visible">True</property>
                 <property name="margin-left">6</property>

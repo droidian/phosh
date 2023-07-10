@@ -46,10 +46,12 @@ struct _PhoshAudioSettings {
 
   /* Volume slider */
   GvcMixerStream    *output_stream;
+  GvcMixerStream    *phone_stream;
   gboolean           allow_volume_above_100_percent;
   gboolean           setting_volume;
   gboolean           is_headphone;
   GtkWidget         *output_vol_bar;
+  GtkWidget         *phone_vol_bar;
 
   /* Device select */
   GtkWidget         *stack_audio_details;
@@ -63,6 +65,116 @@ struct _PhoshAudioSettings {
 };
 G_DEFINE_TYPE (PhoshAudioSettings, phosh_audio_settings, GTK_TYPE_BIN)
 
+/* Phone stream handling */
+
+static void
+phone_vol_bar_value_changed_cb (GvcChannelBar *bar, PhoshAudioSettings *self)
+{
+  double volume, rounded;
+  g_autofree char *name = NULL;
+
+  volume = gvc_channel_bar_get_volume (bar);
+  rounded = round (volume);
+
+  g_object_get (self->phone_vol_bar, "name", &name, NULL);
+  g_debug ("Setting phone stream volume %lf (rounded: %lf) for bar '%s'", volume, rounded, name);
+
+  g_return_if_fail (self->phone_stream);
+  if (gvc_mixer_stream_set_volume (self->phone_stream, (pa_volume_t) rounded) != FALSE)
+    gvc_mixer_stream_push_volume (self->phone_stream);
+
+  gvc_mixer_stream_change_is_muted (self->phone_stream, (int) rounded == 0);
+}
+
+static void
+update_phone_vol_bar (PhoshAudioSettings *self)
+{
+  GtkAdjustment *adj;
+
+  self->setting_volume = TRUE;
+  gvc_channel_bar_set_base_volume (GVC_CHANNEL_BAR (self->phone_vol_bar),
+                                   gvc_mixer_stream_get_base_volume (self->phone_stream));
+  adj = GTK_ADJUSTMENT (gvc_channel_bar_get_adjustment (GVC_CHANNEL_BAR (self->phone_vol_bar)));
+  g_debug ("Adjusting phone volume to %d", gvc_mixer_stream_get_volume (self->phone_stream));
+  gtk_adjustment_set_value (adj, gvc_mixer_stream_get_volume (self->phone_stream));
+  self->setting_volume = FALSE;
+}
+
+
+static void
+phone_stream_notify_is_muted_cb (GvcMixerStream *stream, GParamSpec *pspec, gpointer data)
+{
+  PhoshAudioSettings *self = PHOSH_AUDIO_SETTINGS (data);
+  gboolean muted;
+  
+  muted = gvc_mixer_stream_get_is_muted (stream);
+  if (!self->setting_volume) {
+    gvc_channel_bar_set_is_muted (GVC_CHANNEL_BAR (self->phone_vol_bar), muted);
+    if (!muted)
+      update_phone_vol_bar (self);   
+  }
+}
+
+
+static void
+phone_stream_notify_volume_cb (GvcMixerStream *stream, GParamSpec *pspec, gpointer data)
+{
+  PhoshAudioSettings *self = PHOSH_AUDIO_SETTINGS (data);
+
+  if (!self->setting_volume)
+    update_phone_vol_bar (self);
+}
+
+
+static void
+mixer_control_phone_stream_added_cb (GvcMixerControl    *mixer,
+                                     guint               id,
+                                     PhoshAudioSettings *self)
+{
+  g_debug ("Phone stream added: %d", id);
+
+  g_return_if_fail (PHOSH_IS_AUDIO_SETTINGS (self));
+
+  if (self->phone_stream)
+    /* There can be only one */
+    g_signal_handlers_disconnect_by_data (self->phone_stream, self);
+
+  g_set_object (&self->phone_stream,
+                gvc_mixer_control_lookup_stream_id (self->mixer_control, id));
+  g_return_if_fail (self->phone_stream);
+
+  g_signal_connect_object (self->phone_stream,
+                           "notify::volume",
+                           G_CALLBACK (phone_stream_notify_volume_cb),
+                           self, 0);
+
+  g_signal_connect_object (self->phone_stream,
+                           "notify::is-muted",
+                           G_CALLBACK (phone_stream_notify_is_muted_cb),
+                           self, 0);
+
+  gtk_widget_show (self->phone_vol_bar);
+  update_phone_vol_bar (self);
+}
+
+
+static void
+mixer_control_phone_stream_removed_cb (GvcMixerControl    *mixer,
+                                       guint               id,
+                                       PhoshAudioSettings *self)
+{
+  g_debug ("Phone stream removed: %d", id);
+
+  g_return_if_fail (PHOSH_IS_AUDIO_SETTINGS (self));
+
+  gtk_widget_hide (self->phone_vol_bar);
+
+  g_signal_handlers_disconnect_by_data (self->phone_stream, self);
+
+  g_clear_object (&self->phone_stream);
+}
+
+/* End phone stream handling */
 
 static void
 update_output_vol_bar (PhoshAudioSettings *self)
@@ -295,6 +407,10 @@ phosh_audio_settings_dispose (GObject *object)
   g_clear_object (&self->audio_output_devices);
   g_clear_object (&self->audio_input_devices);
 
+  /* Phone stream handling */
+  g_clear_object (&self->phone_stream);
+  /* End phone stream handling */
+  
   G_OBJECT_CLASS (phosh_audio_settings_parent_class)->dispose (object);
 }
 
@@ -341,6 +457,7 @@ phosh_audio_settings_class_init (PhoshAudioSettingsClass *klass)
   gtk_widget_class_bind_template_child (widget_class, PhoshAudioSettings, listbox_audio_input_devices);
   gtk_widget_class_bind_template_child (widget_class, PhoshAudioSettings, listbox_audio_output_devices);
   gtk_widget_class_bind_template_child (widget_class, PhoshAudioSettings, output_vol_bar);
+  gtk_widget_class_bind_template_child (widget_class, PhoshAudioSettings, phone_vol_bar);
   gtk_widget_class_bind_template_child (widget_class, PhoshAudioSettings, stack_audio_details);
   gtk_widget_class_bind_template_child (widget_class, PhoshAudioSettings, toggle_audio_details);
 
@@ -411,6 +528,24 @@ phosh_audio_settings_init (PhoshAudioSettings *self)
   g_object_bind_property (self->audio_input_devices, "has-devices",
                           self->box_audio_input_devices, "visible",
                           G_BINDING_DEFAULT | G_BINDING_SYNC_CREATE);
+  
+  /* Phone stream handling */
+  g_signal_connect (self->phone_vol_bar,
+                    "value-changed",
+                    G_CALLBACK (phone_vol_bar_value_changed_cb),
+                    self);
+  g_signal_connect (self->mixer_control,
+                    "phone-stream-added",
+                    G_CALLBACK (mixer_control_phone_stream_added_cb),
+                    self);
+  g_signal_connect (self->mixer_control,
+                    "phone-stream-removed",
+                    G_CALLBACK (mixer_control_phone_stream_removed_cb),
+                    self);
+  g_object_bind_property (self->phone_vol_bar, "visible",
+                          self->output_vol_bar, "visible",
+                          G_BINDING_INVERT_BOOLEAN);
+  /* End phone stream handling */
 }
 
 
