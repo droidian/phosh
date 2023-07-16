@@ -255,7 +255,8 @@ static void
 on_powerbar_pressed (PhoshHome *self, PhoshOskManager *osk, PhoshShell *shell)
 {
   gboolean osk_is_available, osk_current_state, osk_new_state;
-
+ 
+  PhoshDragSurfaceState drag_state = phosh_drag_surface_get_drag_state (PHOSH_DRAG_SURFACE (self));
   g_return_if_fail (PHOSH_IS_HOME (self));
   shell = phosh_shell_get_default ();
   self->osk = phosh_shell_get_osk_manager (shell);
@@ -263,8 +264,6 @@ on_powerbar_pressed (PhoshHome *self, PhoshOskManager *osk, PhoshShell *shell)
   osk_is_available = phosh_osk_manager_get_available (self->osk);
   osk_current_state = phosh_osk_manager_get_visible (self->osk);
   osk_new_state = osk_current_state;
-
-  PhoshDragSurfaceState drag_state = phosh_drag_surface_get_drag_state (PHOSH_DRAG_SURFACE (self));
 
   gtk_gesture_set_state ((self->click_gesture), GTK_EVENT_SEQUENCE_DENIED);
 
