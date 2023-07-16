@@ -156,9 +156,12 @@ update_drag_handle (PhoshHome *self, gboolean commit)
   PhoshDragSurfaceState drag_state = phosh_drag_surface_get_drag_state (PHOSH_DRAG_SURFACE (self));
 
   /* reset powerbar gesture when dragging */
-  gtk_gesture_set_state ((self->osk_toggle_long_press), GTK_EVENT_SEQUENCE_DENIED);
-  gtk_gesture_set_state ((self->osk_toggle_long_press), GTK_EVENT_SEQUENCE_NONE);
-
+  if (gtk_gesture_get_sequence_state (self->osk_toggle_long_press) == GTK_EVENT_SEQUENCE_DENIED) {
+    gtk_gesture_set_state ((self->osk_toggle_long_press), GTK_EVENT_SEQUENCE_NONE);
+  else 
+    gtk_gesture_set_state ((self->osk_toggle_long_press), GTK_EVENT_SEQUENCE_DENIED);
+  }
+  
   /* Update the handle's arrow and dragability */
   if (phosh_overview_has_running_activities (PHOSH_OVERVIEW (self->overview)) == FALSE &&
     self->state == PHOSH_HOME_STATE_UNFOLDED && drag_state != PHOSH_DRAG_SURFACE_STATE_DRAGGED) {
