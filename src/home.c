@@ -146,7 +146,7 @@ phosh_home_get_property (GObject *object,
 
 
 static void
-update_drag_handle (PhoshHome *self, GdkEventSequence *sequence, gboolean commit)
+update_drag_handle (PhoshHome *self, gboolean commit)
 {
   gboolean success;
   gint handle = 0;
