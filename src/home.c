@@ -161,7 +161,7 @@ update_drag_handle (PhoshHome *self, gboolean commit)
     gtk_gesture_set_state ((self->osk_toggle_long_press), GTK_EVENT_SEQUENCE_DENIED);
     g_warning ("disabling long press");
   } else {
-    gtk_gesture_set_state ((self->osk_toggle_long_press), GTK_EVENT_SEQUENCE_CLAIMED);
+    gtk_gesture_set_state ((self->osk_toggle_long_press), GTK_EVENT_SEQUENCE_NONE);
   }
 
   /* Update the handle's arrow and dragability */
