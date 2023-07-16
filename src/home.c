@@ -155,8 +155,9 @@ update_drag_handle (PhoshHome *self, gboolean commit)
   PhoshDragSurfaceDragMode drag_mode = PHOSH_DRAG_SURFACE_DRAG_MODE_HANDLE;
   PhoshDragSurfaceState drag_state = phosh_drag_surface_get_drag_state (PHOSH_DRAG_SURFACE (self));
 
-  /* disable powerbar gesture when dragging */
+  /* reset powerbar gesture when dragging */
   gtk_gesture_set_state ((self->osk_toggle_long_press), GTK_EVENT_SEQUENCE_DENIED);
+  gtk_gesture_set_state ((self->osk_toggle_long_press), GTK_EVENT_SEQUENCE_NONE);
 
   /* Update the handle's arrow and dragability */
   if (phosh_overview_has_running_activities (PHOSH_OVERVIEW (self->overview)) == FALSE &&
@@ -240,6 +241,7 @@ powerbar_action_ended (PhoshHome *self)
 {
   g_debug ("powerbar action ended");
   phosh_util_toggle_style_class (self->stack, POWERBAR_ACTIVE_CLASS, FALSE);
+  phosh_util_toggle_style_class (self->stack, POWERBAR_FAILED_CLASS, FALSE);
 }
 
 
