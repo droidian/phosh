@@ -264,6 +264,8 @@ on_powerbar_pressed (PhoshHome *self, PhoshOskManager *osk, PhoshShell *shell)
   osk_current_state = phosh_osk_manager_get_visible (self->osk);
   osk_new_state = osk_current_state;
 
+  PhoshDragSurfaceState drag_state = phosh_drag_surface_get_drag_state (PHOSH_DRAG_SURFACE (self));
+
   gtk_gesture_set_state ((self->click_gesture), GTK_EVENT_SEQUENCE_DENIED);
 
   /*check drag state to ensure osk is not getting triggered accidently*/
