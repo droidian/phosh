@@ -172,8 +172,8 @@ update_drag_handle (PhoshHome *self, gboolean commit)
     g_warning ("enabling long press");
   }
  */
- 
-  gtk_gesture_set_state ((self->osk_toggle_long_press), GTK_EVENT_SEQUENCE_NONE);
+   gtk_gesture_set_state ((self->osk_toggle_long_press), GTK_EVENT_SEQUENCE_DENIED);
+   gtk_gesture_set_state ((self->osk_toggle_long_press), GTK_EVENT_SEQUENCE_NONE);
 
   /* Update the handle's arrow and dragability */
   if (phosh_overview_has_running_activities (PHOSH_OVERVIEW (self->overview)) == FALSE &&
