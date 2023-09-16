@@ -1,5 +1,5 @@
 project('phosh', 'c',
-          version: '0.30.0',
+          version: '0.3l.0',
           license: 'GPL-3.0-or-later',
     meson_version: '>= 0.54.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
@@ -22,6 +22,12 @@ plugins_dir = join_paths(prefix, libdir, 'phosh', 'plugins')
 plugin_prefs_dir = join_paths(prefix, libdir, 'phosh', 'plugins', 'prefs')
 servicedir = join_paths(datadir, 'dbus-1', 'services')
 schemasdir = datadir / 'glib-2.0/schemas'
+
+if prefix != '/usr'
+  sysconfdir = join_paths(prefix, get_option('sysconfdir'))
+else
+  sysconfdir = get_option('sysconfdir')
+endif
 
 glib_ver = 'GLIB_VERSION_2_72'
 
