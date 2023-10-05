@@ -106,6 +106,14 @@ phosh_home_update_home_bar (PhoshHome *self)
 
   gtk_stack_set_visible_child_name (GTK_STACK (self->stack), visible_child);
   g_debug ("switched home-bar visible child");
+
+  /* check the gesture state to see if the touch cancel is functing */
+  
+  if (gtk_gesture_get_sequence_state ((self->osk_toggle_long_press), (self->sequence)) == GTK_EVENT_SEQUENCE_DENIED) {
+        g_debug ("longpress is in denied state");
+  } else {
+        g_debug ("longpress is not denied state");
+  }
 }
 
 
