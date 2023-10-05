@@ -108,11 +108,15 @@ phosh_home_update_home_bar (PhoshHome *self)
   g_debug ("switched home-bar visible child");
 
   /* check the gesture state to see if the touch cancel is functing */
-  
+
   if (gtk_gesture_get_sequence_state ((self->osk_toggle_long_press), (self->sequence)) == GTK_EVENT_SEQUENCE_DENIED) {
         g_debug ("longpress is in denied state");
+  } else if (gtk_gesture_get_sequence_state ((self->osk_toggle_long_press), (self->sequence)) == GTK_EVENT_SEQUENCE_NONE) {
+        g_debug ("longpress is in NONE state");
+  } else if (gtk_gesture_get_sequence_state ((self->osk_toggle_long_press), (self->sequence)) == GTK_EVENT_SEQUENCE_CLAIMED) {
+        g_debug ("longpress is in CLAIMED state");
   } else {
-        g_debug ("longpress is not denied state");
+     g_debug ("longpress is in an unknown state");
   }
 }
 
