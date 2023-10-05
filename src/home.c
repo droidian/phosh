@@ -97,7 +97,7 @@ phosh_home_update_home_bar (PhoshHome *self)
   } else {
     gtk_widget_set_visible (GTK_WIDGET (self->powerbar), FALSE);
   }
-    g_debug ("toggled powerbar visiblity ");
+  g_debug ("toggled powerbar visiblity");
 
   if (self->state == PHOSH_HOME_STATE_FOLDED &&
       drag_state != PHOSH_DRAG_SURFACE_STATE_DRAGGED) {
