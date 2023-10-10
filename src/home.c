@@ -90,7 +90,7 @@ phosh_home_update_home_bar (PhoshHome *self)
 {
   const char *visible_child = "home-bar-unfolded";
   PhoshDragSurfaceState drag_state = phosh_drag_surface_get_drag_state (PHOSH_DRAG_SURFACE (self));
-
+  /*
   if (self->state == PHOSH_HOME_STATE_FOLDED &&
       drag_state != PHOSH_DRAG_SURFACE_STATE_DRAGGED) {
     gtk_widget_set_visible (GTK_WIDGET (self->powerbar), TRUE);
@@ -106,7 +106,7 @@ phosh_home_update_home_bar (PhoshHome *self)
 
   gtk_stack_set_visible_child_name (GTK_STACK (self->stack), visible_child);
   g_debug ("switched home-bar visible child");
-
+  */
   /* check the gesture state to see if the touch cancel is functing */
 
   if (gtk_gesture_get_sequence_state ((self->osk_toggle_long_press), (self->sequence)) == GTK_EVENT_SEQUENCE_DENIED) {
@@ -279,6 +279,31 @@ powerbar_action_failed (PhoshHome *self)
   g_debug ("powerbar action failed");
   phosh_util_toggle_style_class (self->stack, POWERBAR_ACTIVE_CLASS, FALSE);
   phosh_util_toggle_style_class (self->stack, POWERBAR_FAILED_CLASS, TRUE);
+}
+
+
+static void
+powerbar_longpress_begin (PhoshHome *self)
+{
+  g_debug ("powerbar longpress began");
+}
+
+static void
+powerbar_longpress_cancel (PhoshHome *self)
+{
+  g_debug ("powerbar longpress cancel");
+}
+
+static void
+powerbar_longpress_cancelled (PhoshHome *self)
+{
+  g_debug ("powerbar longpress cancelled");
+}
+
+static void
+powerbar_longpress_end (PhoshHome *self)
+{
+  g_debug ("powerbar longpress end");
 }
 
 
@@ -637,6 +662,10 @@ phosh_home_class_init (PhoshHomeClass *klass)
   gtk_widget_class_bind_template_callback (widget_class, powerbar_action_started);
   gtk_widget_class_bind_template_callback (widget_class, powerbar_action_ended);
   gtk_widget_class_bind_template_callback (widget_class, powerbar_action_failed);
+  gtk_widget_class_bind_template_callback (widget_class, powerbar_longpress_begin);
+  gtk_widget_class_bind_template_callback (widget_class, powerbar_longpress_cancel);
+  gtk_widget_class_bind_template_callback (widget_class, powerbar_longpress_cancelled);
+  gtk_widget_class_bind_template_callback (widget_class, powerbar_longpress_end);
   gtk_widget_class_bind_template_callback (widget_class, window_key_press_event_cb);
 
   gtk_widget_class_set_css_name (widget_class, "phosh-home");

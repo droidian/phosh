@@ -96,6 +96,9 @@
   <object class="GtkGestureLongPress" id="osk_toggle_long_press">
     <property name="widget">powerbar</property>
     <signal name="pressed" handler="on_powerbar_pressed" swapped="true"/>
-    <signal name="cancelled" handler="powerbar_action_ended" swapped="true"/>
+    <signal name="cancelled" handler="powerbar_longpress_cancelled" swapped="true"/>
+    <signal name="begin" handler="powerbar_longpress_begin" swapped="true"/>
+    <signal name="cancel" handler="powerbar_longpress_cancel" swapped="true"/>
+    <signal name="end" handler="powerbar_longpress_end" swapped="true"/>
   </object>
 </interface>
