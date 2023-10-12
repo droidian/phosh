@@ -186,6 +186,7 @@ update_drag_handle (PhoshHome *self, gboolean commit)
     g_warning ("enabling long press");
   }
  */
+    gtk_event_controller_reset(GTK_EVENT_CONTROLLER(self->osk_toggle_long_press));
 
   /* Update the handle's arrow and dragability */
   if (phosh_overview_has_running_activities (PHOSH_OVERVIEW (self->overview)) == FALSE &&
