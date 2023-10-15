@@ -309,6 +309,38 @@ powerbar_longpress_end (PhoshHome *self)
 
 
 static void
+powerbar_press_gesture_begin (PhoshHome *self)
+{
+  g_debug ("powerbar pressgesture began");
+}
+
+static void
+powerbar_press_gesture_cancel (PhoshHome *self)
+{
+  g_debug ("powerbar pressgesture cancel");
+}
+static void
+powerbar_press_gesture_end (PhoshHome *self)
+{
+  g_debug ("powerbar pressgesture end");
+}
+static void
+powerbar_press_gesture_pressed (PhoshHome *self)
+{
+  g_debug ("powerbar pressgesture pressed");
+}
+static void
+powerbar_press_gesture_released (PhoshHome *self)
+{
+  g_debug ("powerbar pressgesture released");
+}
+static void
+powerbar_press_gesture_stopped (PhoshHome *self)
+{
+  g_debug ("powerbar pressgesture stopped");
+}
+
+static void
 on_powerbar_pressed (PhoshHome *self, PhoshOskManager *osk, PhoshShell *shell)
 {
   gboolean osk_is_available, osk_current_state, osk_new_state;
