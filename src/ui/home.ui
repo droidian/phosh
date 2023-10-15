@@ -90,12 +90,19 @@
   
   <object class="GtkGestureMultiPress" id="powerbar_press_gesture">
     <property name="widget">powerbar</property>
-    <signal name="pressed" handler="powerbar_action_started" swapped="true"/>
-    <signal name="stopped" handler="powerbar_action_ended" swapped="true"/>
+    <signal name="begin" handler="powerbar_press_gesture_begin" swapped="true"/>
+    <signal name="cancel" handler="powerbar_press_gesture_cancel" swapped="true"/>
+    <signal name="end" handler="powerbar_press_gesture_end" swapped="true"/>
+    <signal name="pressed" handler="powerbar_press_gesture_pressed" swapped="true"/>
+    <signal name="released" handler="powerbar_press_gesture_released" swapped="true"/>
+    <signal name="stopped" handler="powerbar_press_gesture_stopped" swapped="true"/>
   </object>
+  
   <object class="GtkGestureLongPress" id="osk_toggle_long_press">
     <property name="widget">powerbar</property>
+    <signal name="begin" handler="powerbar_action_started" swapped="true"/>
     <signal name="pressed" handler="on_powerbar_pressed" swapped="true"/>
+    <signal name="end" handler="powerbar_action_ended" swapped="true"/>
     <signal name="cancelled" handler="powerbar_longpress_cancelled" swapped="true"/>
     <signal name="begin" handler="powerbar_longpress_begin" swapped="true"/>
     <signal name="cancel" handler="powerbar_longpress_cancel" swapped="true"/>
