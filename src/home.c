@@ -23,7 +23,7 @@
 #define KEYBINDING_KEY_TOGGLE_OVERVIEW "toggle-overview"
 #define KEYBINDING_KEY_TOGGLE_APPLICATION_VIEW "toggle-application-view"
 
-#define PHOSH_HOME_DRAG_THRESHOLD 0.3
+#define PHOSH_HOME_DRAG_THRESHOLD 0
 
 #define POWERBAR_ACTIVE_CLASS "p-active"
 #define POWERBAR_FAILED_CLASS "p-failed"
