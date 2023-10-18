@@ -185,9 +185,8 @@ update_drag_handle (PhoshHome *self, gboolean commit)
     gtk_gesture_set_state ((self->osk_toggle_long_press), GTK_EVENT_SEQUENCE_NONE);
     g_warning ("enabling long press");
   }
- */
     gtk_event_controller_reset(GTK_EVENT_CONTROLLER(self->osk_toggle_long_press));
-
+  */
   /* Update the handle's arrow and dragability */
   if (phosh_overview_has_running_activities (PHOSH_OVERVIEW (self->overview)) == FALSE &&
     self->state == PHOSH_HOME_STATE_UNFOLDED && drag_state != PHOSH_DRAG_SURFACE_STATE_DRAGGED) {
@@ -355,13 +354,6 @@ on_powerbar_pressed (PhoshHome *self, PhoshOskManager *osk, PhoshShell *shell)
   osk_new_state = osk_current_state;
 
   gtk_gesture_set_state ((self->click_gesture), GTK_EVENT_SEQUENCE_DENIED);
-
-  /*check drag state to ensure osk is not getting triggered accidently */
-    
-  if (self->state != PHOSH_HOME_STATE_FOLDED ||
-      drag_state == PHOSH_DRAG_SURFACE_STATE_DRAGGED) {
-    return;
-  }
 
   if (osk_is_available) {
     osk_new_state = !osk_current_state;
@@ -699,6 +691,14 @@ phosh_home_class_init (PhoshHomeClass *klass)
   gtk_widget_class_bind_template_callback (widget_class, powerbar_longpress_cancel);
   gtk_widget_class_bind_template_callback (widget_class, powerbar_longpress_cancelled);
   gtk_widget_class_bind_template_callback (widget_class, powerbar_longpress_end);
+  
+  gtk_widget_class_bind_template_callback (widget_class, powerbar_press_gesture_begin);
+  gtk_widget_class_bind_template_callback (widget_class, powerbar_press_gesture_cancel);
+  gtk_widget_class_bind_template_callback (widget_class, powerbar_press_gesture_end);
+  gtk_widget_class_bind_template_callback (widget_class, powerbar_press_gesture_pressed);
+  gtk_widget_class_bind_template_callback (widget_class, powerbar_press_gesture_released);
+  gtk_widget_class_bind_template_callback (widget_class, powerbar_press_gesture_stopped);
+
   gtk_widget_class_bind_template_callback (widget_class, window_key_press_event_cb);
 
   gtk_widget_class_set_css_name (widget_class, "phosh-home");
