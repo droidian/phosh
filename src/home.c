@@ -23,8 +23,6 @@
 #define KEYBINDING_KEY_TOGGLE_OVERVIEW "toggle-overview"
 #define KEYBINDING_KEY_TOGGLE_APPLICATION_VIEW "toggle-application-view"
 
-#define PHOSH_HOME_DRAG_THRESHOLD 0
-
 #define POWERBAR_ACTIVE_CLASS "p-active"
 #define POWERBAR_FAILED_CLASS "p-failed"
 
@@ -739,7 +737,6 @@ phosh_home_new (struct zwlr_layer_shell_v1 *layer_shell,
                        /* drag-surface */
                        "layer-shell-effects", layer_shell_effects,
                        "exclusive", PHOSH_HOME_BUTTON_HEIGHT,
-                       "threshold", PHOSH_HOME_DRAG_THRESHOLD,
                        NULL);
 }
 
