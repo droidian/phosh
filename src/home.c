@@ -90,7 +90,7 @@ phosh_home_update_home_bar (PhoshHome *self)
 {
   const char *visible_child = "home-bar-unfolded";
   PhoshDragSurfaceState drag_state = phosh_drag_surface_get_drag_state (PHOSH_DRAG_SURFACE (self));
-  /*
+ 
   if (self->state == PHOSH_HOME_STATE_FOLDED &&
       drag_state != PHOSH_DRAG_SURFACE_STATE_DRAGGED) {
     gtk_widget_set_visible (GTK_WIDGET (self->powerbar), TRUE);
@@ -106,8 +106,8 @@ phosh_home_update_home_bar (PhoshHome *self)
 
   gtk_stack_set_visible_child_name (GTK_STACK (self->stack), visible_child);
   g_debug ("switched home-bar visible child");
-  */
-  /* check the gesture state to see if the touch cancel is functing */
+  
+  /* debug stuff: check the gesture state to see if the touch cancel is functing */
 
   if (gtk_gesture_get_sequence_state ((self->osk_toggle_long_press), (self->sequence)) == GTK_EVENT_SEQUENCE_DENIED) {
         g_debug ("longpress is in denied state");
@@ -177,16 +177,9 @@ update_drag_handle (PhoshHome *self, gboolean commit)
   PhoshDragSurfaceDragMode drag_mode = PHOSH_DRAG_SURFACE_DRAG_MODE_HANDLE;
   PhoshDragSurfaceState drag_state = phosh_drag_surface_get_drag_state (PHOSH_DRAG_SURFACE (self));
    
-  /* disable powerbar gesture when dragging
-  if (drag_state == PHOSH_DRAG_SURFACE_STATE_DRAGGED) {
-    gtk_gesture_set_state ((self->osk_toggle_long_press), GTK_EVENT_SEQUENCE_DENIED);
-    g_warning ("disabling long press");
-  } else {
-    gtk_gesture_set_state ((self->osk_toggle_long_press), GTK_EVENT_SEQUENCE_NONE);
-    g_warning ("enabling long press");
-  }
+  /* disable powerbar gesture when dragging */
     gtk_event_controller_reset(GTK_EVENT_CONTROLLER(self->osk_toggle_long_press));
-  */
+
   /* Update the handle's arrow and dragability */
   if (phosh_overview_has_running_activities (PHOSH_OVERVIEW (self->overview)) == FALSE &&
     self->state == PHOSH_HOME_STATE_UNFOLDED && drag_state != PHOSH_DRAG_SURFACE_STATE_DRAGGED) {
