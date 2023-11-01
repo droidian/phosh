@@ -114,6 +114,6 @@
     <property name="widget">powerbar</property>
     <signal name="swipe" handler="on_powerbar_swiped" />
     <signal name="begin" handler="powerbar_action_started" swapped="true"/>
-    <signal name="end" handler="powerbar_longpress_end" swapped="true"/>
+    <signal name="end" handler="powerbar_action_ended" swapped="true"/>
   </object>
 </interface>
