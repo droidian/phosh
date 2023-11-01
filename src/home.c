@@ -369,7 +369,7 @@ on_powerbar_pressed (PhoshHome *self, PhoshOskManager *osk, PhoshShell *shell)
 
 
 static void
-on_home_swiped (GtkGestureSwipe *gesture, double velocity_x, double velocity_y, gpointer user_data)
+on_powerbar_swiped (GtkGestureSwipe *gesture, double velocity_x, double velocity_y, gpointer user_data)
 {
   PhoshHome *self;
   PhoshToplevelManager *toplevel_manager;
@@ -727,7 +727,7 @@ phosh_home_class_init (PhoshHomeClass *klass)
   gtk_widget_class_bind_template_child (widget_class, PhoshHome, powerbar_press_gesture);
   gtk_widget_class_bind_template_callback (widget_class, fold_cb);
   gtk_widget_class_bind_template_callback (widget_class, on_home_released);
-  gtk_widget_class_bind_template_callback (widget_class, on_home_swiped);
+  gtk_widget_class_bind_template_callback (widget_class, on_powerbar_swiped);
   gtk_widget_class_bind_template_callback (widget_class, on_has_activities_changed);
   gtk_widget_class_bind_template_callback (widget_class, on_powerbar_pressed);
   gtk_widget_class_bind_template_callback (widget_class, powerbar_action_started);

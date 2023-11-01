@@ -111,7 +111,9 @@
   </object>
 
   <object class="GtkGestureSwipe" id="swipe_gesture">
-    <property name="widget">evbox_home</property>
-    <signal name="swipe" handler="on_home_swiped" />
+    <property name="widget">powerbar</property>
+    <signal name="swipe" handler="on_powerbar_swiped" />
+    <signal name="begin" handler="powerbar_action_started" swapped="true"/>
+    <signal name="end" handler="powerbar_longpress_end" swapped="true"/>
   </object>
 </interface>
