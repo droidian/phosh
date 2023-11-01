@@ -109,4 +109,9 @@
     <signal name="cancel" handler="powerbar_longpress_cancel" swapped="true"/>
     <signal name="end" handler="powerbar_longpress_end" swapped="true"/>
   </object>
+
+  <object class="GtkGestureSwipe" id="swipe_gesture">
+    <property name="widget">evbox_home</property>
+    <signal name="swipe" handler="on_home_swiped" />
+  </object>
 </interface>
