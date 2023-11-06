@@ -144,6 +144,8 @@ libphosh_tool_sources = files(
   'mount-operation.h',
   'overview.c',
   'overview.h',
+  'password-entry.c',
+  'password-entry.h',
   'osd-window.c',
   'osd-window.h',
   'plugin-loader.c',
@@ -357,9 +359,9 @@ if get_option('gtk_doc')
     link_with: phosh_lib,
     dependencies: phosh_deps)
 
-    phosh_gir_extra_args = [
-      '--quiet',
-    ]
+  phosh_gir_extra_args = [
+    '--quiet',
+  ]
 
   phosh_gir = gnome.generate_gir(phosh_lib,
                 sources : phosh_gir_sources,

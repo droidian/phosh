@@ -1,21 +1,28 @@
-# Turkish translation of phosh.
-# Sabri Ünal <libreajans@gmail.com>, 2023.
-# Emin Tufan Çetin <etcetin@gmail.com>, 2019, 2020, 2021, 2022, 2023.
+# Frisian translation for phosh.
+# Copyright (C) 2023 phosh's COPYRIGHT HOLDER
+# This file is distributed under the same license as the phosh package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+# Vancha March <tjipke@tutanota.com>, 2023.
 #
 msgid ""
 msgstr ""
-"Project-Id-Version: phosh\n"
+"Project-Id-Version: phosh main\n"
 "Report-Msgid-Bugs-To: https://gitlab.gnome.org/World/Phosh/phosh/issues\n"
-"POT-Creation-Date: 2023-10-27 13:22+0000\n"
-"PO-Revision-Date: 2023-10-29 08:00+0300\n"
-"Last-Translator: Emin Tufan Çetin <etcetin@gmail.com>\n"
-"Language-Team: Turkish <takim@gnome.org.tr>\n"
-"Language: tr\n"
+"POT-Creation-Date: 2023-09-06 10:56+0000\n"
+"PO-Revision-Date: 2023-09-08 12:52+0200\n"
+"Last-Translator: Vancha March <tjipke@tutanota.com>\n"
+"Language-Team: Western Frisian <gnome-fy-list@gnome.org>\n"
+"Language: fy\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=1; plural=0;\n"
-"X-Generator: Poedit 3.4\n"
+"Plural-Forms: nplurals=2; plural=(n != 1)\n"
+"X-DL-Team: fy\n"
+"X-DL-Module: phosh\n"
+"X-DL-Branch: main\n"
+"X-DL-Domain: po\n"
+"X-DL-State: None\n"
+"X-Generator: Gtranslator 42.0\n"
 
 #. Translators: this is the session name, no need to translate it
 #: data/phosh.session.desktop.in.in:4 data/wayland-sessions/phosh.desktop:3
@@ -24,57 +31,57 @@ msgstr "Phosh"
 
 #: data/sm.puri.Phosh.desktop.in.in:4 data/wayland-sessions/phosh.desktop:4
 msgid "Phone Shell"
-msgstr "Telefon Kabuğu"
+msgstr ""
 
 #: data/sm.puri.Phosh.desktop.in.in:5
 msgid "Window management and application launching for mobile"
-msgstr "Mobil için pencere yönetimi ve uygulama başlatımı"
+msgstr ""
 
 #: data/wayland-sessions/phosh.desktop:5
 msgid "This session logs you into Phosh"
-msgstr "Bu oturum sizi Phosh’a sokar"
+msgstr ""
 
 #: plugins/calendar/calendar.desktop.in.in:5
 msgid "Calendar"
-msgstr "Takvim"
+msgstr "Kalinder"
 
 #: plugins/calendar/calendar.desktop.in.in:6
 msgid "A simple calendar widget"
-msgstr "Basit takvim parçacığı"
+msgstr "In simpele kalinder widget"
 
 #: plugins/ticket-box/ticket-box.desktop.in.in:4
 #: plugins/ticket-box/ticket-box.ui:14
 msgid "Ticket Box"
-msgstr "Bilet Kutusu"
+msgstr ""
 
 #: plugins/ticket-box/ticket-box.desktop.in.in:5
 msgid "Show PDFs on the lock screen. <b>This plugin is experimental.</b>"
-msgstr "Kilit ekranında PDF göster. <b>Bu uzantı deneyseldir.</b>"
+msgstr ""
 
 #: plugins/upcoming-events/upcoming-events.desktop.in.in:4
 msgid "Upcoming Events"
-msgstr "Yaklaşan Olaylar"
+msgstr ""
 
 #: plugins/upcoming-events/upcoming-events.desktop.in.in:5
 msgid "Show upcoming calendar events"
-msgstr "Yaklaşan olayları göster"
+msgstr ""
 
 #: src/app-grid-button.c:529
 msgid "Application"
-msgstr "Uygulama"
+msgstr "Aplikaasje"
 
-#: src/app-grid.c:138
+#: src/app-grid.c:137
 msgid "Show All Apps"
-msgstr "Tüm Uygulamaları Göster"
+msgstr "Alle applikaasjes sjen litte"
 
-#: src/app-grid.c:141
+#: src/app-grid.c:140
 msgid "Show Only Mobile Friendly Apps"
-msgstr "Yalnızca Mobil Uyumluları Göster"
+msgstr ""
 
 #: src/bt-info.c:92
 msgctxt "bluetooth:enabled"
 msgid "On"
-msgstr "Açık"
+msgstr ""
 
 #: src/bt-info.c:94
 msgid "Bluetooth"
@@ -82,129 +89,132 @@ msgstr "Bluetooth"
 
 #: src/call-notification.c:61
 msgid "Unknown caller"
-msgstr "Bilinmeyen arayan"
+msgstr ""
 
 #: src/docked-info.c:81
 msgid "Docked"
-msgstr "Yuvada"
+msgstr ""
 
 #: src/docked-info.c:81 src/docked-info.c:199
 msgid "Undocked"
-msgstr "Yuvada Değil"
+msgstr ""
 
 #: src/emergency-menu.c:97 src/ui/app-auth-prompt.ui:71
 #: src/ui/end-session-dialog.ui:71
 msgid "Ok"
-msgstr "Tamam"
+msgstr ""
 
 #: src/emergency-menu.c:100
 msgid "Unable to place emergency call"
-msgstr "Acil durum araması yapılamadı"
+msgstr ""
 
 #: src/emergency-menu.c:105
 msgid "Internal error"
-msgstr "İç hata"
+msgstr ""
 
 #: src/end-session-dialog.c:163
 msgid "Log Out"
-msgstr "Oturumu Kapat"
+msgstr "Utlogge"
 
 #: src/end-session-dialog.c:166
 #, c-format
 msgid "%s will be logged out automatically in %d second."
 msgid_plural "%s will be logged out automatically in %d seconds."
-msgstr[0] "%s oturumu %d saniyede kendiliğinden kapanacak."
+msgstr[0] ""
+msgstr[1] ""
 
 #: src/end-session-dialog.c:172
 msgid "Power Off"
-msgstr "Gücü Kapat"
+msgstr ""
 
 #: src/end-session-dialog.c:173
 #, c-format
 msgid "The system will power off automatically in %d second."
 msgid_plural "The system will power off automatically in %d seconds."
-msgstr[0] "Sistem %d saniyede kendiliğinden kapanacak."
+msgstr[0] ""
+msgstr[1] ""
 
 #: src/end-session-dialog.c:179
 msgid "Restart"
-msgstr "Yeniden Başlat"
+msgstr "Werstarte"
 
 #: src/end-session-dialog.c:180
 #, c-format
 msgid "The system will restart automatically in %d second."
 msgid_plural "The system will restart automatically in %d seconds."
-msgstr[0] "Sistem %d saniyede kendiliğinden yeniden başlayacak."
+msgstr[0] ""
+msgstr[1] ""
 
 #: src/end-session-dialog.c:270
 msgid "Unknown application"
-msgstr "Bilinmeyen uygulama"
+msgstr "Unbekende applikaasje"
 
 #. Translators: quiet and silent are fbd profiles names:
 #. see https://source.puri.sm/Librem5/feedbackd#profiles
 #. for details
 #: src/feedbackinfo.c:97
 msgid "Quiet"
-msgstr "Titreşim"
+msgstr ""
 
 #. Translators: quiet and silent are fbd profiles names:
 #. see https://source.puri.sm/Librem5/feedbackd#profiles
 #. for details
 #: src/feedbackinfo.c:104
 msgid "Silent"
-msgstr "Sessiz"
+msgstr ""
 
 #. Translators: Enable LED, haptic and audio feedback
 #: src/feedbackinfo.c:108
 msgctxt "feedback:enabled"
 msgid "On"
-msgstr "Açık"
+msgstr ""
 
 #: src/location-manager.c:268
 #, c-format
 msgid "Allow '%s' to access your location information?"
-msgstr "'%s' konum bilginize erişebilsin mi?"
+msgstr ""
 
 #: src/location-manager.c:273
 msgid "Geolocation"
-msgstr "Coğrafi Konum"
+msgstr ""
 
 #: src/location-manager.c:274
 msgid "Yes"
-msgstr "Evet"
+msgstr "Ja"
 
 #: src/location-manager.c:274
 msgid "No"
-msgstr "Hayır"
+msgstr "Nee"
 
 #: src/lockscreen.c:174 src/ui/lockscreen.ui:245
 msgid "Enter Passcode"
-msgstr "Parolayı Gir"
+msgstr "Tagongskoade ynfiere"
 
 #: src/lockscreen.c:397
 msgid "Checking…"
-msgstr "Denetleniyor…"
+msgstr "Oan it kontrolearjen…"
 
 #: src/screenshot-manager.c:213
 msgid "Screenshot"
-msgstr "Ekran Görüntüsü"
+msgstr "Skermôfbylding"
 
 #: src/screenshot-manager.c:214
 msgid "Screenshot copied to clipboard"
-msgstr "Ekran görüntüsü panoya kopyalandı"
+msgstr "Skermôfbylding nei klemboerd kopiearre"
 
 #. Translators: Used when the title of a song is unknown
 #: src/media-player.c:321 src/ui/media-player.ui:161
 msgid "Unknown Title"
-msgstr "Bilinmeyen Başlık"
+msgstr "Unbekende Titel"
 
 #. Translators: Used when the artist of a song is unknown
 #: src/media-player.c:329 src/ui/media-player.ui:148
 msgid "Unknown Artist"
-msgstr "Bilinmeyen Sanatçı"
+msgstr "Unbekende Artyst"
 
 #: src/monitor-manager.c:119
 msgid "Built-in display"
-msgstr "İç ekran"
+msgstr "Ynboud skerm"
 
 #: src/monitor-manager.c:137
 #, c-format
@@ -224,340 +234,340 @@ msgstr "%s %s"
 #. Translators: An unknown monitor type
 #: src/monitor-manager.c:153
 msgid "Unknown"
-msgstr "Bilinmeyen"
+msgstr "Unbekend"
 
 #: src/network-auth-prompt.c:201
 #, c-format
 msgid "Authentication type of wifi network “%s” not supported"
-msgstr "“%s” wifi ağının kimlik doğrulama türü desteklenmiyor"
+msgstr "Autentikaasje type fan it wifi network “%s” wurd net stipe"
 
 #: src/network-auth-prompt.c:206
 #, c-format
 msgid "Enter password for the wifi network “%s”"
-msgstr "“%s” wifi ağı için parola gir"
+msgstr ""
 
 #: src/notifications/mount-notification.c:121
 msgid "Open"
-msgstr "Aç"
+msgstr "Iepenje"
 
-#: src/notifications/notification.c:405 src/notifications/notification.c:678
+#: src/notifications/notification.c:383 src/notifications/notification.c:654
 msgid "Notification"
-msgstr "Bildirim"
+msgstr "Notifikaasje"
 
 #. Translators: Timestamp seconds suffix
 #: src/notifications/timestamp-label.c:84
 msgctxt "timestamp-suffix-seconds"
 msgid "s"
-msgstr "sn"
+msgstr "s"
 
 #. Translators: Timestamp minute suffix
 #: src/notifications/timestamp-label.c:86
 msgctxt "timestamp-suffix-minute"
 msgid "m"
-msgstr "d"
+msgstr "m"
 
 #. Translators: Timestamp minutes suffix
 #: src/notifications/timestamp-label.c:88
 msgctxt "timestamp-suffix-minutes"
 msgid "m"
-msgstr "d"
+msgstr "m"
 
 #. Translators: Timestamp hour suffix
 #: src/notifications/timestamp-label.c:90
 msgctxt "timestamp-suffix-hour"
 msgid "h"
-msgstr "s"
+msgstr ""
 
 #. Translators: Timestamp hours suffix
 #: src/notifications/timestamp-label.c:92
 msgctxt "timestamp-suffix-hours"
 msgid "h"
-msgstr "s"
+msgstr ""
 
 #. Translators: Timestamp day suffix
 #: src/notifications/timestamp-label.c:94
 msgctxt "timestamp-suffix-day"
 msgid "d"
-msgstr "g"
+msgstr ""
 
 #. Translators: Timestamp days suffix
 #: src/notifications/timestamp-label.c:96
 msgctxt "timestamp-suffix-days"
 msgid "d"
-msgstr "g"
+msgstr ""
 
 #. Translators: Timestamp month suffix
 #: src/notifications/timestamp-label.c:98
 msgctxt "timestamp-suffix-month"
 msgid "mo"
-msgstr "a"
+msgstr ""
 
 #. Translators: Timestamp months suffix
 #: src/notifications/timestamp-label.c:100
 msgctxt "timestamp-suffix-months"
 msgid "mos"
-msgstr "a"
+msgstr ""
 
 #. Translators: Timestamp year suffix
 #: src/notifications/timestamp-label.c:102
 msgctxt "timestamp-suffix-year"
 msgid "y"
-msgstr "y"
+msgstr ""
 
 #. Translators: Timestamp years suffix
 #: src/notifications/timestamp-label.c:104
 msgctxt "timestamp-suffix-years"
 msgid "y"
-msgstr "y"
+msgstr ""
 
 #: src/notifications/timestamp-label.c:121
 msgid "now"
-msgstr "şimdi"
+msgstr "no krekt"
 
 #. Translators: time difference "Over 5 years"
 #: src/notifications/timestamp-label.c:189
 #, c-format
 msgid "Over %dy"
-msgstr "%d yılı aşkın"
+msgstr "Oer %dy"
 
 #. Translators: time difference "almost 5 years"
 #: src/notifications/timestamp-label.c:193
 #, c-format
 msgid "Almost %dy"
-msgstr "Neredeyse %d yıl"
+msgstr "Hast %dy"
 
 #. Translators: a time difference like '<5m', if in doubt leave untranslated
 #: src/notifications/timestamp-label.c:200
 #, c-format
 msgid "%s%d%s"
-msgstr "%s%d%s"
+msgstr ""
 
 #: src/polkit-auth-agent.c:227
 msgid "Authentication dialog was dismissed by the user"
-msgstr "Kullanıcı, kimlik doğrulama kutusunu görmezden geldi"
+msgstr ""
 
 #: src/polkit-auth-prompt.c:278 src/ui/gtk-mount-prompt.ui:20
 #: src/ui/network-auth-prompt.ui:82 src/ui/polkit-auth-prompt.ui:56
 #: src/ui/system-prompt.ui:32
 msgid "Password:"
-msgstr "Parola:"
+msgstr "Wachtwurd:"
 
 #: src/polkit-auth-prompt.c:325
 msgid "Sorry, that didn’t work. Please try again."
-msgstr "Üzgünüz, işe yaramadı. Lütfen yeniden deneyin."
+msgstr "Sorry, dat wurke net. Probearje it noch ris."
 
 #: src/rotateinfo.c:102
 msgid "Portrait"
-msgstr "Dikey"
+msgstr ""
 
 #: src/rotateinfo.c:105
 msgid "Landscape"
-msgstr "Yatay"
+msgstr ""
 
 #: src/rotateinfo.c:125 src/rotateinfo.c:230
 msgctxt "automatic-screen-rotation-disabled"
 msgid "Off"
-msgstr "Kapalı"
+msgstr "Ut"
 
 #: src/rotateinfo.c:126
 msgctxt "automatic-screen-rotation-enabled"
 msgid "On"
-msgstr "Açık"
+msgstr "Oan"
 
 #: src/run-command-dialog.c:129
 msgid "Press ESC to close"
-msgstr "ESC’ye basarak kapat"
+msgstr "Druk op ESC om te slúten"
 
 #: src/run-command-manager.c:89
 #, c-format
 msgid "Running '%s' failed"
-msgstr "'%s' çalıştırılamadı"
+msgstr "Koe '%s' net útfiere"
 
 #: src/settings/audio-settings.c:373
 msgid "Phone Shell Volume Control"
-msgstr "Telefon Kabuğu Ses Denetimi"
+msgstr ""
 
 #: src/system-prompt.c:365
 msgid "Passwords do not match."
-msgstr "Parolalar eşleşmedi."
+msgstr "De wachtwurden komme net oerien."
 
 #: src/system-prompt.c:372
 msgid "Password cannot be blank"
-msgstr "Parola boş olamaz"
+msgstr "Wachtwurd mei net leech wêze"
 
 #: src/torch-info.c:80
 msgid "Torch"
-msgstr "Fener"
+msgstr "Lampe"
 
 #: src/ui/app-auth-prompt.ui:49
 msgid "Remember decision"
-msgstr "Kararı anımsa"
+msgstr "Beslut ûnthalde"
 
 #: src/ui/app-auth-prompt.ui:62 src/ui/end-session-dialog.ui:62
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:29
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:289
 msgid "Cancel"
-msgstr "İptal"
+msgstr "Ofbrekke"
 
 #: src/ui/app-grid-button.ui:55
 msgid "App"
-msgstr "Uygulama"
+msgstr "Applikaasje"
 
 #: src/ui/app-grid-button.ui:79
 msgid "Remove from _Favorites"
-msgstr "_Gözdelerden kaldır"
+msgstr ""
 
 #: src/ui/app-grid-button.ui:84
 msgid "Add to _Favorites"
-msgstr "_Gözdelere ekle"
+msgstr ""
 
 #: src/ui/app-grid-button.ui:89
 msgid "View _Details"
-msgstr "_Ayrıntıları Göster"
+msgstr "_Details besjen"
 
 #: src/ui/app-grid.ui:21
 msgid "Search apps…"
-msgstr "Uygulama ara…"
+msgstr "Applikaasjes sykje…"
 
 #: src/ui/audio-settings.ui:84
 msgid "Output Devices"
-msgstr "Çıktı Aygıtları"
+msgstr "Utfier apparaten"
 
 #: src/ui/audio-settings.ui:107
 msgid "Input Devices"
-msgstr "Girdi Aygıtları"
+msgstr "Ynfier apparaten"
 
 #: src/ui/audio-settings.ui:134
 msgid "Sound Settings"
-msgstr "Ses Ayarları"
+msgstr "Lûdsynstellings"
 
 #: src/ui/emergency-menu.ui:26
 msgid "Close the emergency call dialog"
-msgstr "Acil durum arama penceresini kapat"
+msgstr ""
 
 #: src/ui/emergency-menu.ui:52
 msgid "Emergency _Contacts"
-msgstr "Acil Durumda _Ulaşılacaklar"
+msgstr ""
 
 #: src/ui/emergency-menu.ui:59
 msgid "Go to the emergency contacts page"
-msgstr "Acil durumda ulaşılacaklar sayfasına git"
+msgstr ""
 
 #: src/ui/emergency-menu.ui:83
 msgid "Go back to the emergency dialpad page"
-msgstr "Acil durum tuşlama sayfasına geri git"
+msgstr ""
 
 #: src/ui/emergency-menu.ui:106
 msgid "Owner unknown"
-msgstr "Sahip bilinmiyor"
+msgstr ""
 
 #: src/ui/emergency-menu.ui:124 plugins/emergency-info/emergency-info.ui:195
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:230
 msgid "Emergency Contacts"
-msgstr "Acil Durumda Ulaşılacaklar"
+msgstr ""
 
 #: src/ui/emergency-menu.ui:142
 msgid "No emergency contacts available."
-msgstr "Acil durumda ulaşılacak kişi yok."
+msgstr ""
 
 #: src/ui/end-session-dialog.ui:31
 msgid "Some applications are busy or have unsaved work"
-msgstr "Bazı uygulamalar meşgul ya da kaydedilmemiş verisi var"
+msgstr ""
 
 #: src/ui/gtk-mount-prompt.ui:94
 msgid "User:"
-msgstr "Kullanıcı:"
+msgstr "Brûker:"
 
 #: src/ui/gtk-mount-prompt.ui:117
 msgid "Domain:"
-msgstr "Etki Alanı:"
+msgstr ""
 
 #: src/ui/gtk-mount-prompt.ui:150
 msgid "Co_nnect"
-msgstr "_Bağlan"
+msgstr ""
 
 #: src/ui/lockscreen.ui:36 src/ui/lockscreen.ui:334
 msgid "Back"
-msgstr "Geri"
+msgstr "Werom"
 
 #: src/ui/lockscreen.ui:97
 msgid "Slide up to unlock"
-msgstr "Açmak için kaldır"
+msgstr ""
 
 #: src/ui/lockscreen.ui:297
 msgid "Unlock"
-msgstr "Kilidi Aç"
+msgstr ""
 
 #: src/ui/network-auth-prompt.ui:5 src/ui/polkit-auth-prompt.ui:6
 msgid "Authentication required"
-msgstr "Kimlik doğrulama gerekli"
+msgstr ""
 
 #: src/ui/network-auth-prompt.ui:40
 #: plugins/ticket-box/prefs/ticket-box-prefs.c:90
 msgid "_Cancel"
-msgstr "İ_ptal"
+msgstr ""
 
 #: src/ui/network-auth-prompt.ui:58
 msgid "C_onnect"
-msgstr "_Bağlan"
+msgstr ""
 
 #: src/ui/polkit-auth-prompt.ui:122
 msgid "Authenticate"
-msgstr "Kimlik Doğrula"
+msgstr ""
 
 #: src/ui/power-menu.ui:69
 msgid "_Power Off"
-msgstr "_Gücü Kapat"
+msgstr ""
 
 #: src/ui/power-menu.ui:110
 msgid "_Lock"
-msgstr "_Kilitle"
+msgstr ""
 
 #: src/ui/power-menu.ui:151
 msgid "_Screenshot"
-msgstr "_Ekran Görüntüsü"
+msgstr "_Skermôfbylding"
 
 #: src/ui/power-menu.ui:192
 msgid "_Emergency"
-msgstr "_Acil"
+msgstr ""
 
 #: src/ui/run-command-dialog.ui:6
 msgid "Run Command"
-msgstr "Komut Çalıştır"
+msgstr "Kommando útfiere"
 
 #: src/ui/settings.ui:296
 msgid "No notifications"
-msgstr "Bildirim yok"
+msgstr "Gjin notifikaasjes"
 
 #: src/ui/settings.ui:336
 msgid "Clear all"
-msgstr "Tümünü temizle"
+msgstr ""
 
 #: src/ui/system-prompt.ui:62
 msgid "Confirm:"
-msgstr "Doğrula:"
+msgstr ""
 
 #: src/ui/top-panel.ui:32
 msgid "_Power Off…"
-msgstr "_Gücü Kapat…"
+msgstr ""
 
 #: src/ui/top-panel.ui:60
 msgid "_Restart…"
-msgstr "_Yeniden Başlat…"
+msgstr ""
 
 #: src/ui/top-panel.ui:88
 msgid "_Suspend…"
-msgstr "_Askıya Al…"
+msgstr ""
 
 #: src/ui/top-panel.ui:116
 msgid "_Log Out…"
-msgstr "_Oturumu Kapat…"
+msgstr ""
 
 #. Translators: This is a time format for a date in
 #. long format
 #: src/util.c:339
 msgid "%A, %B %-e"
-msgstr "%A, %B %-e"
+msgstr ""
 
 #: src/vpn-info.c:89
 msgid "VPN"
@@ -565,218 +575,198 @@ msgstr "VPN"
 
 #: src/widget-box.c:54
 msgid "Plugin not found"
-msgstr "Uzantı bulunamadı"
+msgstr ""
 
 #: src/widget-box.c:57
 #, c-format
 msgid "The plugin '%s' could not be loaded."
-msgstr "'%s' uzantısı yüklenemedi."
+msgstr ""
 
 #: src/wifiinfo.c:90
 msgid "Wi-Fi"
-msgstr "Kablosuz"
+msgstr "Wi-Fi"
 
 #. Translators: Refers to the cellular wireless network
 #: src/wwan-info.c:210
 msgid "Cellular"
-msgstr "Hücresel"
+msgstr ""
 
 #: plugins/emergency-info/emergency-info.ui:39
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:70
 msgid "Personal Information"
-msgstr "Kişisel Bilgiler"
+msgstr "Persoanlike ynformaasje"
 
 #: plugins/emergency-info/emergency-info.ui:47
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:88
 msgid "Date of Birth"
-msgstr "Doğum Tarihi"
+msgstr ""
 
 #: plugins/emergency-info/emergency-info.ui:65
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:100
 msgid "Preferred Language"
-msgstr "Yeğlenen Dil"
+msgstr "Foarkars taal"
 
 #: plugins/emergency-info/emergency-info.ui:83
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:112
 msgid "Home Address"
-msgstr "Ev Adresi"
+msgstr ""
 
 #: plugins/emergency-info/emergency-info.ui:91
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:129
 msgid "Medical Information"
-msgstr "Tıbbi Bilgiler"
+msgstr "Medyske ynformaasje"
 
 #: plugins/emergency-info/emergency-info.ui:99
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:135
 msgid "Age"
-msgstr "Yaş"
+msgstr ""
 
 #: plugins/emergency-info/emergency-info.ui:117
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:147
 msgid "Blood Type"
-msgstr "Kan Grubu"
+msgstr ""
 
 #: plugins/emergency-info/emergency-info.ui:135
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:159
 msgid "Height"
-msgstr "Boy"
+msgstr "Lingte"
 
 #: plugins/emergency-info/emergency-info.ui:153
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:171
 msgid "Weight"
-msgstr "Kilo"
+msgstr "Gewicht"
 
 #: plugins/emergency-info/emergency-info.ui:171
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:183
 msgid "Allergies"
-msgstr "Alerjiler"
+msgstr "Allergyen"
 
 #: plugins/emergency-info/emergency-info.ui:179
 msgid "Medications & Conditions"
-msgstr "İlaçlar ve Koşullar"
+msgstr ""
 
 #: plugins/emergency-info/emergency-info.ui:187
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:213
 msgid "Other Information"
-msgstr "Diğer Bilgiler"
+msgstr "Oare ynformaasje"
 
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:6
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:19
 msgid "Emergency Info Preferences"
-msgstr "Acil Durum Bilgi Tercihleri"
+msgstr ""
 
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:40
 msgid "Done"
-msgstr "Bitti"
+msgstr "Klear"
 
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:76
 msgid "Owner Name"
-msgstr "Sahip Adı"
+msgstr ""
 
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:198
 msgid "Medications and Conditions"
-msgstr "İlaçlar ve Koşullar"
+msgstr ""
 
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:239
 msgid "Add Contact"
-msgstr "Kişi Ekle"
+msgstr "Kontakt tafoegje"
 
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:284
 msgid "Add New Contact"
-msgstr "Yeni Kişi Ekle"
+msgstr "Nij kontakt tafoegje"
 
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:294
 msgid "Add"
-msgstr "Ekle"
+msgstr "Tafoegje"
 
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:315
 msgid "New Contact Name"
-msgstr "Yeni Kişi Adı"
+msgstr ""
 
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:329
 msgid "Relationship"
-msgstr "İlişki"
+msgstr "Relaasje"
 
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:342
 msgid "Number"
-msgstr "Numara"
-
-#: plugins/launcher-box/launcher-box.ui:14
-msgid "Launcher Box"
-msgstr "Başlatıcı Kutusu"
-
-#: plugins/launcher-box/launcher-box.ui:15
-msgid "No launchers configured"
-msgstr "Başlatıcı yapılandırılmadı"
-
-#: plugins/launcher-box/launcher-box.ui:32
-msgid "Launchers"
-msgstr "Başlatıcılar"
+msgstr "Nûmer"
 
 #: plugins/ticket-box/ticket-box.ui:15
 msgid "No documents to display"
-msgstr "Gösterilecek belge yok"
+msgstr "Gjin dokuminten om sjen te litten"
 
 #: plugins/ticket-box/ticket-box.ui:83
 msgid "Tickets"
-msgstr "Biletler"
+msgstr ""
 
 #: plugins/ticket-box/prefs/ticket-box-prefs.c:86
 msgid "Choose Folder"
-msgstr "Klasör Seç"
+msgstr ""
 
 #: plugins/ticket-box/prefs/ticket-box-prefs.c:89
 msgid "_Open"
-msgstr "_Aç"
+msgstr ""
 
 #: plugins/ticket-box/prefs/ticket-box-prefs.ui:6
 msgid "Ticket Box Preferences"
-msgstr "Bilet Kutusu Tercihleri"
+msgstr ""
 
 #: plugins/ticket-box/prefs/ticket-box-prefs.ui:13
 msgid "Paths"
-msgstr "Yollar"
+msgstr ""
 
 #: plugins/ticket-box/prefs/ticket-box-prefs.ui:18
 msgid "Folder Settings"
-msgstr "Klasör Ayarları"
+msgstr ""
 
 #: plugins/ticket-box/prefs/ticket-box-prefs.ui:19
 msgid "Where Phosh looks for your tickets"
-msgstr "Phosh, biletlerinize nerede bakacak"
+msgstr ""
 
 #: plugins/ticket-box/prefs/ticket-box-prefs.ui:22
 msgid "Ticket Folder"
-msgstr "Bilet Klasörü"
+msgstr ""
 
 #: plugins/upcoming-events/event-list.c:142
 msgid "Today"
-msgstr "Bugün"
+msgstr "Hjoed"
 
 #: plugins/upcoming-events/event-list.c:144
 msgid "Tomorrow"
-msgstr "Yarın"
+msgstr "Moarn"
 
 #: plugins/upcoming-events/event-list.c:150
 #, c-format
 msgid "In %d day"
 msgid_plural "In %d days"
-msgstr[0] "%d gün içinde"
+msgstr[0] "yn %d dei"
+msgstr[1] "Yn %d dagen"
 
 #: plugins/upcoming-events/event-list.ui:26
 msgid "No events"
-msgstr "Olay yok"
+msgstr "Gjin eveneminten"
 
 #. Translators: This is the time format used in 24-hour mode.
 #: plugins/upcoming-events/upcoming-event.c:56
 msgid "%R"
-msgstr "%R"
+msgstr ""
 
 #. Translators: This is the time format used in 12-hour mode.
 #: plugins/upcoming-events/upcoming-event.c:59
 msgid "%l:%M %p"
-msgstr "%3$p %1$l:%2$M"
+msgstr ""
 
 #. Translators: An all day event
 #: plugins/upcoming-events/upcoming-event.c:122
 #: plugins/upcoming-events/upcoming-event.c:159
 msgid "All day"
-msgstr "Tüm gün"
+msgstr "De folsleine dei"
 
 #. Translators: When the event ends: Ends\r16:00
 #: plugins/upcoming-events/upcoming-event.c:148
 msgid "Ends"
-msgstr "Bitiş"
+msgstr ""
 
 #: plugins/upcoming-events/upcoming-event.c:398
 msgid "Untitled event"
-msgstr "Adsız olay"
-
-#~ msgid "Emergency"
-#~ msgstr "Acil Durum"
-
-#~ msgid "Lock Screen"
-#~ msgstr "Ekranı Kilitle"
-
-#~ msgid "Logout"
-#~ msgstr "Oturumu Kapat"
+msgstr "Namleas evenemint"
