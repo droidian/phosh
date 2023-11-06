@@ -1,3 +1,101 @@
+phosh (0.33.0) experimental; urgency=medium
+
+  [ Guido Günther ]
+  * docs: Drop phosh-docs.xml.
+    It's unused since some time
+  * tools: Drop layer-shell-ui-edit.
+    Unused since ages
+  * plugins: Add launcher plugin.
+    This allows to use arbitrary desktop files as launchers on the lock
+    screen. See 8ec58e3555226c3616deb854eee4dd5833a67496 for details.
+
+  [ pseudorandom-x ]
+  * password-entry: Add new widget.
+    A password entry that allows users
+    to toggle the visibility of typed password.
+    This is based on code from PhoshNetworkAuthPrompt.
+  * gtk-mount-prompt: Use password-entry.
+    Replaces GtkEntry with PhoshPasswordEntry,
+    as well as removes the callback and its
+    connection to toggle password visibility.
+  * network-auth-prompt: Use password-entry.
+    Replaces GtkEntry with PhoshPasswordEntry,
+    for both WiFi dialog box & VPN network
+    prompt. The callback toggling the visibility
+    of typed password is also removed.
+  * polkit-auth-prompt: Use password-entry.
+    Replaces GtkEntry with PhoshPasswordEntry.
+  * system-prompt: Use password-entry.
+    Replaces GtkEntry with PhoshPasswordEntry,
+    in both password entry and confirmation fields.
+    Closes: https://gitlab.gnome.org/World/Phosh/phosh/-/issues/848
+
+  [ Florentina Mușat ]
+  * Update Romanian translation
+
+  [ Yuri Chornoivan ]
+  * Update Ukrainian translation
+
+  [ Anders Jonsson ]
+  * Update Swedish translation
+
+  [ Emin Tufan Çetin ]
+  * Update Turkish translation
+
+ -- Guido Günther <agx@sigxcpu.org>  Mon, 30 Oct 2023 19:08:23 +0100
+
+phosh (0.32.0) experimental; urgency=medium
+
+  [ Guido Günther ]
+  * session: Warn on deprecated rootston.ini.  This way we can remove it in
+    the future
+  * phosh-session: Allow to include a .phoshdebug.
+    This allows to set e.g. G_MESSAGES_DEBUG or the path to a phoc.ini
+    independent from how phoc is started (command line, display manager,
+    systemd unit).
+  * docs: Mention phoc configuration file
+  * notification: Link to the official spec
+  * notifications: Merge comments
+  * notification: Add profile property.
+    This will be used to store the feedback profile level for the feedback
+    event associated with this notification.
+  * notify-feedback: Adjust feedback profile based on notification.
+    This allows the notification to lower (or skip) the event
+    feedback noisiness.
+  * notify-manager: Honor x-phosh-fb-profile hint.
+    Allowed values are feedback profile levels from the Feedback Profile
+    Spec and `none` to indicate: omit all feedback.
+    This is somewhat similar to the `suppress-sound` hint of the fdo spec.
+  * tools: Add category and profile to notification tool
+  * docs: Add some hints for application developers.  Document some mobile
+    specific extensions.
+  * docs: Document additional notification hint
+  * docs: Mention that we prefer a "recipe" style git commit history
+  * docs: Add some more common patterns
+  * docs: Add a merge request check list
+  * feedback-manager: Don't access lfb if not inited.
+    Otherwise libfeedback asserts.
+  * feedback-manager: Add more type checks
+  * notification-feedback: Guard against unitted libfeedback
+
+  [ Keegan Sabo ]
+  * app-grid: Hide separator when there are no favorites.
+    Hide the favorites separator if there are no favorites.
+
+  [ Tjipke van der Heide ]
+  * Add Frisian translation
+
+  [ Vasil Pupkin ]
+  * Add Belarusian translation
+
+ -- Guido Günther <agx@sigxcpu.org>  Mon, 02 Oct 2023 14:17:40 +0200
+
+phosh (0.31.1) experimental; urgency=medium
+
+  * build: Fix version in meson file
+
+ -- Guido Günther <agx@sigxcpu.org>  Mon, 04 Sep 2023 16:49:20 +0200
+
 phosh (0.31.0) experimental; urgency=medium
 
   [ Guido Günther ]
