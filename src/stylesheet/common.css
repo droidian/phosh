@@ -1,7 +1,9 @@
 /*
  * Top panel and bar
  */
-phosh-top-panel {
+ phosh-top-panel {
+  background: none;
+  color: @phosh_fg_color;
   font: 15px Cantarell;
 }
 
@@ -53,11 +55,19 @@ phosh-top-panel .phosh-topbar-date {
   min-width: 0;
   min-height: 0;
   padding: 6px;
+  background: none;
 }
 
 /*
  * Settings menu
  */
+
+widget.phosh-settings-menu > scrolledwindow {
+    background-color: @phosh_bg_color;
+    border-radius: 24px;
+    margin-left: 6px;
+    margin-right: 6px;
+}
 
 .phosh-settings-menu {
   background-color: @phosh_bg_color;
@@ -70,7 +80,7 @@ phosh-top-panel .phosh-topbar-date {
 }
 
 .phosh-settings-menu scrolledwindow > viewport {
-  padding: 0 16px;
+  padding: 0 12px;
 }
 
 #phosh_quick_settings flowboxchild > button {
@@ -242,8 +252,8 @@ phosh-activity.phosh-empty {
   background-size: cover;
 }
 
-phosh-home, phosh-top-panel {
-  background: @phosh_bg_color;
+phosh-home {
+  background: none;
   color: @phosh_fg_color;
 }
 
@@ -256,7 +266,7 @@ phosh-home, phosh-top-panel {
 }
 
 .phosh-overview {
-  background: @phosh_bg_color;
+  background: none;
   color: @phosh_fg_color;
 }
 
@@ -298,7 +308,7 @@ phosh-home, phosh-top-panel {
 }
 
 phosh-app-grid {
-  background: @phosh_bg_color;
+  background: none;
   color: @phosh_fg_color;
 }
 
@@ -331,7 +341,11 @@ phosh-app-grid-button button {
  * Lock screen
  */
 
-phosh-lockscreen,
+phosh-lockscreen {
+  background-color: @phosh_bg_color;
+  color: @phosh_fg_color;
+}
+
 .phosh-lockshield {
   background-color: @phosh_bg_color;
   color: @phosh_fg_color;

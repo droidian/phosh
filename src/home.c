@@ -577,9 +577,15 @@ phosh_home_dragged (PhoshDragSurface *self, int margin)
 {
   PhoshHome *home = PHOSH_HOME (self);
   int width, height;
+  double progress;
+
   gtk_window_get_size (GTK_WINDOW (self), &width, &height);
-  phosh_arrow_set_progress (PHOSH_ARROW (home->arrow_home), 1.0 - (-margin / (double)(height - PHOSH_HOME_BUTTON_HEIGHT)));
-  g_debug ("Margin: %d", margin);
+  
+  progress = 1.0 - (-margin / (double)(height - PHOSH_HOME_BUTTON_HEIGHT));
+
+  g_debug ("Margin: %d, %f", margin, progress);
+  phosh_arrow_set_progress (PHOSH_ARROW (home->arrow_home), progress);
+  phosh_shell_set_bg_alpha (phosh_shell_get_default (), hdy_ease_out_cubic (progress));
 }
 
 
@@ -601,10 +607,12 @@ on_drag_state_changed (PhoshHome *self)
       phosh_overview_focus_app_search (PHOSH_OVERVIEW (self->overview));
       self->focus_app_search = FALSE;
     }
+    phosh_shell_set_bg_alpha (phosh_shell_get_default (), 1.0);
     break;
   case PHOSH_DRAG_SURFACE_STATE_FOLDED:
     state = PHOSH_HOME_STATE_FOLDED;
     phosh_arrow_set_progress (PHOSH_ARROW (self->arrow_home), 0.0);
+        phosh_shell_set_bg_alpha (phosh_shell_get_default (), 0.0);
     break;
   case PHOSH_DRAG_SURFACE_STATE_DRAGGED:
     if (self->state == PHOSH_HOME_STATE_FOLDED)
