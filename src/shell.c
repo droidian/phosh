@@ -23,6 +23,7 @@
 
 #include "phosh-config.h"
 #include "ambient.h"
+#include "background.h"
 #include "drag-surface.h"
 #include "shell.h"
 #include "app-tracker.h"
@@ -123,6 +124,7 @@ static PhoshShellDebugFlags debug_flags;
 
 typedef struct
 {
+  PhoshBackground *top_bg;
   PhoshDragSurface *top_panel;
   PhoshDragSurface *home;
   GPtrArray *faders;              /* for final fade out */
@@ -286,6 +288,10 @@ on_home_state_changed (PhoshShell *self, GParamSpec *pspec, PhoshHome *home)
 
   g_object_get (priv->home, "state", &state, NULL);
   phosh_shell_set_state (self, PHOSH_STATE_OVERVIEW, state == PHOSH_HOME_STATE_UNFOLDED);
+
+  if (state == PHOSH_HOME_STATE_FOLDED) {
+    phosh_layer_surface_set_empty_input_region (PHOSH_LAYER_SURFACE (priv->top_bg));
+  }
 }
 
 
@@ -348,6 +354,16 @@ panels_create (PhoshShell *self)
 
   monitor = phosh_shell_get_primary_monitor (self);
   g_return_if_fail (monitor);
+
+  /* TODO: just handle the background as part of PhoshHome */
+  /* Add a "background layer in the top layer */
+  priv->top_bg =  PHOSH_BACKGROUND (phosh_background_new (
+                                      phosh_wayland_get_zwlr_layer_shell_v1(wl),
+                                      monitor->wl_output,
+                                      MAX(1.0, phosh_monitor_get_fractional_scale (monitor)),
+                                      TRUE,
+                                      ZWLR_LAYER_SHELL_V1_LAYER_TOP));;
+  gtk_widget_show (GTK_WIDGET (priv->top_bg));
 
   top_layer = priv->locked ? ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY : ZWLR_LAYER_SHELL_V1_LAYER_TOP;
   priv->top_panel = PHOSH_DRAG_SURFACE (phosh_top_panel_new (
@@ -777,7 +793,7 @@ setup_idle_cb (PhoshShell *self)
   priv->suspend_manager = phosh_suspend_manager_new ();
   priv->emergency_calls_manager = phosh_emergency_calls_manager_new ();
   priv->power_menu_manager = phosh_power_menu_manager_new ();
-  
+
   setup_primary_monitor_signal_handlers (self);
 
   /* Delay signaling the compositor a bit so that idle handlers get a
@@ -2163,7 +2179,6 @@ phosh_shell_get_blanked (PhoshShell *self)
   return phosh_shell_get_state (self) & PHOSH_STATE_BLANKED;
 }
 
-
 /**
  * phosh_shell_activate_action:
  * @self: The #PhoshShell singleton
@@ -2203,5 +2218,16 @@ phosh_shell_get_debug_flags (void)
   return debug_flags;
 }
 
-/* }}} */
 
+void
+phosh_shell_set_bg_alpha (PhoshShell *self, double alpha)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_if_fail (PHOSH_IS_SHELL (self));
+  priv = phosh_shell_get_instance_private (self);
+
+  phosh_layer_surface_set_alpha (PHOSH_LAYER_SURFACE (priv->top_bg), alpha);
+}
+
+/* }}} */
