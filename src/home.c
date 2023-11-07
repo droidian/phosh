@@ -27,6 +27,7 @@
 
 #define POWERBAR_ACTIVE_CLASS "p-active"
 #define POWERBAR_FAILED_CLASS "p-failed"
+#define HOMEBAR_OPAQUE_CLASS "opaque"
 
 /**
  * PhoshHome:
@@ -90,22 +91,20 @@ static void
 phosh_home_update_home_bar (PhoshHome *self)
 {
   const char *visible_child = "home-bar-unfolded";
+  gboolean home_bar_transparent = FALSE;
+
   PhoshDragSurfaceState drag_state = phosh_drag_surface_get_drag_state (PHOSH_DRAG_SURFACE (self));
  
-  if (self->state == PHOSH_HOME_STATE_FOLDED &&
-      drag_state != PHOSH_DRAG_SURFACE_STATE_DRAGGED) {
-    gtk_widget_set_visible (GTK_WIDGET (self->powerbar), TRUE);
-  } else {
-    gtk_widget_set_visible (GTK_WIDGET (self->powerbar), FALSE);
-  }
   g_debug ("toggled powerbar visiblity");
 
   if (self->state == PHOSH_HOME_STATE_FOLDED &&
       drag_state != PHOSH_DRAG_SURFACE_STATE_DRAGGED) {
     visible_child = "home-bar-folded";
+    home_bar_transparent = TRUE;
   }
 
   gtk_stack_set_visible_child_name (GTK_STACK (self->stack), visible_child);
+  phosh_util_toggle_style_class (self->stack, HOMEBAR_OPAQUE_CLASS , home_bar_transparent);
   g_debug ("switched home-bar visible child");
   
   /* debug stuff: check the gesture state to see if the touch cancel is functing */
