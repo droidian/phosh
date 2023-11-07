@@ -616,3 +616,36 @@ phosh_clear_fd (int *fd, GError **err)
 
   return success;
 }
+
+/**
+ * phosh_is_high_contrast:
+ * @widget:(nullable): a widget or %NULL.
+ *
+ * Check if a high contrast theme is in use. If no widget is passed
+ * the default GTK settings object is used.
+ *
+ * Returns: %TRUE if phosh currently using a high contrast theme
+ */
+gboolean
+phosh_is_high_contrast (GtkWidget *widget)
+{
+  GtkSettings *settings = NULL;
+  g_autofree char *theme_name = NULL;
+
+  g_return_val_if_fail (widget == NULL || GTK_IS_WIDGET (widget), FALSE);
+
+  if (widget)
+    settings = gtk_widget_get_settings (widget);
+  else
+    settings = gtk_settings_get_default ();
+
+  g_return_val_if_fail (GTK_IS_SETTINGS (settings), FALSE);
+
+  g_object_get (settings, "gtk-theme-name", &theme_name, NULL);
+  if (g_strcmp0 (theme_name, "HighContrast") &&
+      g_strcmp0 (theme_name, "HighContrastInverse")) {
+    return FALSE;
+  }
+
+  return TRUE;
+}

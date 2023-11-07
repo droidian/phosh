@@ -19,6 +19,7 @@ G_DECLARE_FINAL_TYPE (PhoshBackground, phosh_background, PHOSH, BACKGROUND, Phos
 GtkWidget *phosh_background_new (gpointer layer_shell,
                                  gpointer wl_output,
                                  float scale,
-                                 gboolean primary);
+                                 gboolean primary,
+                                 guint layer);
 void phosh_background_set_primary (PhoshBackground *self, gboolean primary);
 void phosh_background_set_scale (PhoshBackground *self, float scale);

@@ -266,9 +266,11 @@ background_update (PhoshBackground *self, GdkPixbuf *pixbuf, GDesktopBackgroundS
 
   g_clear_object (&self->pixbuf);
 
+#if 0  
   if (self->primary)
     phosh_shell_get_usable_area (phosh_shell_get_default (), NULL, NULL, &width, &height);
   else
+#endif    
     g_object_get (self, "configured-width", &width, "configured-height", &height, NULL);
 
   g_debug ("Scaling %p to %dx%d, scale %f", self, width, height, self->scale);
@@ -466,8 +468,10 @@ background_draw_cb (PhoshBackground *self,
 
   g_return_val_if_fail (GDK_IS_PIXBUF (self->pixbuf), TRUE);
 
+#if 0  
   if (self->primary)
     phosh_shell_get_usable_area (phosh_shell_get_default (), &x, &y, NULL, NULL);
+#endif  
 
   cairo_save(cr);
   cairo_scale(cr, 1.0 / self->scale, 1.0 / self->scale);
@@ -626,7 +630,8 @@ GtkWidget *
 phosh_background_new (gpointer layer_shell,
                       gpointer wl_output,
                       float    scale,
-                      gboolean primary)
+                      gboolean primary,
+                      guint    layer)
 {
   return g_object_new (PHOSH_TYPE_BACKGROUND,
                        "layer-shell", layer_shell,
@@ -635,7 +640,7 @@ phosh_background_new (gpointer layer_shell,
                                   ZWLR_LAYER_SURFACE_V1_ANCHOR_BOTTOM |
                                   ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT |
                                   ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT),
-                       "layer", ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND,
+                       "layer", layer,
                        "kbd-interactivity", FALSE,
                        "exclusive-zone", -1,
                        "namespace", "phosh background",
