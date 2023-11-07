@@ -2,7 +2,6 @@
  * Top panel and bar
  */
  phosh-top-panel {
-  background: none;
   color: @phosh_fg_color;
   font: 15px Cantarell;
 }
@@ -132,6 +131,10 @@ widget.phosh-settings-menu > scrolledwindow {
 }
 
 /* phosh-home */
+
+.opaque  { 
+  background-color: @phosh_bg_color;
+}
 
 #powerbar {
   background: -gtk-recolor(url('resource:///sm/puri/phosh/icons/scalable/status/input-powerbar-symbolic.svg'));
