@@ -28,6 +28,7 @@
 
 #define POWERBAR_ACTIVE_CLASS "p-active"
 #define POWERBAR_FAILED_CLASS "p-failed"
+#define HOMEBAR_OPAQUE_CLASS "opaque"
 
 /**
  * PhoshHome:
@@ -87,13 +88,18 @@ G_DEFINE_TYPE(PhoshHome, phosh_home, PHOSH_TYPE_DRAG_SURFACE);
 static void
 phosh_home_update_home_bar (PhoshHome *self)
 {
+  gboolean home_bar_transparent = FALSE;
+
   const char *visible_child = "home-bar-unfolded";
   PhoshDragSurfaceState drag_state = phosh_drag_surface_get_drag_state (PHOSH_DRAG_SURFACE (self));
 
-  if (self->state == PHOSH_HOME_STATE_FOLDED && drag_state != PHOSH_DRAG_SURFACE_STATE_DRAGGED)
+  if (self->state == PHOSH_HOME_STATE_FOLDED && drag_state != PHOSH_DRAG_SURFACE_STATE_DRAGGED) {
     visible_child = "home-bar-folded";
+    home_bar_transparent = TRUE;
+  }
 
   gtk_stack_set_visible_child_name (GTK_STACK (self->stack), visible_child);
+  phosh_util_toggle_style_class (self->stack, HOMEBAR_OPAQUE_CLASS , home_bar_transparent);
 }
 
 
@@ -444,9 +450,15 @@ phosh_home_dragged (PhoshDragSurface *self, int margin)
 {
   PhoshHome *home = PHOSH_HOME (self);
   int width, height;
+  double progress;
+
   gtk_window_get_size (GTK_WINDOW (self), &width, &height);
-  phosh_arrow_set_progress (PHOSH_ARROW (home->arrow_home), 1.0 - (-margin / (double)(height - PHOSH_HOME_BUTTON_HEIGHT)));
-  g_debug ("Margin: %d", margin);
+  
+  progress = 1.0 - (-margin / (double)(height - PHOSH_HOME_BUTTON_HEIGHT));
+
+  g_debug ("Margin: %d, %f", margin, progress);
+  phosh_arrow_set_progress (PHOSH_ARROW (home->arrow_home), progress);
+  phosh_shell_set_bg_alpha (phosh_shell_get_default (), hdy_ease_out_cubic (progress));
 }
 
 
@@ -468,10 +480,12 @@ on_drag_state_changed (PhoshHome *self)
       phosh_overview_focus_app_search (PHOSH_OVERVIEW (self->overview));
       self->focus_app_search = FALSE;
     }
+    phosh_shell_set_bg_alpha (phosh_shell_get_default (), 1.0);
     break;
   case PHOSH_DRAG_SURFACE_STATE_FOLDED:
     state = PHOSH_HOME_STATE_FOLDED;
     phosh_arrow_set_progress (PHOSH_ARROW (self->arrow_home), 0.0);
+        phosh_shell_set_bg_alpha (phosh_shell_get_default (), 0.0);
     break;
   case PHOSH_DRAG_SURFACE_STATE_DRAGGED:
     if (self->state == PHOSH_HOME_STATE_FOLDED)
