@@ -1,5 +1,5 @@
 /*
- * Copyright (C) 2018-2023 Purism SPC
+ * Copyright (C) 2018 Purism SPC
  *
  * SPDX-License-Identifier: GPL-3.0-or-later
  *
@@ -84,8 +84,6 @@ typedef struct {
   HdyDeck           *deck;
   GtkWidget         *carousel;
 
-  GtkCssProvider    *provider;
-
   /* info page */
   GtkWidget         *box_info;
   GtkWidget         *box_datetime;
@@ -96,7 +94,7 @@ typedef struct {
   GtkRevealer       *rev_call_notifications;
   GtkRevealer       *rev_media_player;
   GtkRevealer       *rev_notifications;
-  GSettings         *notification_settings;
+  GSettings         *settings;
   guint              reveals;
 
   /* unlock page */
@@ -111,7 +109,7 @@ typedef struct {
   guint              idle_timer;
   gint64             last_input;
   PhoshAuth         *auth;
-  GSettings         *lockscreen_settings;
+  GSettings         *keypad_settings;
 
   /* widget box */
   GtkWidget         *widget_box;
@@ -750,71 +748,12 @@ on_notification_items_changed (PhoshLockscreen *self,
   g_return_if_fail (PHOSH_IS_LOCKSCREEN (self));
   priv = phosh_lockscreen_get_instance_private (self);
 
-  show_in_lockscreen = g_settings_get_boolean (priv->notification_settings, "show-in-lock-screen");
+  show_in_lockscreen = g_settings_get_boolean (priv->settings, "show-in-lock-screen");
   is_empty = !g_list_model_get_n_items (list);
 
   reveal = show_in_lockscreen && !is_empty;
 
   gtk_revealer_set_reveal_child (priv->rev_notifications, reveal);
-}
-
-
-static void
-clear_css_provider (PhoshLockscreen *self)
-{
-  PhoshLockscreenPrivate *priv = phosh_lockscreen_get_instance_private (self);
-
-  if (priv->provider == NULL)
-    return;
-
-  gtk_style_context_remove_provider_for_screen (gdk_screen_get_default (),
-                                                GTK_STYLE_PROVIDER (priv->provider));
-  g_clear_object (&priv->provider);
-}
-
-
-static void
-load_background (PhoshLockscreen *self)
-{
-  PhoshLockscreenPrivate *priv = phosh_lockscreen_get_instance_private (self);
-  g_autoptr (GSettings) settings = g_settings_new ("org.gnome.desktop.screensaver");
-  g_autofree char *uri = NULL;
-  g_autofree char *css = NULL;
-  g_autoptr (GError) err = NULL;
-
-  g_return_if_fail (priv->provider == NULL);
-
-  uri = g_settings_get_string (settings, "picture-uri");
-  if (STR_IS_NULL_OR_EMPTY (uri)) {
-    clear_css_provider (self);
-    return;
-  }
-
-  if (g_str_has_suffix (uri, ".xml")) {
-    g_warning ("Ignoring XML background '%s'", uri);
-    return;
-  }
-
-  priv->provider = gtk_css_provider_new ();
-  css = g_strdup_printf ("phosh-lockscreen {\n"
-                         "  background-image: url(\"%s\");\n"
-                         "  background-size: cover;\n"
-                         "  background-position: center;\n"
-                         "}\n"
-                         ""
-                         "phosh-top-panel {\n"
-                         "  background: none;\n"
-                         "}\n", uri);
-  if (gtk_css_provider_load_from_data (GTK_CSS_PROVIDER (priv->provider), css, -1, &err)) {
-    g_debug ("Using lockscreen image '%s'", uri);
-  } else {
-    g_warning ("Failed to load lockscreen image '%s': %s", uri, err->message);
-    return;
-  }
-
-  gtk_style_context_add_provider_for_screen (gdk_screen_get_default (),
-                                             GTK_STYLE_PROVIDER (priv->provider),
-                                             GTK_STYLE_PROVIDER_PRIORITY_APPLICATION + 1);
 }
 
 
@@ -878,7 +817,7 @@ phosh_lockscreen_constructed (GObject *object)
     update_active_call (self, active);
 
   manager = phosh_notify_manager_get_default ();
-  priv->notification_settings = g_settings_new (NOTIFICATIONS_SCHEMA_ID);
+  priv->settings = g_settings_new(NOTIFICATIONS_SCHEMA_ID);
   gtk_list_box_bind_model (GTK_LIST_BOX (priv->list_notifications),
                            G_LIST_MODEL (phosh_notify_manager_get_list (manager)),
                            create_notification_row,
@@ -904,18 +843,16 @@ phosh_lockscreen_constructed (GObject *object)
                           priv->btn_keyboard, "sensitive",
                           G_BINDING_SYNC_CREATE);
 
-  priv->lockscreen_settings = g_settings_new ("sm.puri.phosh.lockscreen");
-  g_settings_bind (priv->lockscreen_settings, "shuffle-keypad",
+  priv->keypad_settings = g_settings_new("sm.puri.phosh.lockscreen");
+  g_settings_bind (priv->keypad_settings, "shuffle-keypad",
                    priv->keypad, "shuffle",
                    G_SETTINGS_BIND_GET);
 
   plugin_settings = g_settings_new ("sm.puri.phosh.plugins");
   plugins = g_settings_get_strv (plugin_settings, "lock-screen");
+
   if (plugins)
     phosh_widget_box_set_plugins (PHOSH_WIDGET_BOX (priv->widget_box), plugins);
-
-  if (!phosh_is_high_contrast (GTK_WIDGET (self)))
-    load_background (self);
 
   on_deck_visible_child_changed (self, NULL, priv->deck);
 }
@@ -946,13 +883,12 @@ phosh_lockscreen_dispose (GObject *object)
   PhoshLockscreen *self = PHOSH_LOCKSCREEN (object);
   PhoshLockscreenPrivate *priv = phosh_lockscreen_get_instance_private (self);
 
-  g_clear_object (&priv->notification_settings);
+  g_clear_object (&priv->settings);
   g_clear_object (&priv->wall_clock);
   g_clear_handle_id (&priv->idle_timer, g_source_remove);
   g_clear_object (&priv->calls_manager);
   g_clear_pointer (&priv->active, g_free);
-  g_clear_object (&priv->lockscreen_settings);
-  clear_css_provider (self);
+  g_clear_object (&priv->keypad_settings);
 
   G_OBJECT_CLASS (phosh_lockscreen_parent_class)->dispose (object);
 }
