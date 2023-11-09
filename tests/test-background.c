@@ -55,7 +55,8 @@ test_background_new (Fixture *fixture, gconstpointer unused)
                                        fixture->base.state->wl),
                                      fixture->base.state->output,
                                      1,
-                                     TRUE);
+                                     TRUE
+                                     ZWLR_LAYER_SHELL_V1_LAYER_BACKGROUND);
   g_assert_true (PHOSH_IS_BACKGROUND (background));
   g_object_get (background, "primary", &primary, NULL);
   g_assert_true (primary);
