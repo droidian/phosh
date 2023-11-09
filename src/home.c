@@ -322,9 +322,9 @@ on_powerbar_swiped (GtkGestureSwipe *gesture, double velocity_x, double velocity
       return;
   }
 
-  if (velocity_x < 0)
+  if (velocity_x < -300)
     toplevel_next = toplevel_active + 1;
-  else if (velocity_x > 0)
+  else if (velocity_x > 300)
     toplevel_next = toplevel_active - 1;
   else
     return;
