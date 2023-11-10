@@ -133,7 +133,7 @@ widget.phosh-settings-menu > scrolledwindow {
 /* phosh-home */
 
 .opaque  { 
-  background-color: @phosh_bg_color;
+  background-color: @window_bg_color;
 }
 
 #powerbar {
