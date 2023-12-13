@@ -1,13 +1,23 @@
 include:
  - remote: 'https://source.puri.sm/Librem5/librem5-ci/raw/master/librem5-pipeline-definitions.yml'
- - remote: 'https://gitlab.freedesktop.org/freedesktop/ci-templates/-/raw/34039cd573a2df832d465bc9e4c5f543571f5241/templates/ci-fairy.yml'
+ - remote: 'https://gitlab.freedesktop.org/freedesktop/ci-templates/-/raw/d03cddbcff35f26861429fc816c00323f48e99af/templates/ci-fairy.yml'
 
 stages:
  - build
  - test+docs
+ - style-checks
  - analyze
  - package
  - deploy
+
+workflow:
+  rules:
+    - if: $CI_PIPELINE_SOURCE == 'merge_request_event'
+    # Don't trigger a branch pipeline if there is an open MR
+    - if: $CI_COMMIT_BRANCH && $CI_OPEN_MERGE_REQUESTS
+      when: never
+    - if: $CI_COMMIT_TAG
+    - if: $CI_COMMIT_BRANCH
 
 default:
   # Protect CI infra from rogue jobs
@@ -27,7 +37,7 @@ variables:
   # For ci-fairy
   FDO_UPSTREAM_REPO: World/Phosh/phosh
   # screenshot and asan builds on DEBIAN_IMAGE so keep them in sync
-  IMAGE_VERSION: v0.0.20230607
+  IMAGE_VERSION: v0.0.2023-11-20
   DEBIAN_IMAGE: $CI_REGISTRY/world/phosh/phosh/debian:$IMAGE_VERSION
   SCREENSHOT_IMAGE: $CI_REGISTRY/world/phosh/phosh/screenshot:$IMAGE_VERSION
   ASAN_IMAGE: $CI_REGISTRY/world/phosh/phosh/asan:v0.0.20230608
@@ -73,27 +83,26 @@ variables:
 .test_step: &test_step
   script:
     - export LC_ALL=C.UTF-8
-    - ${XVFB_RUN} meson test --print-errorlogs -C _build --no-suite screenshots
+    - ${XVFB_RUN} meson test --print-errorlogs -C _build --suite unit
+    - ${XVFB_RUN} meson test --print-errorlogs -C _build --suite integration
   after_script:
     - gcovr --json --output=coverage-${CI_JOB_NAME}.json
 
 # Sanity checks of MR settings and commit logs
-sanity:
+commit-log-check:
   extends:
     - .fdo.ci-fairy
-  stage: build
+  stage: style-checks
+  variables:
+    GIT_DEPTH: "100"
+  needs: []
   script: |
-    if [ -n "$CI_OPEN_MERGE_REQUESTS" ]; then
-      ci-fairy check-commits --junit-xml=commit-message-junit-report.xml cifairy/main..HEAD ;
-    else
-      echo "Not a merge request" ;
-    fi
+    ci-fairy check-commits --junit-xml=commit-message-junit-report.xml
   artifacts:
     reports:
       junit: commit-message-junit-report.xml
-  only:
-    variables:
-      - $CI_OPEN_MERGE_REQUESTS && $PKG_ONLY != "1"
+  rules:
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
 
 build:native-debian-trixie:
   stage: build
@@ -257,6 +266,31 @@ unit-test:native-alpinelinux-edge:
     variables:
       - $PKG_ONLY == "1"
       - $SCREENSHOTS_ONLY == "1"
+
+format-check:
+  stage: style-checks
+  image: ${DEBIAN_IMAGE}
+  needs: []
+  script:
+    - |
+      if [ -n "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" ]; then
+        git remote add target $CI_MERGE_REQUEST_PROJECT_URL.git
+        echo "Fetching MR target branch $CI_MERGE_REQUEST_TARGET_BRANCH_NAME from $CI_MERGE_REQUEST_PROJECT_URL"
+        git fetch target "$CI_MERGE_REQUEST_TARGET_BRANCH_NAME"
+        git fetch --deepen=100 origin HEAD
+        merge_base=$(git merge-base "target/$CI_MERGE_REQUEST_TARGET_BRANCH_NAME" HEAD)
+        if [ -z "$merge_base" ]; then
+          echo "Could't determine merge base"
+          exit 1
+        fi
+        echo "Merge base: $merge_base"
+        ./.gitlab-ci/check-style.py --dry-run --sha $merge_base
+      else
+        echo "Not a merge request"
+      fi
+  allow_failure: true
+  rules:
+    - if: '$CI_MERGE_REQUEST_TARGET_BRANCH_NAME'
 
 coverage:
   image: ${DEBIAN_IMAGE}

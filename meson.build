@@ -1,5 +1,5 @@
 project('phosh', 'c',
-          version: '0.33.0',
+          version: '0.34.0',
           license: 'GPL-3.0-or-later',
     meson_version: '>= 0.54.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
@@ -29,7 +29,7 @@ else
   sysconfdir = get_option('sysconfdir')
 endif
 
-glib_ver = 'GLIB_VERSION_2_72'
+glib_ver = 'GLIB_VERSION_2_76'
 
 add_project_arguments([
   '-DGLIB_VERSION_MIN_REQUIRED=@0@'.format(glib_ver),
