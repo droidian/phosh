@@ -65,6 +65,7 @@ struct _PhoshHome
   GtkWidget *powerbar;
   PhoshOskManager *osk;
   GtkWidget *stack;
+  GtkGesture     *swipe_gesture;
 
   guint      debounce_handle;
   gboolean   focus_app_search;
@@ -287,6 +288,55 @@ on_powerbar_pressed (PhoshHome *self, PhoshOskManager *osk, PhoshShell *shell)
   phosh_osk_manager_set_visible (self->osk, osk_new_state);
 
   phosh_trigger_feedback ("button-pressed");
+}
+
+static void
+on_powerbar_swiped (GtkGestureSwipe *gesture, double velocity_x, double velocity_y, gpointer user_data)
+{
+  PhoshHome *self;
+  PhoshToplevelManager *toplevel_manager;
+
+  gint toplevel_n;
+  gint toplevel_active;
+  gint toplevel_next;
+
+  self = g_object_get_data (G_OBJECT (gesture), "phosh-home");
+  g_return_if_fail (PHOSH_IS_HOME (self));
+
+  /* only allow swiping when folded; it doesn't make sense while in the overview */
+  if (phosh_drag_surface_get_drag_state(PHOSH_DRAG_SURFACE (self)) != PHOSH_DRAG_SURFACE_STATE_FOLDED)
+    return;
+
+  g_debug("detected swipe on home: velocity_x: %f; velocity_y: %f", velocity_x, velocity_y);
+
+  toplevel_manager = phosh_shell_get_toplevel_manager (phosh_shell_get_default ());
+
+  toplevel_n = phosh_toplevel_manager_get_num_toplevels(toplevel_manager);
+  if (toplevel_n < 2) /* no swipe possible if there is only one activity */
+      return;
+
+  for (toplevel_active = 0; toplevel_active < toplevel_n; toplevel_active++) {
+    if (phosh_toplevel_is_activated (phosh_toplevel_manager_get_toplevel (toplevel_manager, toplevel_active)))
+      break;
+    if (toplevel_active == toplevel_n -1) // no toplevel active?
+      return;
+  }
+
+  if (velocity_x < 0)
+    toplevel_next = toplevel_active + 1;
+  else if (velocity_x > 0)
+    toplevel_next = toplevel_active - 1;
+  else
+    return;
+
+  if (toplevel_next < 0 || toplevel_next >= toplevel_n) {
+    g_debug ("next toplevel is out of bounds - id: %d", toplevel_next);
+    return;
+  }
+
+  phosh_toplevel_activate (
+          phosh_toplevel_manager_get_toplevel (toplevel_manager, toplevel_next),
+          phosh_wayland_get_wl_seat (phosh_wayland_get_default ()));
 }
 
 
@@ -534,6 +584,7 @@ phosh_home_constructed (GObject *object)
 
   g_object_set_data (G_OBJECT (self->click_gesture), "phosh-home", self);
   g_object_set_data (G_OBJECT (self->osk_toggle_long_press), "phosh-home", self);
+  g_object_set_data (G_OBJECT (self->swipe_gesture), "phosh-home", self);
 }
 
 
@@ -601,9 +652,11 @@ phosh_home_class_init (PhoshHomeClass *klass)
   gtk_widget_class_bind_template_child (widget_class, PhoshHome, stack);
   gtk_widget_class_bind_template_child (widget_class, PhoshHome, click_gesture);
   gtk_widget_class_bind_template_child (widget_class, PhoshHome, osk_toggle_long_press);
+  gtk_widget_class_bind_template_child (widget_class, PhoshHome, swipe_gesture);
   gtk_widget_class_bind_template_child (widget_class, PhoshHome, overview);
   gtk_widget_class_bind_template_callback (widget_class, fold_cb);
   gtk_widget_class_bind_template_callback (widget_class, on_home_released);
+  gtk_widget_class_bind_template_callback (widget_class, on_powerbar_swiped);
   gtk_widget_class_bind_template_callback (widget_class, on_has_activities_changed);
   gtk_widget_class_bind_template_callback (widget_class, on_powerbar_pressed);
   gtk_widget_class_bind_template_callback (widget_class, on_powerbar_action_started);
