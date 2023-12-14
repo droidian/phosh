@@ -187,7 +187,7 @@ phosh-audio-device-row image {
 /* phosh-home */
 
 .opaque  {
-  background-color: @phosh_bg_color;
+  background-color: @window_bg_color;
 }
 
 #powerbar {
