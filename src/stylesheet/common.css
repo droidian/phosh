@@ -209,6 +209,12 @@ phosh-audio-device-row image {
   animation-iteration-count: 1;
 }
 
+.p-auto-hide #powerbar {
+  transition: 10s ease;
+  background-size: 15px 5px;
+  opacity: 0.1;
+}
+
 @keyframes error-shake {
    0% {background-position: center; opacity: .5;}
   10% {background-position: center; opacity: .7;}

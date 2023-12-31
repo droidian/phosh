@@ -28,6 +28,7 @@
 
 #define POWERBAR_ACTIVE_CLASS "p-active"
 #define POWERBAR_FAILED_CLASS "p-failed"
+#define POWERBAR_AUTO_HIDE_CLASS "p-auto-hide"
 #define HOMEBAR_OPAQUE_CLASS "opaque"
 
 /**
@@ -100,7 +101,7 @@ phosh_home_update_home_bar (PhoshHome *self)
   }
 
   gtk_stack_set_visible_child_name (GTK_STACK (self->stack), visible_child);
-  phosh_util_toggle_style_class (self->stack, HOMEBAR_OPAQUE_CLASS , home_bar_transparent);
+  /*phosh_util_toggle_style_class (self->stack, HOMEBAR_OPAQUE_CLASS , home_bar_transparent); */
 }
 
 
@@ -240,6 +241,8 @@ static void
 on_powerbar_action_started (PhoshHome *self)
 {
   g_debug ("powerbar action started");
+  phosh_util_toggle_style_class (self->stack, POWERBAR_AUTO_HIDE_CLASS, FALSE);
+
   phosh_util_toggle_style_class (self->stack, POWERBAR_FAILED_CLASS, FALSE);
   phosh_util_toggle_style_class (self->stack, POWERBAR_ACTIVE_CLASS, TRUE);
 }
@@ -248,9 +251,11 @@ on_powerbar_action_started (PhoshHome *self)
 static void
 on_powerbar_action_ended (PhoshHome *self)
 {
-  g_debug ("powerbar action ended");
+  g_debug ("powerbar action ended");    
   phosh_util_toggle_style_class (self->stack, POWERBAR_ACTIVE_CLASS, FALSE);
   phosh_util_toggle_style_class (self->stack, POWERBAR_FAILED_CLASS, FALSE);
+
+  phosh_util_toggle_style_class (self->stack, POWERBAR_AUTO_HIDE_CLASS, TRUE);
 }
 
 
@@ -260,6 +265,8 @@ on_powerbar_action_failed (PhoshHome *self)
   g_debug ("powerbar action failed");
   phosh_util_toggle_style_class (self->stack, POWERBAR_ACTIVE_CLASS, FALSE);
   phosh_util_toggle_style_class (self->stack, POWERBAR_FAILED_CLASS, TRUE);
+    
+  phosh_util_toggle_style_class (self->stack, POWERBAR_AUTO_HIDE_CLASS, TRUE);
 }
 
 
@@ -706,7 +713,6 @@ phosh_home_new (struct zwlr_layer_shell_v1 *layer_shell,
                        "namespace", "phosh home",
                        /* drag-surface */
                        "layer-shell-effects", layer_shell_effects,
-                       "exclusive", PHOSH_HOME_BUTTON_HEIGHT,
                        "threshold", PHOSH_HOME_DRAG_THRESHOLD,
                        NULL);
 }
