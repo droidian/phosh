@@ -77,6 +77,17 @@
         UI elements in order to not overlap with notches and cutouts.
       </description>
     </key>
+
+    <key name="osk-unfold-delay" type="d">
+      <default>1.0</default>
+      <summary>OSK unfold long press delay factor</summary>
+      <description>
+        Delay factor for long press on the home bar to unfold the keyboard.
+        Valid values are [0.5,2.0]. Values less than 1.0 make the unfold trigger
+        sooner, greater than 1.0 make the unfold trigger later.
+      </description>
+    </key>
+
   </schema>
 
   <schema id="sm.puri.phosh.emergency-calls"
@@ -98,7 +109,7 @@
       <summary>Whether to scramble the keypad</summary>
       <description>
         Setting this to true shuffle the digits on the PIN keypad to
-        make eaveysdropping harder.
+        make eavesdropping harder.
       </description>
     </key>
   </schema>
