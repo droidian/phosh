@@ -264,7 +264,7 @@ phosh-activity.phosh-empty {
 }
 
 phosh-home {
-  background: @phosh_bg_color;
+  background: none;
   color: @phosh_fg_color;
 }
 
@@ -277,7 +277,7 @@ phosh-home {
 }
 
 .phosh-overview {
-  background: @phosh_bg_color;
+  background: none;
   color: @phosh_fg_color;
 }
 
@@ -319,7 +319,7 @@ phosh-home {
 }
 
 phosh-app-grid {
-  background: @phosh_bg_color;
+  background: none;
   color: @phosh_fg_color;
 }
 
