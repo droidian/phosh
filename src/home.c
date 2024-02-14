@@ -83,10 +83,14 @@ G_DEFINE_TYPE(PhoshHome, phosh_home, PHOSH_TYPE_DRAG_SURFACE);
 static void
 phosh_home_update_home_bar (PhoshHome *self)
 {
-  gboolean reveal;
+  gboolean reveal, solid;
+  PhoshDragSurfaceState drag_state = phosh_drag_surface_get_drag_state (PHOSH_DRAG_SURFACE (self));
 
   reveal = !(self->state == PHOSH_HOME_STATE_UNFOLDED);
   gtk_revealer_set_reveal_child (GTK_REVEALER (self->rev_powerbar), reveal);
+
+  solid = !!(self->state == PHOSH_HOME_STATE_FOLDED && drag_state != PHOSH_DRAG_SURFACE_STATE_DRAGGED);
+  phosh_util_toggle_style_class (GTK_WIDGET (self), "p-solid", solid);
 }
 
 
@@ -427,6 +431,19 @@ on_keybindings_changed (PhoshHome *self,
 
 
 static void
+phosh_home_dragged (PhoshDragSurface *self, int margin)
+{
+  int width, height;
+  double progress;
+
+  gtk_window_get_size (GTK_WINDOW (self), &width, &height);
+  progress = 1.0 - (-margin / (double)(height - PHOSH_HOME_BAR_HEIGHT));
+
+  phosh_shell_set_bg_alpha (phosh_shell_get_default (), hdy_ease_out_cubic (progress));
+}
+
+
+static void
 on_drag_state_changed (PhoshHome *self)
 {
   PhoshHomeState state = self->state;
@@ -443,9 +460,11 @@ on_drag_state_changed (PhoshHome *self)
       phosh_overview_focus_app_search (PHOSH_OVERVIEW (self->overview));
       self->focus_app_search = FALSE;
     }
+    phosh_shell_set_bg_alpha (phosh_shell_get_default (), 1.0);
     break;
   case PHOSH_DRAG_SURFACE_STATE_FOLDED:
     state = PHOSH_HOME_STATE_FOLDED;
+    phosh_shell_set_bg_alpha (phosh_shell_get_default (), 0.0);
     break;
   case PHOSH_DRAG_SURFACE_STATE_DRAGGED:
     if (self->state == PHOSH_HOME_STATE_FOLDED)
@@ -520,12 +539,15 @@ phosh_home_class_init (PhoshHomeClass *klass)
 {
   GObjectClass *object_class = (GObjectClass *)klass;
   GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
+  PhoshDragSurfaceClass *drag_surface_class = PHOSH_DRAG_SURFACE_CLASS (klass);
 
   object_class->constructed = phosh_home_constructed;
   object_class->dispose = phosh_home_dispose;
 
   object_class->set_property = phosh_home_set_property;
   object_class->get_property = phosh_home_get_property;
+
+  drag_surface_class->dragged = phosh_home_dragged;
 
   /**
    * PhoshHome:state:
