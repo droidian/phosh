@@ -23,6 +23,7 @@
 
 #include "phosh-config.h"
 #include "ambient.h"
+#include "background.h"
 #include "drag-surface.h"
 #include "shell.h"
 #include "app-tracker.h"
@@ -127,6 +128,7 @@ static PhoshShellDebugFlags debug_flags;
 
 typedef struct
 {
+  PhoshBackground *home_bg;
   PhoshDragSurface *top_panel;
   PhoshDragSurface *home;
   GPtrArray *faders;              /* for final fade out */
@@ -299,6 +301,20 @@ on_home_state_changed (PhoshShell *self, GParamSpec *pspec, PhoshHome *home)
 
   state = phosh_home_get_state (PHOSH_HOME (priv->home));
   phosh_shell_set_state (self, PHOSH_STATE_OVERVIEW, state == PHOSH_HOME_STATE_UNFOLDED);
+
+  if (state == PHOSH_HOME_STATE_FOLDED)
+    phosh_layer_surface_set_empty_input_region (PHOSH_LAYER_SURFACE (priv->home_bg));
+}
+
+
+static void
+on_home_drag_state_changed (PhoshShell *self, GParamSpec *pspec, PhoshHome *home)
+{
+  PhoshShellPrivate *priv;
+
+  /* Make the top-panel transparent when home unfolds */
+  priv = phosh_shell_get_instance_private (self);
+  phosh_util_toggle_style_class (GTK_WIDGET (priv->top_panel), "p-solid-trans", FALSE);
 }
 
 
@@ -366,6 +382,21 @@ panels_create (PhoshShell *self)
 
   top_layer = priv->locked ? ZWLR_LAYER_SHELL_V1_LAYER_OVERLAY : ZWLR_LAYER_SHELL_V1_LAYER_TOP;
 
+  /* TODO: just handle the background as part of PhoshHome */
+  /* Home background */
+  priv->home_bg =  PHOSH_BACKGROUND (phosh_background_new (
+                                      phosh_wayland_get_zwlr_layer_shell_v1(wl),
+                                      monitor,
+                                      /* Span over whole display */
+                                      FALSE,
+                                      ZWLR_LAYER_SHELL_V1_LAYER_TOP));
+  gtk_widget_show (GTK_WIDGET (priv->home_bg));
+  g_signal_connect_object (phosh_shell_get_background_manager (self),
+                           "config-changed",
+                           G_CALLBACK (phosh_background_needs_update),
+                           priv->home_bg,
+                           G_CONNECT_SWAPPED);
+
   /* Top panel background */
   top_bg = PHOSH_TOP_PANEL_BG (phosh_top_panel_bg_new (phosh_wayland_get_zwlr_layer_shell_v1 (wl),
                                                        monitor,
@@ -387,6 +418,9 @@ panels_create (PhoshShell *self)
                                                    monitor));
   gtk_widget_show (GTK_WIDGET (priv->home));
 
+  phosh_layer_surface_set_stacked_below (PHOSH_LAYER_SURFACE (priv->home_bg),
+                                         PHOSH_LAYER_SURFACE (priv->home));
+
   g_object_set (priv->top_panel, "background", top_bg, NULL);
   phosh_layer_surface_set_stacked_below (PHOSH_LAYER_SURFACE (top_bg),
                                          PHOSH_LAYER_SURFACE (priv->top_panel));
@@ -405,6 +439,12 @@ panels_create (PhoshShell *self)
                             "notify::state",
                             G_CALLBACK (on_home_state_changed),
                             self);
+
+  g_signal_connect_swapped (
+    priv->home,
+    "notify::drag-state",
+    G_CALLBACK(on_home_drag_state_changed),
+    self);
 
   app_grid = phosh_overview_get_app_grid (phosh_home_get_overview (PHOSH_HOME (priv->home)));
   g_object_bind_property (priv->docked_manager,
@@ -2496,6 +2536,18 @@ phosh_shell_get_lockscreen_type (PhoshShell *self)
 {
   PhoshShellClass *klass = PHOSH_SHELL_GET_CLASS (self);
   return klass->get_lockscreen_type (self);
+}
+
+
+void
+phosh_shell_set_bg_alpha (PhoshShell *self, double alpha)
+{
+  PhoshShellPrivate *priv;
+
+  g_return_if_fail (PHOSH_IS_SHELL (self));
+  priv = phosh_shell_get_instance_private (self);
+
+  phosh_layer_surface_set_alpha (PHOSH_LAYER_SURFACE (priv->home_bg), alpha);
 }
 
 /* }}} */
