@@ -988,6 +988,12 @@ phosh-emergency-menu .emergency-button {
   background-color: @phosh_bg_color;
 }
 
+.p-solid-trans {
+  background-color: @phosh_bg_color;
+  transition-timing-function: ease-out;
+  transition: background-color 100ms;
+}
+
 /*
  * GTK Overrides
  */

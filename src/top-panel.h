@@ -7,6 +7,7 @@
 #pragma once
 
 #include "drag-surface.h"
+#include "top-panel-bg.h"
 
 #define PHOSH_TYPE_TOP_PANEL            (phosh_top_panel_get_type ())
 
@@ -29,8 +30,10 @@ typedef enum {
 GtkWidget         *phosh_top_panel_new (struct zwlr_layer_shell_v1          *layer_shell,
                                         struct zphoc_layer_shell_effects_v1 *layer_shell_effects,
                                         PhoshMonitor                        *monitor,
-                                        guint32                              layer);
+                                        guint32                              layer,
+                                        PhoshTopPanelBg                     *background);
 void               phosh_top_panel_toggle_fold (PhoshTopPanel *self);
 void               phosh_top_panel_fold (PhoshTopPanel *self);
 void               phosh_top_panel_unfold (PhoshTopPanel *self);
 PhoshTopPanelState phosh_top_panel_get_state (PhoshTopPanel *self);
+void               phosh_top_panel_set_layer (PhoshTopPanel *self, guint32 layer);
