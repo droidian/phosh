@@ -60,5 +60,9 @@ void                              phosh_layer_surface_set_alpha (PhoshLayerSurfa
                                                                  double             alpha);
 gboolean                          phosh_layer_surface_has_alpha (PhoshLayerSurface *self);
 void                              phosh_layer_surface_set_empty_input_region (PhoshLayerSurface *self);
+void                              phosh_layer_surface_set_stacked_above (PhoshLayerSurface *self,
+                                                                         PhoshLayerSurface *target);
+void                              phosh_layer_surface_set_stacked_below (PhoshLayerSurface *self,
+                                                                         PhoshLayerSurface *target);
 
 G_END_DECLS
