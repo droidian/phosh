@@ -59,5 +59,6 @@ int                               phosh_layer_surface_get_configured_height (Pho
 void                              phosh_layer_surface_set_alpha (PhoshLayerSurface *self,
                                                                  double             alpha);
 gboolean                          phosh_layer_surface_has_alpha (PhoshLayerSurface *self);
+void                              phosh_layer_surface_set_empty_input_region (PhoshLayerSurface *self);
 
 G_END_DECLS
