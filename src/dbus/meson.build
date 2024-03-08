@@ -10,6 +10,8 @@ dbus_prefix = 'PhoshDBus'
 # Protocols where Phosh is the DBus client:
 #
 dbus_client_protos = [
+  # DBus-specific
+  ['droidian-flashlightd-dbus', 'org.droidian.Flashlightd.xml', 'org.droidian.Flashlightd'],
   # Sorted by xml filename:
   ['iio-sensor-proxy-dbus', 'net.hadess.SensorProxy.xml', 'net.hadess'],
   ['hostname1-dbus', 'org.freedesktop.hostname1.xml', 'org.freedesktop'],

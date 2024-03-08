@@ -59,7 +59,7 @@ struct _PhoshTorchManager {
   GUdevDevice           *udev_device;
 
   PhoshDBusLoginSession *proxy;
-  DroidianTorchDbusDroidianTorch     *droid_proxy;
+  PhoshDBusDroidianTorch *droid_proxy;
 
   GCancellable                       *cancel;
 };
@@ -72,13 +72,13 @@ apply_brightness (PhoshTorchManager *self)
   const char *icon_name;
 
   g_return_if_fail (PHOSH_IS_TORCH_MANAGER (self));
-  if (!DROIDIAN_TORCH_DBUS_IS_DROIDIAN_TORCH (self->droid_proxy)){
+  if (!PHOSH_DBUS_IS_DROIDIAN_TORCH (self->droid_proxy)){
     g_return_if_fail (G_UDEV_IS_DEVICE (self->udev_device));
 
     self->brightness = g_udev_device_get_sysfs_attr_as_int_uncached (self->udev_device,
                                                                      "brightness");
   } else {
-    self->brightness = droidian_torch_dbus_droidian_torch_get_brightness (self->droid_proxy);
+    self->brightness = phosh_dbus_droidian_torch_get_brightness (self->droid_proxy);
   }
   g_object_freeze_notify (G_OBJECT (self));
 
@@ -113,14 +113,14 @@ on_brightness_set (PhoshDBusLoginSession *proxy,
 }
 
 static void
-on_droid_brightness_set (DroidianTorchDbusDroidianTorch     *droid_proxy,
+on_droid_brightness_set (PhoshDBusDroidianTorch             *droid_proxy,
                          GAsyncResult                       *res,
                          PhoshTorchManager                  *self)
 {
   g_autoptr (GError) err = NULL;
 
   g_return_if_fail (PHOSH_IS_TORCH_MANAGER (self));
-  if (!droidian_torch_dbus_droidian_torch_call_set_brightness_finish (droid_proxy, res, &err)) {
+  if (!phosh_dbus_droidian_torch_call_set_brightness_finish (droid_proxy, res, &err)) {
       g_warning ("Failed to set torch brigthness: %s", err->message);
       return;
   }
@@ -146,11 +146,11 @@ set_brightness (PhoshTorchManager *self, int brightness)
                                                 self);
   } else {
     /* Droidian Flashlightd */
-    droidian_torch_dbus_droidian_torch_call_set_brightness (self->droid_proxy,
-                                                            (guint) brightness,
-                                                            NULL,
-                                                            (GAsyncReadyCallback) on_droid_brightness_set,
-                                                            self);
+    phosh_dbus_droidian_torch_call_set_brightness (self->droid_proxy,
+                                                   (guint) brightness,
+                                                   NULL,
+                                                   (GAsyncReadyCallback) on_droid_brightness_set,
+                                                   self);
   }
 }
 
@@ -229,7 +229,7 @@ find_torch_device (PhoshTorchManager *self)
 static gboolean
 find_droid_torch_device (PhoshTorchManager *self)
 {
-  if (DROIDIAN_TORCH_DBUS_IS_DROIDIAN_TORCH (self->droid_proxy)){
+  if (PHOSH_DBUS_IS_DROIDIAN_TORCH (self->droid_proxy)){
     self->max_brightness = 1;
     return TRUE;
   }
@@ -272,9 +272,9 @@ on_droid_proxy_new_for_bus_finish (GObject           *source_object,
                              PhoshTorchManager *self)
 {
   g_autoptr (GError) err = NULL;
-  DroidianTorchDbusDroidianTorch     *droid_proxy;
+  PhoshDBusDroidianTorch *droid_proxy;
 
-  droid_proxy = droidian_torch_dbus_droidian_torch_proxy_new_for_bus_finish (res, &err);
+  droid_proxy = phosh_dbus_droidian_torch_proxy_new_for_bus_finish (res, &err);
   if(!droid_proxy){
     phosh_async_error_warn (err, "Failed to get droid torch proxy");
     return;
@@ -311,13 +311,13 @@ phosh_torch_manager_idle_init (PhoshManager *manager)
                                               (GAsyncReadyCallback) on_proxy_new_for_bus_finish,
                                               self);
 
-  droidian_torch_dbus_droidian_torch_proxy_new_for_bus (G_BUS_TYPE_SESSION,
-                                                        G_DBUS_PROXY_FLAGS_NONE,
-                                                        "org.droidian.Flashlightd",
-                                                        "/org/droidian/Flashlightd",
-                                                        self->cancel,
-                                                        (GAsyncReadyCallback) on_droid_proxy_new_for_bus_finish,
-                                                        self);
+  phosh_dbus_droidian_torch_proxy_new_for_bus (G_BUS_TYPE_SESSION,
+                                               G_DBUS_PROXY_FLAGS_NONE,
+                                               "org.droidian.Flashlightd",
+                                               "/org/droidian/Flashlightd",
+                                               self->cancel,
+                                               (GAsyncReadyCallback) on_droid_proxy_new_for_bus_finish,
+                                               self);
 }
 
 
