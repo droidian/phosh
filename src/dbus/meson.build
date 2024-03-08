@@ -13,6 +13,14 @@ dbus_inc_dir = lib_inc_dir / 'dbus'
 # Protocols where Phosh is the DBus client:
 #
 dbus_client_protos = [
+  # Droidian specific
+  [
+    'droidian-flashlightd-dbus',
+    'org.droidian.Flashlightd.xml',
+    'org.droidian.Flashlightd',
+    false,
+    false
+  ],
   # Sorted by xml filename:
   [
     'iio-sensor-proxy-dbus',
