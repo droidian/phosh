@@ -3,6 +3,12 @@ configure_file(
   output: 'run_tool',
   configuration: run_data)
 
+test('check-exported-symbols',
+     find_program('check-exported-symbols'),
+     args: phosh,
+     suite: 'tools',
+)
+
 tools_or_tests = get_option('tools') or get_option('tests')
 
 if tools_or_tests
@@ -11,13 +17,13 @@ if tools_or_tests
              dependencies: phosh_tool_dep)
 endif
 
-if get_option('lockscreen-plugins') or tools_or_tests
+if get_option('lockscreen-plugins') or get_option('quick-setting-plugins') or tools_or_tests
   # plugin-prefs is used in the tests
   executable('plugin-prefs', ['plugin-prefs-standalone.c',
                               '../src/plugin-loader.c',
                              ],
              c_args: ['-DBUILD_DIR="@0@"'.format(meson.project_build_root()),
-                      '-DPLUGINS="@0@"'.format(' '.join(lockscreen_plugins)),
+                      '-DPLUGINS="@0@"'.format(' '.join(lockscreen_plugins + quick_setting_plugins)),
                       '-DTEST_INSTALLED="@0@/install"'.format(meson.project_build_root()),
                      ],
              include_directories: [root_inc, phosh_inc],
@@ -50,6 +56,17 @@ if get_option('tools')
                c_args: ['-DBUILD_DIR="@0@"'.format(meson.project_build_root()),
                         '-DPLUGINS="@0@"'.format(' '.join(lockscreen_plugins)),
                        ],
-               dependencies: phosh_tool_dep)
+               link_args: phosh_export_sym_link_arg,
+               dependencies: [gmodule_dep, phosh_tool_dep])
+  endif
+
+  if get_option('quick-setting-plugins')
+    executable('custom-quick-settings', ['custom-quick-settings-standalone.c'] + test_stub_deps,
+               c_args: ['-DBUILD_DIR="@0@"'.format(meson.project_build_root()),
+                        '-DPLUGINS="@0@"'.format(' '.join(quick_setting_plugins)),
+                       ],
+               link_args: phosh_export_sym_link_arg,
+               link_with: [phosh_lib],
+               dependencies: [gmodule_dep, phosh_tool_dep])
   endif
 endif

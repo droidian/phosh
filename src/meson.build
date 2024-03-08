@@ -51,6 +51,7 @@ libphosh_glib_generated_sources = [
   phosh_enums,
   phosh_marshalers,
   phosh_resources,
+  generated_dbus_headers,
   generated_dbus_sources,
 ]
 
@@ -82,6 +83,10 @@ libphosh_tool_sources = files(
   'app-list-model.h',
   'auth-prompt-option.c',
   'auth-prompt-option.h',
+  'background-cache.c',
+  'background-cache.h',
+  'background-image.c',
+  'background-image.h',
   'background.c',
   'background.h',
   'bidi.c',
@@ -275,6 +280,8 @@ libphosh_sources = files(
   'session-manager.h',
   'shell.c',
   'shell.h',
+  'status-page.c',
+  'status-page.h',
   'system-prompt.c',
   'system-prompt.h',
   'system-prompter.c',
@@ -289,10 +296,16 @@ libphosh_sources = files(
   'torch-manager.h',
   'toplevel.c',
   'toplevel.h',
-  'wifiinfo.c',
-  'wifiinfo.h',
-  'wifimanager.c',
-  'wifimanager.h',
+  'wifi-status-page.c',
+  'wifi-status-page.h',
+  'wifi-network-row.c',
+  'wifi-network-row.h',
+  'wifi-network.c',
+  'wifi-network.h',
+  'wifi-info.c',
+  'wifi-info.h',
+  'wifi-manager.c',
+  'wifi-manager.h',
   'wwan-info.c',
   'wwan-info.h',
 ) + [
@@ -330,34 +343,43 @@ phosh_deps = [
 ]
 
 phosh_inc = include_directories('.')
+phosh_lib_inc = [root_inc, phosh_inc, proto_inc, dbus_inc, phosh_gtk_list_models_inc]
+
 # A static library used by tests and tools
 phosh_tool_lib = static_library('phosh-tool',
   [libphosh_tool_sources,
    libphosh_generated_sources,
    phosh_gtk_list_models_sources],
-  include_directories: [root_inc, phosh_inc],
+  include_directories: phosh_lib_inc,
   dependencies: phosh_deps)
 phosh_tool_dep = declare_dependency(sources: libphosh_generated_sources,
-  include_directories: [root_inc, phosh_inc],
+  include_directories: phosh_lib_inc,
   link_with: phosh_tool_lib,
   dependencies: phosh_deps)
 
+# A static library containing everything
 phosh_lib = both_libraries('phosh',
   libphosh_sources,
-  include_directories: [root_inc, phosh_inc],
+  include_directories: phosh_lib_inc,
   dependencies: [phosh_tool_dep, phosh_deps])
+
+phosh_static_lib_dep = declare_dependency(
+  include_directories: phosh_lib_inc,
+  link_with: phosh_lib.get_static_lib(),
+  dependencies: [phosh_deps, phosh_tool_dep],
+)
+
+# Dependencies that can be used by plugins
+phosh_plugins_dep = declare_dependency(
+  include_directories: phosh_lib_inc,
+  sources: generated_dbus_headers,
+)
 
 if get_option('gtk_doc')
   phosh_gir_sources = [ libphosh_sources,
                         libphosh_tool_sources,
                         libphosh_glib_generated_sources,
                       ]
-
-  # Shared lib used by docs
-  phosh_doc_dep = declare_dependency(sources: libphosh_generated_sources,
-    include_directories: [root_inc, phosh_inc, proto_inc, dbus_inc],
-    link_with: phosh_lib,
-    dependencies: phosh_deps)
 
   phosh_gir_extra_args = [
     '--quiet',
@@ -373,17 +395,16 @@ if get_option('gtk_doc')
               link_with : phosh_lib,
                includes : ['Gio-2.0', 'Gtk-3.0', 'Handy-1'],
              extra_args : phosh_gir_extra_args,
-           dependencies : phosh_doc_dep,
+           dependencies : phosh_static_lib_dep,
    )
 endif
 
-# Static library used by shell and integration tests
-phosh_dep = declare_dependency(
-  include_directories: [root_inc, phosh_inc],
-  link_with: phosh_lib.get_static_lib(),
-  dependencies: [phosh_deps, phosh_tool_dep])
-
-phosh = executable('phosh', 'main.c',
-  dependencies: phosh_dep,
+phosh_export_sym_link_arg = '-Wl,--dynamic-list=@0@/phosh-exported-symbols.txt'.format(meson.current_source_dir())
+phosh = executable(
+  'phosh', 'main.c',
+  dependencies: phosh_static_lib_dep,
+  link_depends: ['phosh-exported-symbols.txt'],
+  link_args: phosh_export_sym_link_arg,
   install: true,
-  install_dir: libexecdir)
+  install_dir: libexecdir
+)

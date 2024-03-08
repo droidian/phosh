@@ -2,6 +2,7 @@ name='ticket-box'
 
 ticket_box_plugin_deps = [
   plugin_dep,
+  gio_unix_dep,
   dependency('evince-document-3.0'),
   dependency('evince-view-3.0'),
 ]
@@ -30,9 +31,6 @@ phosh_ticket_box_plugin = shared_module(
             '-DPLUGIN_NAME="@0@"'.format(name),
 	   ],
   dependencies: ticket_box_plugin_deps,
-  include_directories: [root_inc,
-                        phosh_gtk_list_models_inc
-                       ],
   install: true,
   install_dir: plugins_dir,
 )

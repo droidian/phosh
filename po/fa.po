@@ -1,22 +1,22 @@
 # Persian translation for phosh.
 # Copyright (C) 2020 phosh's COPYRIGHT HOLDER
 # This file is distributed under the same license as the phosh package.
-# Danial Behzadi <dani.behzi@ubuntu.com>, 2020-2023.
+# Danial Behzadi <dani.behzi@ubuntu.com>, 2020-2024.
 #
 msgid ""
 msgstr ""
 "Project-Id-Version: phosh master\n"
 "Report-Msgid-Bugs-To: https://gitlab.gnome.org/World/Phosh/phosh/issues\n"
-"POT-Creation-Date: 2023-11-27 10:12+0000\n"
-"PO-Revision-Date: 2023-12-25 13:38+0330\n"
+"POT-Creation-Date: 2024-03-06 13:44+0000\n"
+"PO-Revision-Date: 2024-03-07 00:01+0330\n"
 "Last-Translator: Danial Behzadi <dani.behzi@ubuntu.com>\n"
 "Language-Team: Persian <fa@li.org>\n"
 "Language: fa\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n==0 || n==1);\n"
-"X-Generator: Poedit 3.4.1\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+"X-Generator: Poedit 3.4.2\n"
 
 #. Translators: this is the session name, no need to translate it
 #: data/phosh.session.desktop.in.in:4 data/wayland-sessions/phosh.desktop:3
@@ -35,11 +35,23 @@ msgstr "مدیریت پنجره‌ها و اجرا کنندهٔ برنامه‌�
 msgid "This session logs you into Phosh"
 msgstr "این نشست وارد فوشتان می‌کند"
 
+#: plugins/caffeine-quick-setting/caffeine-quick-setting.c:51
+msgid "Phosh on caffeine"
+msgstr "فوش روی کافئین"
+
+#: plugins/caffeine-quick-setting/caffeine-quick-setting.c:130
+msgid "On"
+msgstr "روشن"
+
+#: plugins/caffeine-quick-setting/caffeine-quick-setting.c:130
+msgid "Off"
+msgstr "خاموش"
+
 #: plugins/calendar/calendar.desktop.in.in:5
 msgid "Calendar"
 msgstr "تقویم"
 
-#: plugins/calendar/calendar.desktop.in.in:6
+#: plugins/calendar/calendar.desktop.in.in:7
 msgid "A simple calendar widget"
 msgstr "ابزارک تقویمی ساده"
 
@@ -48,7 +60,7 @@ msgstr "ابزارک تقویمی ساده"
 msgid "Ticket Box"
 msgstr "جعبهٔ بلیت"
 
-#: plugins/ticket-box/ticket-box.desktop.in.in:5
+#: plugins/ticket-box/ticket-box.desktop.in.in:6
 msgid "Show PDFs on the lock screen. <b>This plugin is experimental.</b>"
 msgstr "نمایش PDFها روی صفحهٔ قفل. <b>این افزایه آزمایشی است.</b>"
 
@@ -56,7 +68,7 @@ msgstr "نمایش PDFها روی صفحهٔ قفل. <b>این افزایه آز
 msgid "Upcoming Events"
 msgstr "رویدادهای پیش رو"
 
-#: plugins/upcoming-events/upcoming-events.desktop.in.in:5
+#: plugins/upcoming-events/upcoming-events.desktop.in.in:6
 msgid "Show upcoming calendar events"
 msgstr "نمایش رویدادهای تقویم پیش رو"
 
@@ -180,7 +192,7 @@ msgstr "نه"
 msgid "Enter Passcode"
 msgstr "ورود رمز عبور"
 
-#: src/lockscreen.c:398
+#: src/lockscreen.c:401
 msgid "Checking…"
 msgstr "در حال بررسی…"
 
@@ -228,12 +240,12 @@ msgstr "ناشناخته"
 
 #: src/network-auth-prompt.c:202
 #, c-format
-msgid "Authentication type of wifi network “%s” not supported"
+msgid "Authentication type of Wi-Fi network “%s” not supported"
 msgstr "گونهٔ تأییدیهٔ شبکهٔ وای‌فای %s پشتیبانی نمی‌شود"
 
 #: src/network-auth-prompt.c:207
 #, c-format
-msgid "Enter password for the wifi network “%s”"
+msgid "Enter password for the Wi-Fi network “%s”"
 msgstr "ورود گذرواژه برای شبکهٔ وای‌فای %s"
 
 #: src/notifications/mount-notification.c:121
@@ -395,7 +407,7 @@ msgstr "به‌خاطر سپردن تصمیم"
 
 #: src/ui/app-auth-prompt.ui:62 src/ui/end-session-dialog.ui:62
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:29
-#: plugins/emergency-info/prefs/emergency-info-prefs.ui:289
+#: plugins/emergency-info/prefs/emergency-info-prefs.ui:293
 msgid "Cancel"
 msgstr "لغو"
 
@@ -423,11 +435,11 @@ msgstr "جست‌وجوی کاره‌ها…"
 msgid "Output Devices"
 msgstr "افزاره‌های خروجی"
 
-#: src/ui/audio-settings.ui:107
+#: src/ui/audio-settings.ui:108
 msgid "Input Devices"
 msgstr "افزاره‌های ورودی"
 
-#: src/ui/audio-settings.ui:134
+#: src/ui/audio-settings.ui:136
 msgid "Sound Settings"
 msgstr "تنظیمات صدا"
 
@@ -452,7 +464,7 @@ msgid "Owner unknown"
 msgstr "مالک ناشناخته"
 
 #: src/ui/emergency-menu.ui:124 plugins/emergency-info/emergency-info.ui:195
-#: plugins/emergency-info/prefs/emergency-info-prefs.ui:230
+#: plugins/emergency-info/prefs/emergency-info-prefs.ui:234
 msgid "Emergency Contacts"
 msgstr "تماس‌های اضطراری"
 
@@ -525,11 +537,11 @@ msgstr "_اضطراری"
 msgid "Run Command"
 msgstr "اجرای فرمان"
 
-#: src/ui/settings.ui:296
+#: src/ui/settings.ui:327
 msgid "No notifications"
 msgstr "بدون آگاهی"
 
-#: src/ui/settings.ui:336
+#: src/ui/settings.ui:367
 msgid "Clear all"
 msgstr "پاک‌سازی همه"
 
@@ -553,9 +565,33 @@ msgstr "_تعلیق…"
 msgid "_Log Out…"
 msgstr "_خروج…"
 
+#: src/ui/wifi-status-page.ui:32
+msgid "No Wi-Fi Device Found"
+msgstr "هیچ افزارهٔ وای‌فایی پیدا نشد"
+
+#: src/ui/wifi-status-page.ui:60
+msgid "Wi-Fi Disabled"
+msgstr "وای‌فای از کار افتاده"
+
+#: src/ui/wifi-status-page.ui:97
+msgid "Wi-Fi Hotspot Active"
+msgstr "نقطهٔ داغ وای‌فای فعّال"
+
+#: src/ui/wifi-status-page.ui:133
+msgid "No Wi-Fi Hotspots Found"
+msgstr "هیچ نقطهٔ داغ وای‌فایی پیدا نشد"
+
+#: src/ui/wifi-status-page.ui:144
+msgid "Scan"
+msgstr "پویش"
+
+#: src/ui/wifi-status-page.ui:176
+msgid "Wi-Fi Settings"
+msgstr "تنظیمات وای‌فای"
+
 #. Translators: This is a time format for a date in
 #. long format
-#: src/util.c:343
+#: src/util.c:342
 msgid "%A, %B %-e"
 msgstr "%A، %Od %OB"
 
@@ -572,7 +608,7 @@ msgstr "افزایه پیدا نشد"
 msgid "The plugin '%s' could not be loaded."
 msgstr "افزایهٔ «%s» نتوانست بار شود."
 
-#: src/wifiinfo.c:90
+#: src/wifi-info.c:90
 msgid "Wi-Fi"
 msgstr "وای‌فای"
 
@@ -602,32 +638,32 @@ msgid "Home Address"
 msgstr "نشانی خانه"
 
 #: plugins/emergency-info/emergency-info.ui:91
-#: plugins/emergency-info/prefs/emergency-info-prefs.ui:129
+#: plugins/emergency-info/prefs/emergency-info-prefs.ui:130
 msgid "Medical Information"
 msgstr "اطّلاعات پزشکی"
 
 #: plugins/emergency-info/emergency-info.ui:99
-#: plugins/emergency-info/prefs/emergency-info-prefs.ui:135
+#: plugins/emergency-info/prefs/emergency-info-prefs.ui:136
 msgid "Age"
 msgstr "سن"
 
 #: plugins/emergency-info/emergency-info.ui:117
-#: plugins/emergency-info/prefs/emergency-info-prefs.ui:147
+#: plugins/emergency-info/prefs/emergency-info-prefs.ui:148
 msgid "Blood Type"
 msgstr "گروه خونی"
 
 #: plugins/emergency-info/emergency-info.ui:135
-#: plugins/emergency-info/prefs/emergency-info-prefs.ui:159
+#: plugins/emergency-info/prefs/emergency-info-prefs.ui:160
 msgid "Height"
 msgstr "قد"
 
 #: plugins/emergency-info/emergency-info.ui:153
-#: plugins/emergency-info/prefs/emergency-info-prefs.ui:171
+#: plugins/emergency-info/prefs/emergency-info-prefs.ui:172
 msgid "Weight"
 msgstr "وزن"
 
 #: plugins/emergency-info/emergency-info.ui:171
-#: plugins/emergency-info/prefs/emergency-info-prefs.ui:183
+#: plugins/emergency-info/prefs/emergency-info-prefs.ui:184
 msgid "Allergies"
 msgstr "حسّاسیت‌ها"
 
@@ -636,7 +672,7 @@ msgid "Medications & Conditions"
 msgstr "داروها و شرایط"
 
 #: plugins/emergency-info/emergency-info.ui:187
-#: plugins/emergency-info/prefs/emergency-info-prefs.ui:213
+#: plugins/emergency-info/prefs/emergency-info-prefs.ui:216
 msgid "Other Information"
 msgstr "دیگر اطّلاعات"
 
@@ -653,31 +689,31 @@ msgstr "انجام شد"
 msgid "Owner Name"
 msgstr "نام مالک"
 
-#: plugins/emergency-info/prefs/emergency-info-prefs.ui:198
+#: plugins/emergency-info/prefs/emergency-info-prefs.ui:200
 msgid "Medications and Conditions"
 msgstr "داروها و شرایط"
 
-#: plugins/emergency-info/prefs/emergency-info-prefs.ui:239
+#: plugins/emergency-info/prefs/emergency-info-prefs.ui:243
 msgid "Add Contact"
 msgstr "افزودن آشنا"
 
-#: plugins/emergency-info/prefs/emergency-info-prefs.ui:284
+#: plugins/emergency-info/prefs/emergency-info-prefs.ui:288
 msgid "Add New Contact"
 msgstr "افزودن آشنای جدید"
 
-#: plugins/emergency-info/prefs/emergency-info-prefs.ui:294
+#: plugins/emergency-info/prefs/emergency-info-prefs.ui:298
 msgid "Add"
 msgstr "افزودن"
 
-#: plugins/emergency-info/prefs/emergency-info-prefs.ui:315
+#: plugins/emergency-info/prefs/emergency-info-prefs.ui:319
 msgid "New Contact Name"
 msgstr "نام آشنای جدید"
 
-#: plugins/emergency-info/prefs/emergency-info-prefs.ui:329
+#: plugins/emergency-info/prefs/emergency-info-prefs.ui:333
 msgid "Relationship"
 msgstr "رابطه"
 
-#: plugins/emergency-info/prefs/emergency-info-prefs.ui:342
+#: plugins/emergency-info/prefs/emergency-info-prefs.ui:346
 msgid "Number"
 msgstr "شماره"
 
@@ -723,7 +759,7 @@ msgstr "تنظیمات شاخه"
 
 #: plugins/ticket-box/prefs/ticket-box-prefs.ui:19
 msgid "Where Phosh looks for your tickets"
-msgstr "جایی که فوش به دنبال بلیت‌ّایتان می‌گردد"
+msgstr "جایی که فوش به دنبال بلیت‌هایتان می‌گردد"
 
 #: plugins/ticket-box/prefs/ticket-box-prefs.ui:22
 msgid "Ticket Folder"
@@ -742,7 +778,7 @@ msgstr "فردا"
 msgid "In %d day"
 msgid_plural "In %d days"
 msgstr[0] "در %Id روز"
-msgstr[1] "در ۱ روز"
+msgstr[1] "در %Id روز"
 
 #: plugins/upcoming-events/event-list.ui:26
 msgid "No events"
@@ -769,7 +805,7 @@ msgstr "تمام روز"
 msgid "Ends"
 msgstr "پایان"
 
-#: plugins/upcoming-events/upcoming-event.c:398
+#: plugins/upcoming-events/upcoming-event.c:400
 msgid "Untitled event"
 msgstr "رویداد بی‌عنوان"
 
