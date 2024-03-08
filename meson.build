@@ -1,5 +1,5 @@
 project('phosh', 'c',
-          version: '0.36.0',
+          version: '0.37.0',
           license: 'GPL-3.0-or-later',
     meson_version: '>= 1.0.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
@@ -90,6 +90,12 @@ foreach arg: test_c_args
     global_c_args += arg
   endif
 endforeach
+
+if cc.get_id() == 'clang'
+  # Avoid cast align warnings for wl_container_of, etc
+  global_c_args += '-Wno-cast-align'
+endif
+
 add_project_arguments(
   global_c_args,
   language: 'c'
@@ -115,7 +121,7 @@ glib_dep = dependency('glib-2.0', version: glib_ver_cmp)
 gio_dep = dependency('gio-2.0', version: glib_ver_cmp)
 gobject_dep = dependency('gobject-2.0', version: glib_ver_cmp)
 gio_unix_dep =  dependency('gio-unix-2.0', version: glib_ver_cmp)
-gmodule_dep = dependency('gmodule-2.0', version: glib_ver_cmp)
+gmodule_dep = dependency('gmodule-no-export-2.0', version: glib_ver_cmp)
 gnome_desktop_dep = dependency('gnome-desktop-3.0', version: '>=3.26')
 gsettings_desktop_schemas_dep = dependency('gsettings-desktop-schemas', version: '>=42')
 gtk_dep = dependency('gtk+-3.0', version: '>=3.22')
@@ -181,7 +187,7 @@ have_polkit_subject_cleanup = cc.compiles('''
 
 int main()
 {
-   g_autoptr (PolkitSubject) *subj = NULL;
+   g_autoptr (PolkitSubject) subj = NULL;
 }''',
   name : 'Have PolkitSubject cleanup',
   dependencies: libpolkit_agent_dep)
@@ -193,7 +199,7 @@ have_polkit_agent_listener_cleanup = cc.compiles('''
 
 int main()
 {
-   g_autoptr (PolkitAgentListener) *listener = NULL;
+   g_autoptr (PolkitAgentListener) listener = NULL;
 }''',
   name : 'Have PolkitAgentListener cleanup',
   dependencies: libpolkit_agent_dep)
@@ -239,6 +245,7 @@ summary({
     'Manual pages': get_option('man'),
     'Tools': get_option('tools'),
     'Lockscreen Plugins': get_option('lockscreen-plugins'),
+    'Quick Setting Plugins': get_option('quick-setting-plugins'),
     'Animation slowdown': get_option('animation-slowdown'),
   },
   bool_yn: true,

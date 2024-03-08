@@ -2,6 +2,7 @@ name='launcher-box'
 
 launcher_box_plugin_deps = [
   plugin_dep,
+  gio_unix_dep,
 ]
 
 launcher_box_resources = gnome.compile_resources(
@@ -26,9 +27,6 @@ phosh_launcher_box_plugin = shared_module(
             '-DPLUGIN_NAME="@0@"'.format(name),
 	   ],
   dependencies: launcher_box_plugin_deps,
-  include_directories: [root_inc,
-                        phosh_gtk_list_models_inc
-                       ],
   install: true,
   install_dir: plugins_dir,
 )

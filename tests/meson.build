@@ -5,6 +5,7 @@ test_stub_deps = files(
   'stubs/phosh.c',
   'stubs/app-tracker.c',
   'stubs/lockscreen-manager.c',
+  'stubs/background-manager.c',
   'stubs/toplevel.c',
   'stubs/toplevel-manager.c',
   'stubs/thumbnail.c',
@@ -26,7 +27,7 @@ test_env_common.set('G_TEST_BUILDDIR', meson.current_build_dir())
 test_env_common.set('G_DEBUG', 'gc-friendly,fatal-warnings')
 test_env_common.set('GSETTINGS_BACKEND', 'memory')
 test_env_common.set('GSETTINGS_SCHEMA_DIR', '@0@/data:@1@'.format(meson.project_build_root(),
-                                                                  lockscreen_plugin_schema_path))
+                                                                  plugin_schema_path))
 test_env_common.set('PYTHONDONTWRITEBYTECODE', 'yes')
 test_env_common.set('MALLOC_CHECK_', '2')
 test_env_common.set('NO_AT_BRIDGE', '1')
@@ -53,9 +54,6 @@ test_cflags = [
   '-DTEST_DATA_DIR="@0@/data"'.format(meson.current_source_dir()),
   '-DTEST_OUTPUT_DIR="@0@"'.format(meson.current_build_dir()),
   '-DTEST_PHOC_INI="@0@/data/phoc.ini"'.format(meson.project_source_root()),
-  # Some tests want an installed tree (e.g. for .mo, this is where it should
-  # be located:
-  '-DTEST_INSTALLED="@0@/install"'.format(meson.project_build_root()),
   '-DTEST_TOOLS="@0@/tools"'.format(meson.project_build_root()),
 ]
 
@@ -169,7 +167,7 @@ if run_phoc_tests
                  c_args: test_cflags,
                  pie: true,
                  link_args: test_link_args,
-                 dependencies: [phosh_tool_dep, phosh_dep, testlib_dep])
+                 dependencies: [phosh_static_lib_dep, testlib_dep])
   test('shell', t,
        env: test_env_phoc,
        suite: ['integration'],
@@ -183,7 +181,7 @@ if run_phoc_tests
                    c_args: test_cflags,
                    pie: true,
                    link_args: test_link_args,
-                   dependencies: [phosh_tool_dep, phosh_dep, testlib_dep])
+                   dependencies: [phosh_static_lib_dep, testlib_dep])
     test(test, t,
          env: test_env_phoc,
          suite: ['integration'],
@@ -195,8 +193,8 @@ if run_phoc_tests
                    ['test-take-screenshots.c', generated_dbus_sources],
                    c_args: test_cflags,
                    pie: true,
-                   link_args: test_link_args,
-                   dependencies: [phosh_tool_dep, phosh_dep, testlib_dep])
+                   link_args: test_link_args + phosh_export_sym_link_arg,
+                   dependencies: [phosh_static_lib_dep, testlib_dep])
   foreach lang : screenshot_langs
     lang_env = test_env_phoc
     lang_env.set('LANGUAGE', lang)

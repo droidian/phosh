@@ -10,10 +10,13 @@
 
 #include "phosh-config.h"
 
+#include "gtkfilterlistmodel.h"
+
 #include <handy.h>
 
 #include <widget-box.h>
 #include <plugin-loader.h>
+
 
 static void
 css_setup (void)
@@ -63,6 +66,9 @@ main (int argc, char *argv[])
 
   css_setup ();
 
+  /* Needed by the widget box */
+  g_type_ensure (GTK_TYPE_FILTER_LIST_MODEL);
+
   g_object_set (gtk_settings_get_default (),
                 "gtk-application-prefer-dark-theme", TRUE,
                 NULL);
@@ -70,7 +76,7 @@ main (int argc, char *argv[])
   win = gtk_window_new (GTK_WINDOW_TOPLEVEL);
   gtk_window_set_title (GTK_WINDOW (win), "Lockscreen widget box");
   gtk_window_set_default_size (GTK_WINDOW (win), 360, 720);
-  g_signal_connect (win, "delete_event", G_CALLBACK (gtk_main_quit), NULL);
+  g_signal_connect (win, "delete-event", G_CALLBACK (gtk_main_quit), NULL);
 
   gtk_widget_show (win);
 

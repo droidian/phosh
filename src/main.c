@@ -13,6 +13,7 @@
 #include "log.h"
 #include "shell.h"
 #include "phosh-wayland.h"
+#include "background-cache.h"
 
 #include <handy.h>
 #include <call-ui.h>
@@ -57,8 +58,11 @@ on_sigusr1_signal (gpointer unused)
 static gboolean
 on_shutdown_signal (gpointer unused)
 {
+  guint id;
+
   phosh_shell_fade_out (phosh_shell_get_default (), 0);
-  g_timeout_add_seconds (2, (GSourceFunc)quit, NULL);
+  id = g_timeout_add_seconds (2, (GSourceFunc)quit, NULL);
+  g_source_set_name_by_id (id, "[PhoshMain] quit");
 
   return FALSE;
 }
@@ -76,7 +80,7 @@ static void
 on_shell_ready (PhoshShell *shell, GTimer *timer)
 {
   g_timer_stop (timer);
-  g_debug ("Phosh ready after %.2fs", g_timer_elapsed (timer, NULL));
+  g_message ("Phosh ready after %.2fs", g_timer_elapsed (timer, NULL));
 
   /* Inform systemd we're up */
   sd_notify (0, "READY=1");
@@ -92,6 +96,7 @@ int main(int argc, char *argv[])
   gboolean unlocked = FALSE, locked = FALSE, version = FALSE;
   g_autoptr(PhoshWayland) wl = NULL;
   g_autoptr(PhoshShell) shell = NULL;
+  g_autoptr (PhoshBackgroundCache) background_cache = NULL;
   g_autoptr (GTimer) timer = g_timer_new ();
 
   const GOptionEntry options [] = {
@@ -131,6 +136,7 @@ int main(int argc, char *argv[])
   g_unix_signal_add (SIGUSR1, on_sigusr1_signal, NULL);
 
   wl = phosh_wayland_get_default ();
+  background_cache = phosh_background_cache_get_default ();
   shell = phosh_shell_get_default ();
 
   g_signal_connect (shell, "ready", G_CALLBACK (on_shell_ready), timer);
