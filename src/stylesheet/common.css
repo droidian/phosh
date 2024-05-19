@@ -8,7 +8,8 @@ phosh-top-panel {
 }
 
 #top-bar {
-  padding: 4px 9px 4px 9px;
+  padding-top: 4px;
+  padding-bottom: 4px;
 }
 
 .phosh-wwan-indicator,
@@ -330,6 +331,13 @@ phosh-app-grid-button button {
   background: none;
 }
 
+phosh-app-grid-folder-button button {
+  font-size: 0.8rem;
+  border-radius: 9px;
+  margin: 0;
+  padding: 0;
+}
+
 .search-active phosh-app-grid-button:first-child button {
   background: @phosh_button_hover_bg_color;
 }
@@ -338,6 +346,10 @@ phosh-app-grid-button button {
   border-radius: 9999px;
   padding: 6px 24px;
   margin: 24px 0;
+}
+
+.phosh-app-grid-folder-page-title-box {
+  margin: 6px 16px;
 }
 
 /*
@@ -435,14 +447,6 @@ phosh-lockscreen cui-call-display actionbar {
 phosh-lockscreen .phosh-notification-tray {
   margin: 0 6px;
   transition: 200ms ease;
-}
-
-
-/* Emergency Info */
-.emergency-button {
-  font-size: 12px;
-  padding: 4px 12px;
-  background-color: transparent;
 }
 
 /* Widget box */
@@ -932,10 +936,7 @@ phosh-power-menu .phosh-dialog-close-button {
   box-shadow: 0 2px 4px 0 rgba(0,0,0,.2);
 }
 
-/*
- * Emergency call related styling
- */
-
+/* Emergency button in the power menu */
 .emergency-button {
   background: @phosh_emergency_button_bg_color;
   color: @phosh_emergency_button_fg_color;
@@ -953,6 +954,15 @@ phosh-power-menu .phosh-dialog-close-button {
 
 .emergency-button:active {
   background: shade(@phosh_emergency_button_bg_color, 1.5);
+}
+
+/*
+ * Emergency call menu
+ */
+
+phosh-emergency-menu .emergency-button {
+  font-size: 12px;
+  padding: 4px 12px;
 }
 
 /*

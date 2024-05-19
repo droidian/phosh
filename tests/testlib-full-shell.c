@@ -8,6 +8,7 @@
 
 #include "testlib.h"
 #include "testlib-full-shell.h"
+#include "testlib-wall-clock-mock.h"
 
 #include "log.h"
 #include "shell.h"
@@ -48,6 +49,12 @@ phosh_test_full_shell_thread (gpointer data)
   PhoshShell *shell;
   GLogLevelFlags flags;
   PhoshTestFullShellFixture *fixture = (PhoshTestFullShellFixture *)data;
+  /* Fake the date/time to that of the initial commit to Phosh git repository.
+   * (sha d1cf1f02a3ff65331d755cb7bb4f765222f23354 = "Wed Jan 24 14:26:37 2018 +0100")
+   * This is apparently also "Belly Laugh Day", so there you go. */
+  g_autoptr (GDateTime) fake_offset = g_date_time_new_utc (2018, 1, 24, 13, 26, 37);
+  TestlibWallClockMock *wall_clock = testlib_wall_clock_mock_new (fake_offset);
+  g_autoptr (GtkCssProvider) provider = gtk_css_provider_new ();
 
   /* compositor setup in thread since this invokes gdk already */
   fixture->state = phosh_test_compositor_new (FALSE);
@@ -67,8 +74,15 @@ phosh_test_full_shell_thread (gpointer data)
   flags = g_log_set_always_fatal (0);
   g_log_set_always_fatal (flags & ~G_LOG_LEVEL_WARNING);
 
+  phosh_wall_clock_set_default (PHOSH_WALL_CLOCK (wall_clock));
   shell = phosh_shell_get_default ();
   g_assert_true (PHOSH_IS_SHELL (shell));
+
+  gtk_css_provider_load_from_resource (provider,
+                                       "/mobi/phosh/tests/screenshot-no-anim-overrides.css");
+  gtk_style_context_add_provider_for_screen (gdk_screen_get_default (),
+                                             GTK_STYLE_PROVIDER (provider),
+                                             GTK_STYLE_PROVIDER_PRIORITY_USER);
 
   g_assert_false (phosh_shell_is_startup_finished (shell));
 
@@ -82,6 +96,7 @@ phosh_test_full_shell_thread (gpointer data)
 
   gtk_main ();
 
+  g_assert_finalize_object (wall_clock);
   g_assert_finalize_object (shell);
   cui_uninit ();
   phosh_test_compositor_free (fixture->state);
@@ -98,6 +113,11 @@ PhoshTestFullShellFixtureCfg *
 phosh_test_full_shell_fixture_cfg_new (const char *log_domains)
 {
   PhoshTestFullShellFixtureCfg *self = g_new0 (PhoshTestFullShellFixtureCfg, 1);
+  const char *domains;
+
+  domains = g_getenv ("G_MESSAGES_DEBUG");
+  if (domains != NULL && strlen (domains))
+    log_domains = domains;
 
   if (log_domains)
     self->log_domains = g_strdup (log_domains);

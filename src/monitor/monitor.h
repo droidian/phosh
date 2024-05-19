@@ -121,7 +121,7 @@ struct _PhoshMonitor {
   int subpixel;
   gint32 transform;
 
-  struct {
+  struct PhoshLogicalSize {
     gint32 x, y, width, height;
   } logical;
 
@@ -140,7 +140,6 @@ struct _PhoshMonitor {
   PhoshMonitorConnectorType conn_type;
 
   gboolean wl_output_done;
-  gboolean xdg_output_done;
 
   struct zwlr_gamma_control_v1 *gamma_control;
   guint32 n_gamma_entries;

@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: phosh master\n"
 "Report-Msgid-Bugs-To: https://gitlab.gnome.org/World/Phosh/phosh/issues\n"
-"POT-Creation-Date: 2024-03-06 13:44+0000\n"
-"PO-Revision-Date: 2024-03-07 00:01+0330\n"
+"POT-Creation-Date: 2024-05-03 14:06+0000\n"
+"PO-Revision-Date: 2024-05-04 04:38+0330\n"
 "Last-Translator: Danial Behzadi <dani.behzi@ubuntu.com>\n"
 "Language-Team: Persian <fa@li.org>\n"
 "Language: fa\n"
@@ -35,17 +35,13 @@ msgstr "مدیریت پنجره‌ها و اجرا کنندهٔ برنامه‌�
 msgid "This session logs you into Phosh"
 msgstr "این نشست وارد فوشتان می‌کند"
 
-#: plugins/caffeine-quick-setting/caffeine-quick-setting.c:51
-msgid "Phosh on caffeine"
-msgstr "فوش روی کافئین"
+#: plugins/caffeine-quick-setting/caffeine-quick-setting.desktop.in.in:5
+msgid "Caffeine Quick Setting"
+msgstr "تنظیمات سریع کافئین"
 
-#: plugins/caffeine-quick-setting/caffeine-quick-setting.c:130
-msgid "On"
-msgstr "روشن"
-
-#: plugins/caffeine-quick-setting/caffeine-quick-setting.c:130
-msgid "Off"
-msgstr "خاموش"
+#: plugins/caffeine-quick-setting/caffeine-quick-setting.desktop.in.in:7
+msgid "Prevent the session from going idle"
+msgstr "جلوگیری از بی‌کار شدن نشست"
 
 #: plugins/calendar/calendar.desktop.in.in:5
 msgid "Calendar"
@@ -54,6 +50,31 @@ msgstr "تقویم"
 #: plugins/calendar/calendar.desktop.in.in:7
 msgid "A simple calendar widget"
 msgstr "ابزارک تقویمی ساده"
+
+#: plugins/emergency-info/emergency-info.desktop.in.in:5
+msgid "Emergency Info"
+msgstr "اطّلاعات اضطراری"
+
+#: plugins/emergency-info/emergency-info.desktop.in.in:7
+msgid "Show emergency information and contacts"
+msgstr "نمایش آشنایان و اطّلاعات اضطراری"
+
+#: plugins/launcher-box/launcher-box.desktop.in.in:4
+#: plugins/launcher-box/launcher-box.ui:14
+msgid "Launcher Box"
+msgstr "جعبهٔ اجراگر"
+
+#: plugins/launcher-box/launcher-box.desktop.in.in:6
+msgid "Add launchers to the lock screen. <b>This plugin is experimental.</b>"
+msgstr "افزودن اجراگرها به صفحهٔ قفل. <b>این افزایه آزمایشی است.</b>"
+
+#: plugins/night-light-quick-setting/night-light-quick-setting.desktop.in.in:5
+msgid "Night Light Quick Setting"
+msgstr "تنظیمات سریع نور شب"
+
+#: plugins/night-light-quick-setting/night-light-quick-setting.desktop.in.in:7
+msgid "Toggle night light on/off"
+msgstr "تغییر وضعیت نور شب"
 
 #: plugins/ticket-box/ticket-box.desktop.in.in:4
 #: plugins/ticket-box/ticket-box.ui:14
@@ -72,15 +93,23 @@ msgstr "رویدادهای پیش رو"
 msgid "Show upcoming calendar events"
 msgstr "نمایش رویدادهای تقویم پیش رو"
 
-#: src/app-grid-button.c:529
+#: src/app-grid-button.c:153
+msgid "Add to Folder"
+msgstr "افزودن به شاخه"
+
+#: src/app-grid-button.c:177
+msgid "Create new folder"
+msgstr "ایجاد شاخهٔ جدید"
+
+#: src/app-grid-button.c:692 src/app-grid-button.c:749
 msgid "Application"
 msgstr "برنامه"
 
-#: src/app-grid.c:138
+#: src/app-grid.c:263
 msgid "Show All Apps"
 msgstr "نمایش تمامی کاره‌ها"
 
-#: src/app-grid.c:141
+#: src/app-grid.c:266
 msgid "Show Only Mobile Friendly Apps"
 msgstr "فقط نمایش کاره‌های سازگار با تلفن همراه"
 
@@ -93,7 +122,7 @@ msgstr "روشن"
 msgid "Bluetooth"
 msgstr "بلوتوث"
 
-#: src/call-notification.c:61
+#: src/call-notification.c:63
 msgid "Unknown caller"
 msgstr "تماس‌گیرندهٔ ناشناس"
 
@@ -118,33 +147,33 @@ msgstr "ناتوان در برقراری تماس اضطراری"
 msgid "Internal error"
 msgstr "خطای داخلی"
 
-#: src/end-session-dialog.c:173
+#: src/end-session-dialog.c:174
 msgid "Log Out"
 msgstr "خروج"
 
-#: src/end-session-dialog.c:176
+#: src/end-session-dialog.c:177
 #, c-format
 msgid "%s will be logged out automatically in %d second."
 msgid_plural "%s will be logged out automatically in %d seconds."
 msgstr[0] "%s به طور خودکار در %Id ثانیه از سامانه خارج خواهد شد."
 msgstr[1] "%s به طور خودکار در %Id ثانیه از سامانه خارج خواهد شد."
 
-#: src/end-session-dialog.c:182
+#: src/end-session-dialog.c:183 src/ui/power-menu.ui:69
 msgid "Power Off"
 msgstr "خاموش کردن"
 
-#: src/end-session-dialog.c:183
+#: src/end-session-dialog.c:184
 #, c-format
 msgid "The system will power off automatically in %d second."
 msgid_plural "The system will power off automatically in %d seconds."
 msgstr[0] "سامانه پس از %Id ثانیه به طور خودکار خاموش می‌شود."
 msgstr[1] "سامانه پس از %Id ثانیه به طور خودکار خاموش می‌شود."
 
-#: src/end-session-dialog.c:189
+#: src/end-session-dialog.c:190
 msgid "Restart"
 msgstr "راه‌اندازی دوباره"
 
-#: src/end-session-dialog.c:190
+#: src/end-session-dialog.c:191
 #, c-format
 msgid "The system will restart automatically in %d second."
 msgid_plural "The system will restart automatically in %d seconds."
@@ -188,29 +217,29 @@ msgstr "بله"
 msgid "No"
 msgstr "نه"
 
-#: src/lockscreen.c:175 src/ui/lockscreen.ui:245
+#: src/lockscreen.c:172 src/ui/lockscreen.ui:245
 msgid "Enter Passcode"
 msgstr "ورود رمز عبور"
 
-#: src/lockscreen.c:401
+#: src/lockscreen.c:398
 msgid "Checking…"
 msgstr "در حال بررسی…"
 
-#: src/screenshot-manager.c:213
+#: src/screenshot-manager.c:215 src/ui/power-menu.ui:147
 msgid "Screenshot"
 msgstr "نماگرفت"
 
-#: src/screenshot-manager.c:214
+#: src/screenshot-manager.c:216
 msgid "Screenshot copied to clipboard"
 msgstr "نماگرفت در تخته‌گیره رونوشت شد"
 
 #. Translators: Used when the title of a song is unknown
-#: src/media-player.c:321 src/ui/media-player.ui:161
+#: src/media-player.c:324 src/ui/media-player.ui:161
 msgid "Unknown Title"
 msgstr "عنوان ناشناخته"
 
 #. Translators: Used when the artist of a song is unknown
-#: src/media-player.c:329 src/ui/media-player.ui:148
+#: src/media-player.c:332 src/ui/media-player.ui:148
 msgid "Unknown Artist"
 msgstr "هنرمند ناشناخته"
 
@@ -256,93 +285,109 @@ msgstr "گشودن"
 msgid "Notification"
 msgstr "آگاهی"
 
-#. Translators: Timestamp seconds suffix
-#: src/notifications/timestamp-label.c:84
-msgctxt "timestamp-suffix-seconds"
-msgid "s"
-msgstr "ث"
-
-#. Translators: Timestamp minute suffix
+#. Translators: Point in time, use a short word or abbreviation
+#. Please stick to a maximum of 7 chars
 #: src/notifications/timestamp-label.c:86
-msgctxt "timestamp-suffix-minute"
-msgid "m"
-msgstr "د"
-
-#. Translators: Timestamp minutes suffix
-#: src/notifications/timestamp-label.c:88
-msgctxt "timestamp-suffix-minutes"
-msgid "m"
-msgstr "د"
-
-#. Translators: Timestamp hour suffix
-#: src/notifications/timestamp-label.c:90
-msgctxt "timestamp-suffix-hour"
-msgid "h"
-msgstr "س"
-
-#. Translators: Timestamp hours suffix
-#: src/notifications/timestamp-label.c:92
-msgctxt "timestamp-suffix-hours"
-msgid "h"
-msgstr "س"
-
-#. Translators: Timestamp day suffix
-#: src/notifications/timestamp-label.c:94
-msgctxt "timestamp-suffix-day"
-msgid "d"
-msgstr "ر"
-
-#. Translators: Timestamp days suffix
-#: src/notifications/timestamp-label.c:96
-msgctxt "timestamp-suffix-days"
-msgid "d"
-msgstr "ر"
-
-#. Translators: Timestamp month suffix
-#: src/notifications/timestamp-label.c:98
-msgctxt "timestamp-suffix-month"
-msgid "mo"
-msgstr "م"
-
-#. Translators: Timestamp months suffix
-#: src/notifications/timestamp-label.c:100
-msgctxt "timestamp-suffix-months"
-msgid "mos"
-msgstr "م"
-
-#. Translators: Timestamp year suffix
-#: src/notifications/timestamp-label.c:102
-msgctxt "timestamp-suffix-year"
-msgid "y"
-msgstr "سال"
-
-#. Translators: Timestamp years suffix
-#: src/notifications/timestamp-label.c:104
-msgctxt "timestamp-suffix-years"
-msgid "y"
-msgstr "سال"
-
-#: src/notifications/timestamp-label.c:121
 msgid "now"
 msgstr "اکنون"
 
-#. Translators: time difference "Over 5 years"
-#: src/notifications/timestamp-label.c:189
+#. Translators: abbreviated time difference "Less than 30 seconds"
+#. Please stick to a maximum of 7 chars
+#: src/notifications/timestamp-label.c:91
+#, c-format
+msgid "<30s"
+msgstr "<۳۰ث"
+
+#. Translators: abbreviated time difference "Less than one minute"
+#. Please stick to a maximum of 7 chars
+#: src/notifications/timestamp-label.c:96
+#, c-format
+msgid "<1m"
+msgstr "<۱د"
+
+#. Translators: abbreviated time difference "About one minute"
+#. Please stick to a maximum of 7 chars
+#: src/notifications/timestamp-label.c:101
+#, c-format
+msgid "~1m"
+msgstr "~۱د"
+
+#. Translators: abbreviated, exact time difference "1 minute ago"
+#. Please stick to a maximum of 4 chars for the time unit
+#: src/notifications/timestamp-label.c:109
+#, c-format
+msgid "%dm"
+msgid_plural "%dm"
+msgstr[0] "%Idد"
+msgstr[1] "%Idد"
+
+#. Translators: abbreviated time difference "About 3 hours ago"
+#. Please stick to a maximum of 4 chars for the time unit
+#: src/notifications/timestamp-label.c:117
+#, c-format
+msgid "~%dh"
+msgid_plural "~%dh"
+msgstr[0] "~%Idس"
+msgstr[1] "~%Idس"
+
+#. Translators: abbreviated time difference "About 1 day ago"
+#. Please stick to a maximum of 4 chars for the time unit
+#: src/notifications/timestamp-label.c:122
+#, c-format
+msgid "~1d"
+msgstr "~۱ر"
+
+#. Translators: abbreviated, exact time difference "3 days ago"
+#. Please stick to a maximum of 4 chars for the time unit
+#: src/notifications/timestamp-label.c:127
+#, c-format
+msgid "%dd"
+msgid_plural "%dd"
+msgstr[0] "%Idر"
+msgstr[1] "%Idر"
+
+#. Translators: abbreviated time difference "About 1 month ago"
+#. Please stick to a maximum of 4 chars for the time unit
+#: src/notifications/timestamp-label.c:132
+#, c-format
+msgid "~1mo"
+msgstr "~۱م"
+
+#. Translators: abbreviated, exact time difference "3 months ago"
+#. Please stick to a maximum of 4 chars for the time unit
+#: src/notifications/timestamp-label.c:137
+#, c-format
+msgid "%dmo"
+msgid_plural "%dmos"
+msgstr[0] "%Idم"
+msgstr[1] "%Idم"
+
+#. Translators: abbreviated time difference "About 5 years ago"
+#. Please stick to a maximum of 4 chars for the time unit
+#: src/notifications/timestamp-label.c:147
+#, c-format
+msgid "~%dy"
+msgid_plural "~%dy"
+msgstr[0] "~%Idسا"
+msgstr[1] "~%Idسا"
+
+#. Translators: abbreviated time difference "Over 5 years ago"
+#. Please stick to a maximum of 4 chars for the time unit
+#: src/notifications/timestamp-label.c:151
 #, c-format
 msgid "Over %dy"
-msgstr "بیش از %Id سال"
+msgid_plural "Over %dy"
+msgstr[0] "بیش از %Idسا"
+msgstr[1] "بیش از %Idسا"
 
-#. Translators: time difference "almost 5 years"
-#: src/notifications/timestamp-label.c:193
+#. Translators: abbreviated time difference "almost 5 years ago"
+#. Please stick to a maximum of 4 chars for the time unit
+#: src/notifications/timestamp-label.c:156
 #, c-format
 msgid "Almost %dy"
-msgstr "تقریباً %Id سال"
-
-#. Translators: a time difference like '<5m', if in doubt leave untranslated
-#: src/notifications/timestamp-label.c:200
-#, c-format
-msgid "%s%d%s"
-msgstr "%s%Id%s"
+msgid_plural "Almost %dy"
+msgstr[0] "تقریباً %Idسا"
+msgstr[1] "تقریباً %Idسا"
 
 #: src/polkit-auth-agent.c:227
 msgid "Authentication dialog was dismissed by the user"
@@ -385,7 +430,7 @@ msgstr "برای بستن، گریز را بزنید"
 msgid "Running '%s' failed"
 msgstr "اجرای «%s» شکست خورد"
 
-#: src/settings/audio-settings.c:373
+#: src/settings/audio-settings.c:376
 msgid "Phone Shell Volume Control"
 msgstr "واپایش حجم صدای پوستهٔ تلفن"
 
@@ -411,23 +456,23 @@ msgstr "به‌خاطر سپردن تصمیم"
 msgid "Cancel"
 msgstr "لغو"
 
-#: src/ui/app-grid-button.ui:55
-msgid "App"
-msgstr "کاره"
-
-#: src/ui/app-grid-button.ui:79
+#: src/ui/app-grid-button.ui:23
 msgid "Remove from _Favorites"
 msgstr "برداشتن از _محبوب‌ها"
 
-#: src/ui/app-grid-button.ui:84
+#: src/ui/app-grid-button.ui:28
 msgid "Add to _Favorites"
 msgstr "افزودن به _محبوب‌ها"
 
-#: src/ui/app-grid-button.ui:89
+#: src/ui/app-grid-button.ui:33
 msgid "View _Details"
 msgstr "دیدن _جزییات"
 
-#: src/ui/app-grid.ui:21
+#: src/ui/app-grid-button.ui:41
+msgid "_Remove from Folder"
+msgstr "_برداشتن از شاخه"
+
+#: src/ui/app-grid.ui:24
 msgid "Search apps…"
 msgstr "جست‌وجوی کاره‌ها…"
 
@@ -517,21 +562,13 @@ msgstr "_وصل شدن"
 msgid "Authenticate"
 msgstr "تأیید هویت"
 
-#: src/ui/power-menu.ui:69
-msgid "_Power Off"
-msgstr "_خاموش"
+#: src/ui/power-menu.ui:108
+msgid "Lock"
+msgstr "قفل"
 
-#: src/ui/power-menu.ui:110
-msgid "_Lock"
-msgstr "_قفل"
-
-#: src/ui/power-menu.ui:151
-msgid "_Screenshot"
-msgstr "_نماگرفت"
-
-#: src/ui/power-menu.ui:192
-msgid "_Emergency"
-msgstr "_اضطراری"
+#: src/ui/power-menu.ui:186
+msgid "Emergency"
+msgstr "اضطراری"
 
 #: src/ui/run-command-dialog.ui:6
 msgid "Run Command"
@@ -589,15 +626,15 @@ msgstr "پویش"
 msgid "Wi-Fi Settings"
 msgstr "تنظیمات وای‌فای"
 
-#. Translators: This is a time format for a date in
-#. long format
-#: src/util.c:342
-msgid "%A, %B %-e"
-msgstr "%A، %Od %OB"
-
 #: src/vpn-info.c:89
 msgid "VPN"
 msgstr "وی‌پی‌ان"
+
+#. Translators: This is a time format for a date in
+#. long format
+#: src/wall-clock.c:218
+msgid "%A, %B %-e"
+msgstr "%A، %Od %OB"
 
 #: src/widget-box.c:54
 msgid "Plugin not found"
@@ -616,6 +653,19 @@ msgstr "وای‌فای"
 #: src/wwan-info.c:210
 msgid "Cellular"
 msgstr "سلولی"
+
+#. Translators: Phosh prevents the session from going idle because the caffeine quick setting is toggled
+#: plugins/caffeine-quick-setting/caffeine-quick-setting.c:52
+msgid "Phosh on caffeine"
+msgstr "فوش روی کافئین"
+
+#: plugins/caffeine-quick-setting/caffeine-quick-setting.c:131
+msgid "On"
+msgstr "روشن"
+
+#: plugins/caffeine-quick-setting/caffeine-quick-setting.c:131
+msgid "Off"
+msgstr "خاموش"
 
 #: plugins/emergency-info/emergency-info.ui:39
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:70
@@ -717,10 +767,6 @@ msgstr "رابطه"
 msgid "Number"
 msgstr "شماره"
 
-#: plugins/launcher-box/launcher-box.ui:14
-msgid "Launcher Box"
-msgstr "جعبهٔ اجراگر"
-
 #: plugins/launcher-box/launcher-box.ui:15
 msgid "No launchers configured"
 msgstr "هیچ احراگری پیکربندی نشده"
@@ -728,6 +774,14 @@ msgstr "هیچ احراگری پیکربندی نشده"
 #: plugins/launcher-box/launcher-box.ui:32
 msgid "Launchers"
 msgstr "اجراگرها"
+
+#: plugins/night-light-quick-setting/night-light-quick-setting.c:64
+msgid "Night Light On"
+msgstr "نور شب روشن"
+
+#: plugins/night-light-quick-setting/night-light-quick-setting.c:64
+msgid "Night Light Off"
+msgstr "نور شب خاموش"
 
 #: plugins/ticket-box/ticket-box.ui:15
 msgid "No documents to display"
@@ -809,11 +863,65 @@ msgstr "پایان"
 msgid "Untitled event"
 msgstr "رویداد بی‌عنوان"
 
+#~ msgid "_Power Off"
+#~ msgstr "_خاموش"
+
+#~ msgid "_Screenshot"
+#~ msgstr "_نماگرفت"
+
+#~ msgctxt "timestamp-suffix-seconds"
+#~ msgid "s"
+#~ msgstr "ث"
+
+#~ msgctxt "timestamp-suffix-minute"
+#~ msgid "m"
+#~ msgstr "د"
+
+#~ msgctxt "timestamp-suffix-minutes"
+#~ msgid "m"
+#~ msgstr "د"
+
+#~ msgctxt "timestamp-suffix-hour"
+#~ msgid "h"
+#~ msgstr "س"
+
+#~ msgctxt "timestamp-suffix-hours"
+#~ msgid "h"
+#~ msgstr "س"
+
+#~ msgctxt "timestamp-suffix-day"
+#~ msgid "d"
+#~ msgstr "ر"
+
+#~ msgctxt "timestamp-suffix-days"
+#~ msgid "d"
+#~ msgstr "ر"
+
+#~ msgctxt "timestamp-suffix-month"
+#~ msgid "mo"
+#~ msgstr "م"
+
+#~ msgctxt "timestamp-suffix-months"
+#~ msgid "mos"
+#~ msgstr "م"
+
+#~ msgctxt "timestamp-suffix-year"
+#~ msgid "y"
+#~ msgstr "سال"
+
+#~ msgctxt "timestamp-suffix-years"
+#~ msgid "y"
+#~ msgstr "سال"
+
+#, c-format
+#~ msgid "%s%d%s"
+#~ msgstr "%s%Id%s"
+
+#~ msgid "App"
+#~ msgstr "کاره"
+
 #~ msgid "Unknown application"
 #~ msgstr "برنامهٔ ناشناخته"
-
-#~ msgid "Emergency"
-#~ msgstr "اضطراری"
 
 #~ msgid "Lock Screen"
 #~ msgstr "قفل کردن صفحه"

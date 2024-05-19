@@ -7,7 +7,7 @@
  */
 #pragma once
 
-#include "phosh-display-dbus.h"
+#include "dbus/phosh-display-dbus.h"
 #include "monitor/monitor.h"
 
 #include "sensor-proxy-manager.h"
@@ -50,5 +50,6 @@ void                  phosh_monitor_manager_set_sensor_proxy_manager  (PhoshMoni
 gboolean              phosh_monitor_manager_enable_fallback           (PhoshMonitorManager *self);
 void                  phosh_monitor_manager_set_power_save_mode       (PhoshMonitorManager *self,
                                                                        PhoshMonitorPowerSaveMode mode);
+gboolean              phosh_monitor_manager_get_night_light_supported (PhoshMonitorManager *self);
 
 G_END_DECLS

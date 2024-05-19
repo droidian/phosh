@@ -1,5 +1,5 @@
 project('phosh', 'c',
-          version: '0.37.0',
+          version: '0.39.0',
           license: 'GPL-3.0-or-later',
     meson_version: '>= 1.0.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
@@ -22,6 +22,7 @@ plugins_dir = join_paths(prefix, libdir, 'phosh', 'plugins')
 plugin_prefs_dir = join_paths(prefix, libdir, 'phosh', 'plugins', 'prefs')
 servicedir = join_paths(datadir, 'dbus-1', 'services')
 schemasdir = datadir / 'glib-2.0/schemas'
+enable_introspection = get_option('introspection') or get_option('gtk_doc')
 
 if prefix != '/usr'
   sysconfdir = join_paths(prefix, get_option('sysconfdir'))
@@ -37,6 +38,7 @@ add_project_arguments([
   '-DGLIB_VERSION_MIN_REQUIRED=@0@'.format(glib_ver_str),
   '-DGLIB_VERSION_MAX_REQUIRED=@0@'.format(glib_ver_str),
   '-DG_LOG_USE_STRUCTURED',
+  '-DGMOBILE_USE_UNSTABLE_API',
 ], language: 'c')
 
 root_inc = include_directories('.')
@@ -119,14 +121,30 @@ fribidi_dep = dependency('fribidi')
 gcr_dep = dependency('gcr-3', version: '>= 3.7.5')
 glib_dep = dependency('glib-2.0', version: glib_ver_cmp)
 gio_dep = dependency('gio-2.0', version: glib_ver_cmp)
-gobject_dep = dependency('gobject-2.0', version: glib_ver_cmp)
 gio_unix_dep =  dependency('gio-unix-2.0', version: glib_ver_cmp)
+gmobile_dep = dependency('gmobile',
+  version: '>= 0.1.0',
+  fallback: ['gmobile', 'gmobile_dep'],
+  default_options:
+    [ 'examples=false',
+      'introspection=false',
+      'gtk_doc=false',
+      'tests=false'
+    ])
 gmodule_dep = dependency('gmodule-no-export-2.0', version: glib_ver_cmp)
 gnome_desktop_dep = dependency('gnome-desktop-3.0', version: '>=3.26')
+gobject_dep = dependency('gobject-2.0', version: glib_ver_cmp)
 gsettings_desktop_schemas_dep = dependency('gsettings-desktop-schemas', version: '>=42')
 gtk_dep = dependency('gtk+-3.0', version: '>=3.22')
 gtk_wayland_dep = dependency('gtk+-wayland-3.0', version: '>=3.22')
 gudev_dep = dependency('gudev-1.0')
+libcall_ui = subproject('libcall-ui',
+  default_options: [
+    'examples=false',
+    'gtk_doc=false',
+    'tests=false',
+    'install-i18n=@0@'.format(get_option('callui-i18n')),
+  ])
 libfeedback_dep = dependency('libfeedback-0.0',
   version: '>= 0.2.0',
   fallback: ['libfeedback', 'libfeedback_dep'],
@@ -149,23 +167,10 @@ libhandy_dep = dependency('libhandy-1',
   fallback: ['libhandy', 'libhandy_dep'],
   default_options: ['introspection=disabled']
   )
-libcall_ui = subproject('libcall-ui',
-  default_options: [
-    'examples=false',
-    'gtk_doc=false',
-    'tests=false',
-    'install-i18n=@0@'.format(get_option('callui-i18n')),
-  ])
 libcall_ui_dep = libcall_ui.get_variable('libcall_ui_dep')
-gmobile = subproject('gmobile',
-  default_options: [
-    'examples=false',
-    'gtk_doc=false',
-    'tests=false',
-  ])
-gmobile_dep = gmobile.get_variable('gmobile_dep')
 libnm_dep = dependency('libnm', version: '>= 1.14')
 libpolkit_agent_dep = dependency('polkit-agent-1', version: '>= 0.105')
+libsoup_dep = dependency('libsoup-3.0', version: '>= 3.0')
 libsystemd_dep = dependency('libsystemd', 'libelogind', version: '>= 241')
 network_agent_dep = dependency('libsecret-1')
 upower_glib_dep = dependency('upower-glib', version: '>=0.99.1')
@@ -242,6 +247,7 @@ summary({
     'Tests': get_option('tests'),
     'Phoc tests': run_phoc_tests,
     'Documentation': get_option('gtk_doc'),
+    'Introspection': enable_introspection,
     'Manual pages': get_option('man'),
     'Tools': get_option('tools'),
     'Lockscreen Plugins': get_option('lockscreen-plugins'),
