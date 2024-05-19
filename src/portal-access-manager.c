@@ -86,9 +86,9 @@ handle_access_dialog (PhoshDBusImplPortalAccess *object,
                       GVariant                  *arg_options)
 {
   const char *sender;
-  GIcon *icon = NULL;
-  char *grant_label = NULL;
-  char *deny_label = NULL;
+  const char *grant_label = NULL;
+  const char *deny_label = NULL;
+  g_autoptr (GIcon) icon = NULL;
   GVariant *choices = NULL;
   GVariant *icon_variant = g_variant_lookup_value (arg_options, "icon", G_VARIANT_TYPE_STRING);
   PhoshPortalAccessManager *self = PHOSH_PORTAL_ACCESS_MANAGER (object);
@@ -106,7 +106,8 @@ handle_access_dialog (PhoshDBusImplPortalAccess *object,
   }
   g_variant_lookup (arg_options, "grant_label", "&s", grant_label);
   g_variant_lookup (arg_options, "deny_label",  "&s", deny_label);
-  choices = g_variant_lookup_value (arg_options, "choices", G_VARIANT_TYPE (CHOICES_FORMAT));
+  choices = g_variant_lookup_value (arg_options, "choices",
+                                    G_VARIANT_TYPE (PHOSH_APP_AUTH_PROMPT_CHOICES_FORMAT));
 
   self->invocation = invocation;
   self->choices = choices;

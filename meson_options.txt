@@ -15,7 +15,7 @@ option('man',
        description : 'generate man pages (requires rst2man)')
 
 option('systemd',
-       type: 'boolean', value: false,
+       type: 'boolean', value: true,
        description: 'Whether to generate systemd user units')
 
 option('compositor',
@@ -42,3 +42,7 @@ option('lockscreen-plugins',
 option('quick-setting-plugins',
        type: 'boolean', value: true,
        description: 'Whether to build the quick setting plugins')
+
+option('introspection',
+       type: 'boolean', value: false,
+       description: 'Build gobject-introspection support')

@@ -42,12 +42,39 @@ test_phosh_util_escape_markup (void)
 }
 
 
+static void
+test_phosh_util_data_uri_to_pixbuf (void)
+{
+  /* smallest valid png. see https://evanhahn.com/worlds-smallest-png/ */
+  const char *valid_uri = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABAQAAAAA3bvkkAAAAC"
+    "klEQVR4AWNgAAAAAgABc3UBGAAAAABJRU5ErkJggg==";
+  const char *not_a_png = "data:image/png;base64,aGkgdGhlcmUh";
+  GdkPixbuf* pixbuf = NULL;
+  g_autoptr (GError) error = NULL;
+
+  pixbuf = phosh_util_data_uri_to_pixbuf (valid_uri, &error);
+  g_assert_no_error (error);
+  g_assert_nonnull (pixbuf);
+  g_assert_finalize_object (pixbuf);
+
+  pixbuf = phosh_util_data_uri_to_pixbuf (not_a_png, &error);
+  g_assert_null (pixbuf);
+  g_assert_error (error, GDK_PIXBUF_ERROR, GDK_PIXBUF_ERROR_UNKNOWN_TYPE);
+
+  g_clear_error (&error);
+  pixbuf = phosh_util_data_uri_to_pixbuf ("not-an_uri", &error);
+  g_assert_null (pixbuf);
+  g_assert_error (error, G_IO_ERROR, G_IO_ERROR_FAILED);
+}
+
+
 int
 main (int argc, char *argv[])
 {
   gtk_test_init (&argc, &argv, NULL);
 
   g_test_add_func ("/phosh/util/escacpe-markup", test_phosh_util_escape_markup);
+  g_test_add_func ("/phosh/util/data-uri-to-pixbuf", test_phosh_util_data_uri_to_pixbuf);
 
   return g_test_run ();
 }

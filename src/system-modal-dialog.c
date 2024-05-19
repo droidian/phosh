@@ -16,6 +16,8 @@
 #include "swipe-away-bin.h"
 #include "util.h"
 
+#include <gmobile.h>
+
 /**
  * PhoshSystemModalDialog:
  *
@@ -344,7 +346,14 @@ phosh_system_modal_dialog_remove_button (PhoshSystemModalDialog *self, GtkWidget
   gtk_container_remove (GTK_CONTAINER (priv->box_buttons), button);
 }
 
-
+/**
+ * phosh_system_modal_dialog_get_buttons:
+ * @self: A modal dialog
+ *
+ * Get the dialog's buttons
+ *
+ * Returns:(element-type GtkWidget)(transfer container): The buttons
+ */
 GList *
 phosh_system_modal_dialog_get_buttons (PhoshSystemModalDialog *self)
 {
@@ -372,7 +381,7 @@ phosh_system_modal_dialog_set_title (PhoshSystemModalDialog *self, const gchar *
   priv->title = g_strdup (title);
 
   gtk_label_set_label (GTK_LABEL (priv->lbl_title), priv->title);
-  gtk_widget_set_visible (priv->lbl_title, !STR_IS_NULL_OR_EMPTY (priv->title));
+  gtk_widget_set_visible (priv->lbl_title, !gm_str_is_null_or_empty (priv->title));
 
   g_object_notify_by_pspec (G_OBJECT (self), props[PROP_TITLE]);
 }

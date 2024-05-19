@@ -15,7 +15,6 @@
 
 #include "phosh-plugin-upcoming-events-phosh-calendar-dbus.h"
 
-#define GMOBILE_USE_UNSTABLE_API
 #include <gmobile.h>
 
 #define NUM_DAYS 7
@@ -249,14 +248,14 @@ on_client_disappeared (PhoshUpcomingEvents *self, const char *client_id)
 }
 
 
-static gboolean
-on_today_changed (PhoshUpcomingEvents *self)
+static void
+on_today_changed (gpointer data)
 {
+  PhoshUpcomingEvents *self = PHOSH_UPCOMING_EVENTS (data);
+
   g_debug ("Date change, reloading events");
 
   update_calendar (self, FALSE);
-
-  return G_SOURCE_REMOVE;
 }
 
 
@@ -297,7 +296,7 @@ setup_date_change_timeout (PhoshUpcomingEvents *self)
 
   g_debug ("Arming day change timer for %d seconds", seconds);
   self->today_changed_timeout_id = gm_timeout_add_seconds_once (seconds,
-                                                                (GSourceFunc) on_today_changed,
+                                                                on_today_changed,
                                                                 self);
 }
 

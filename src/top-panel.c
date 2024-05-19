@@ -21,9 +21,9 @@
 #include "top-panel.h"
 #include "arrow.h"
 #include "util.h"
+#include "wall-clock.h"
 
 #define GNOME_DESKTOP_USE_UNSTABLE_API
-#include <libgnome-desktop/gnome-wall-clock.h>
 #include <libgnome-desktop/gnome-xkb-info.h>
 
 #include <glib/gi18n.h>
@@ -43,6 +43,7 @@
  */
 enum {
   PROP_0,
+  PROP_TOP_PANEL_STATE,
   PROP_ON_LOCKSCREEN,
   PROP_LAST_PROP,
 };
@@ -80,8 +81,6 @@ typedef struct _PhoshTopPanel {
   GtkWidget *settings;       /* settings menu */
   GtkWidget *batteryinfo;
 
-  GnomeWallClock *wall_clock;
-  GnomeWallClock *wall_clock2;
   GnomeXkbInfo *xkbinfo;
   GSettings *input_settings;
   GSettings *interface_settings;
@@ -126,6 +125,9 @@ phosh_top_panel_get_property (GObject    *object,
   PhoshTopPanel *self = PHOSH_TOP_PANEL (object);
 
   switch (property_id) {
+  case PROP_TOP_PANEL_STATE:
+    g_value_set_enum (value, self->state);
+    break;
   case PROP_ON_LOCKSCREEN:
     g_value_set_boolean (value, self->on_lockscreen);
     break;
@@ -143,7 +145,7 @@ update_drag_handle (PhoshTopPanel *self, gboolean commit)
 
   /* By default only the bottom bar handle is draggable */
   handle = phosh_layer_surface_get_configured_height (PHOSH_LAYER_SURFACE (self));
-  handle -= PHOSH_TOP_PANEL_HEIGHT;
+  handle -= PHOSH_TOP_BAR_HEIGHT;
 
   /* Settings might enlarge the draggable area */
   offset = phosh_settings_get_drag_handle_offset (PHOSH_SETTINGS (self->settings));
@@ -240,20 +242,20 @@ on_logout_action (GSimpleAction *action,
 
 
 static void
-wall_clock2_notify_cb (PhoshTopPanel  *self,
-                       GParamSpec     *pspec,
-                       GnomeWallClock *wall_clock)
+wall_clock_notify_cb (PhoshTopPanel  *self,
+                      GParamSpec     *pspec,
+                      PhoshWallClock *wall_clock)
 {
   const char *str;
   g_autofree char *date = NULL;
 
   g_return_if_fail (PHOSH_IS_TOP_PANEL (self));
-  g_return_if_fail (GNOME_IS_WALL_CLOCK (wall_clock));
+  g_return_if_fail (PHOSH_IS_WALL_CLOCK (wall_clock));
 
-  str = gnome_wall_clock_get_clock (wall_clock);
+  str = phosh_wall_clock_get_clock (wall_clock, TRUE);
   gtk_label_set_text (GTK_LABEL (self->lbl_clock2), str);
 
-  date = phosh_util_local_date ();
+  date = phosh_wall_clock_local_date (wall_clock);
   gtk_label_set_label (GTK_LABEL (self->lbl_date), date);
 }
 
@@ -441,7 +443,7 @@ phosh_top_panel_dragged (PhoshDragSurface *drag_surface, int margin)
   PhoshTopPanel *self = PHOSH_TOP_PANEL (drag_surface);
   int width, height;
   gtk_window_get_size (GTK_WINDOW (self), &width, &height);
-  phosh_arrow_set_progress (PHOSH_ARROW (self->arrow), -margin / (double)(height - PHOSH_TOP_PANEL_HEIGHT));
+  phosh_arrow_set_progress (PHOSH_ARROW (self->arrow), -margin / (double)(height - PHOSH_TOP_BAR_HEIGHT));
   g_debug ("Margin: %d", margin);
 }
 
@@ -482,7 +484,11 @@ on_drag_state_changed (PhoshTopPanel *self)
   gtk_stack_set_visible_child_name (GTK_STACK (self->stack), visible);
   phosh_arrow_set_progress (PHOSH_ARROW (self->arrow), arrow);
 
-  self->state = state;
+  if (self->state != state) {
+    self->state = state;
+    g_object_notify_by_pspec (G_OBJECT (self), props[PROP_TOP_PANEL_STATE]);
+  }
+
   phosh_layer_surface_set_kbd_interactivity (PHOSH_LAYER_SURFACE (self), kbd_interactivity);
   phosh_layer_surface_wl_surface_commit (PHOSH_LAYER_SURFACE (self));
 }
@@ -502,33 +508,30 @@ phosh_top_panel_constructed (GObject *object)
 {
   PhoshTopPanel *self = PHOSH_TOP_PANEL (object);
   GdkDisplay *display = gdk_display_get_default ();
+  PhoshWallClock *wall_clock = phosh_wall_clock_get_default ();
+
   g_autoptr (GSettings) phosh_settings = g_settings_new ("sm.puri.phosh");
 
   G_OBJECT_CLASS (phosh_top_panel_parent_class)->constructed (object);
-
-  self->state = PHOSH_TOP_PANEL_STATE_FOLDED;
 
   g_object_bind_property (phosh_shell_get_default (), "locked",
                           self, "on-lockscreen",
                           G_BINDING_SYNC_CREATE);
 
-  self->wall_clock = gnome_wall_clock_new ();
-  g_object_bind_property (self->wall_clock, "clock",
+  g_object_bind_property (wall_clock, "date-time",
                           self->lbl_clock, "label",
                           G_BINDING_SYNC_CREATE);
   g_object_bind_property (self, "on-lockscreen",
                           self->lbl_clock,
                           "visible",
                           G_BINDING_SYNC_CREATE | G_BINDING_INVERT_BOOLEAN);
-
-  self->wall_clock2 = gnome_wall_clock_new ();
-  g_object_set (self->wall_clock2, "time-only", TRUE, NULL);
-  g_signal_connect_object (self->wall_clock2,
-                           "notify::clock",
-                           G_CALLBACK (wall_clock2_notify_cb),
+  g_signal_connect_object (wall_clock,
+                           "notify::time",
+                           G_CALLBACK (wall_clock_notify_cb),
                            self,
                            G_CONNECT_SWAPPED);
-  wall_clock2_notify_cb (self, NULL, self->wall_clock2);
+
+  wall_clock_notify_cb (self, NULL, wall_clock);
 
   gtk_window_set_title (GTK_WINDOW (self), "phosh panel");
 
@@ -604,8 +607,6 @@ phosh_top_panel_dispose (GObject *object)
   PhoshTopPanel *self = PHOSH_TOP_PANEL (object);
 
   g_clear_object (&self->kb_settings);
-  g_clear_object (&self->wall_clock);
-  g_clear_object (&self->wall_clock2);
   g_clear_object (&self->xkbinfo);
   g_clear_object (&self->input_settings);
   g_clear_object (&self->interface_settings);
@@ -624,7 +625,7 @@ phosh_top_panel_dispose (GObject *object)
 static int
 get_margin (gint height)
 {
-  return (-1 * height) + PHOSH_TOP_PANEL_HEIGHT;
+  return (-1 * height) + PHOSH_TOP_BAR_HEIGHT;
 }
 
 
@@ -684,7 +685,21 @@ phosh_top_panel_class_init (PhoshTopPanelClass *klass)
 
   gtk_widget_class_set_css_name (widget_class, "phosh-top-panel");
 
-  /* PhoshTopPanel:on-lockscreen:
+  /**
+   * PhoshTopPanel:state:
+   *
+   * Whether the top-panel is currently `folded` (only top-bar is
+   * visible) or `unfolded` (settings and notification area are
+   * visible). The property is updated when the widget reaches its
+   * target state.
+   */
+  props[PROP_TOP_PANEL_STATE] =
+    g_param_spec_enum ("state", "", "",
+                       PHOSH_TYPE_TOP_PANEL_STATE,
+                       PHOSH_TOP_PANEL_STATE_UNFOLDED,
+                       G_PARAM_READABLE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
+  /**
+   * PhoshTopPanel:on-lockscreen:
    *
    * Whether top-panel is shown on lockscreen (%TRUE) or in the unlocked shell
    * (%FALSE).
@@ -693,10 +708,9 @@ phosh_top_panel_class_init (PhoshTopPanelClass *klass)
    * use a property binding with the [type@Shell]s "locked" property.
    */
   props[PROP_ON_LOCKSCREEN] =
-    g_param_spec_boolean (
-      "on-lockscreen", "", "",
-      FALSE,
-      G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
+    g_param_spec_boolean ("on-lockscreen", "", "",
+                          FALSE,
+                          G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
   g_object_class_install_properties (object_class, PROP_LAST_PROP, props);
 
@@ -766,12 +780,27 @@ set_clock_position (PhoshTopPanel *self, PhoshLayoutManager *layout_manager)
   gtk_widget_set_margin_top (self->box_clock, top_margin);
 }
 
+
+static void
+set_margin (PhoshTopPanel *self, PhoshLayoutManager *layout_manager)
+{
+  guint shift;
+
+  shift = phosh_layout_manager_get_corner_shift (layout_manager);
+  g_debug ("Shifting UI elements %d pixels to center ", shift);
+
+  gtk_widget_set_margin_start (GTK_WIDGET (self->box_top_bar), shift);
+  gtk_widget_set_margin_end (GTK_WIDGET (self->box_top_bar), shift);
+}
+
+
 static void
 on_layout_changed (PhoshTopPanel *self, PhoshLayoutManager *layout_manager)
 {
   g_return_if_fail (PHOSH_IS_TOP_PANEL (self));
   g_return_if_fail (PHOSH_IS_LAYOUT_MANAGER (layout_manager));
 
+  set_margin (self, layout_manager);
   set_clock_position (self, layout_manager);
 }
 
@@ -783,7 +812,7 @@ phosh_top_panel_init (PhoshTopPanel *self)
 
   gtk_widget_init_template (GTK_WIDGET (self));
 
-  self->state = PHOSH_TOP_PANEL_STATE_FOLDED;
+  self->state = PHOSH_TOP_PANEL_STATE_UNFOLDED;
   self->kb_settings = g_settings_new (KEYBINDINGS_SCHEMA_ID);
   g_signal_connect (self, "configure-event", G_CALLBACK (on_configure_event), NULL);
 
@@ -807,7 +836,7 @@ phosh_top_panel_new (struct zwlr_layer_shell_v1          *layer_shell,
                        /* layer-surface */
                        "layer-shell", layer_shell,
                        "wl-output", monitor->wl_output,
-                       "height", PHOSH_TOP_PANEL_HEIGHT,
+                       "height", PHOSH_TOP_BAR_HEIGHT,
                        "anchor", ZWLR_LAYER_SURFACE_V1_ANCHOR_TOP |
                                  ZWLR_LAYER_SURFACE_V1_ANCHOR_LEFT |
                                  ZWLR_LAYER_SURFACE_V1_ANCHOR_RIGHT,
@@ -816,7 +845,7 @@ phosh_top_panel_new (struct zwlr_layer_shell_v1          *layer_shell,
                        "namespace", "phosh top-panel",
                        /* drag-surface */
                        "layer-shell-effects", layer_shell_effects,
-                       "exclusive", PHOSH_TOP_PANEL_HEIGHT,
+                       "exclusive", PHOSH_TOP_BAR_HEIGHT,
                        "threshold", PHOSH_TOP_PANEL_DRAG_THRESHOLD,
                        NULL);
 }
