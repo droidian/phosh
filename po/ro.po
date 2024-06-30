@@ -7,8 +7,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: phosh master\n"
 "Report-Msgid-Bugs-To: https://gitlab.gnome.org/World/Phosh/phosh/issues\n"
-"POT-Creation-Date: 2024-05-04 15:17+0000\n"
-"PO-Revision-Date: 2024-05-04 18:53+0200\n"
+"POT-Creation-Date: 2024-06-06 13:01+0000\n"
+"PO-Revision-Date: 2024-06-06 18:40+0200\n"
 "Last-Translator: Antonio Marin <gnmer.6qxyg@slmail.me>\n"
 "Language-Team: Romanian <gnomero-list@lists.sourceforge.net>\n"
 "Language: ro\n"
@@ -17,7 +17,7 @@ msgstr ""
 "Content-Transfer-Encoding: 8bit\n"
 "Plural-Forms: nplurals=3; plural=(n==1 ? 0 : n==0 || (n!=1 && n%100>=1 && "
 "n%100<=19) ? 1 : 2);\n"
-"X-Generator: Poedit 3.4.2\n"
+"X-Generator: Poedit 3.4.4\n"
 "X-Poedit-SourceCharset: UTF-8\n"
 
 #. Translators: this is the session name, no need to translate it
@@ -53,6 +53,14 @@ msgstr "Calendar"
 msgid "A simple calendar widget"
 msgstr "Un calendar în miniatură"
 
+#: plugins/dark-mode-quick-setting/dark-mode-quick-setting.desktop.in.in:5
+msgid "Dark Mode / Color Scheme Quick Setting"
+msgstr "Opțiuni Aspect întunecos / Schema de culori"
+
+#: plugins/dark-mode-quick-setting/dark-mode-quick-setting.desktop.in.in:7
+msgid "Toggle dark mode"
+msgstr "Aspect întunecos Activat/Dezactivat"
+
 #: plugins/emergency-info/emergency-info.desktop.in.in:5
 msgid "Emergency Info"
 msgstr "Info. de urgență"
@@ -71,13 +79,21 @@ msgid "Add launchers to the lock screen. <b>This plugin is experimental.</b>"
 msgstr ""
 "Adaugă lansatoare pe ecranul blocat. <b>Acest modul este experimental.</b>"
 
+#: plugins/mobile-data-quick-setting/mobile-data-quick-setting.desktop.in.in:5
+msgid "Mobile Data Quick Setting"
+msgstr "Opțiuni pentru Date mobile"
+
+#: plugins/mobile-data-quick-setting/mobile-data-quick-setting.desktop.in.in:7
+msgid "Toggle mobile data on/off"
+msgstr "Date mobile Activate/Dezactivate"
+
 #: plugins/night-light-quick-setting/night-light-quick-setting.desktop.in.in:5
 msgid "Night Light Quick Setting"
 msgstr "Opțiuni pentru Lumina de noapte"
 
 #: plugins/night-light-quick-setting/night-light-quick-setting.desktop.in.in:7
 msgid "Toggle night light on/off"
-msgstr "Lumina de noapte pornită/oprită"
+msgstr "Lumina de noapte Pornită/Oprită"
 
 #: plugins/ticket-box/ticket-box.desktop.in.in:4
 #: plugins/ticket-box/ticket-box.ui:14
@@ -163,7 +179,7 @@ msgstr[0] "%s se va deconecta automat în %d secundă."
 msgstr[1] "%s se va deconecta automat în %d secunde."
 msgstr[2] "%s se va deconecta automat în %d de secunde."
 
-#: src/end-session-dialog.c:183 src/ui/power-menu.ui:69
+#: src/end-session-dialog.c:183 src/ui/power-menu.ui:72
 msgid "Power Off"
 msgstr "Oprește"
 
@@ -224,19 +240,19 @@ msgstr "Da"
 msgid "No"
 msgstr "Nu"
 
-#: src/lockscreen.c:172 src/ui/lockscreen.ui:245
+#: src/lockscreen.c:166 src/ui/lockscreen.ui:245
 msgid "Enter Passcode"
 msgstr "Introdu codul de acces"
 
-#: src/lockscreen.c:398
+#: src/lockscreen.c:392
 msgid "Checking…"
 msgstr "Se verifică…"
 
-#: src/screenshot-manager.c:215 src/ui/power-menu.ui:147
+#: src/screenshot-manager.c:221 src/ui/power-menu.ui:192
 msgid "Screenshot"
 msgstr "Captură de ecran"
 
-#: src/screenshot-manager.c:216
+#: src/screenshot-manager.c:222
 msgid "Screenshot copied to clipboard"
 msgstr "Captură de ecran copiată în memorie"
 
@@ -419,11 +435,11 @@ msgstr "Nu a funcționat. Încearcă din nou."
 
 #: src/rotateinfo.c:102
 msgid "Portrait"
-msgstr "Portret"
+msgstr "Vertical"
 
 #: src/rotateinfo.c:105
 msgid "Landscape"
-msgstr "Peisaj"
+msgstr "Orizontal"
 
 #: src/rotateinfo.c:125 src/rotateinfo.c:230
 msgctxt "automatic-screen-rotation-disabled"
@@ -576,11 +592,15 @@ msgstr "C_onectează"
 msgid "Authenticate"
 msgstr "Autentificare"
 
-#: src/ui/power-menu.ui:108
+#: src/ui/power-menu.ui:109
+msgid "Suspend"
+msgstr "Suspendă"
+
+#: src/ui/power-menu.ui:153
 msgid "Lock"
 msgstr "Blochează"
 
-#: src/ui/power-menu.ui:186
+#: src/ui/power-menu.ui:231
 msgid "Emergency"
 msgstr "Urgență"
 
@@ -622,11 +642,11 @@ msgstr "Niciun dispozitiv Wi-Fi"
 
 #: src/ui/wifi-status-page.ui:60
 msgid "Wi-Fi Disabled"
-msgstr "Wi-Fi dezactivat"
+msgstr "Wi-Fi Dezactivat"
 
 #: src/ui/wifi-status-page.ui:97
 msgid "Wi-Fi Hotspot Active"
-msgstr "Punct de acces Wi-Fi activ"
+msgstr "Punct de acces Wi-Fi Activ"
 
 #: src/ui/wifi-status-page.ui:133
 msgid "No Wi-Fi Hotspots Found"
@@ -680,6 +700,18 @@ msgstr "Pornit"
 #: plugins/caffeine-quick-setting/caffeine-quick-setting.c:131
 msgid "Off"
 msgstr "Oprit"
+
+#: plugins/dark-mode-quick-setting/dark-mode-quick-setting.c:35
+msgid "Default style"
+msgstr "Aspect prestabilit"
+
+#: plugins/dark-mode-quick-setting/dark-mode-quick-setting.c:36
+msgid "Dark mode"
+msgstr "Aspect întunecos"
+
+#: plugins/dark-mode-quick-setting/dark-mode-quick-setting.c:37
+msgid "Light mode"
+msgstr "Aspect luminos"
 
 #: plugins/emergency-info/emergency-info.ui:39
 #: plugins/emergency-info/prefs/emergency-info-prefs.ui:70
@@ -788,6 +820,14 @@ msgstr "Nu există lansatoare configurate"
 #: plugins/launcher-box/launcher-box.ui:32
 msgid "Launchers"
 msgstr "Lansatoare"
+
+#: plugins/mobile-data-quick-setting/mobile-data-quick-setting.c:66
+msgid "Mobile Data On"
+msgstr "Date mobile Activate"
+
+#: plugins/mobile-data-quick-setting/mobile-data-quick-setting.c:66
+msgid "Mobile Data Off"
+msgstr "Date mobile Dezactivate"
 
 #: plugins/night-light-quick-setting/night-light-quick-setting.c:64
 msgid "Night Light On"

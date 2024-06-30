@@ -14,10 +14,6 @@ option('man',
        type: 'boolean', value : false,
        description : 'generate man pages (requires rst2man)')
 
-option('systemd',
-       type: 'boolean', value: true,
-       description: 'Whether to generate systemd user units')
-
 option('compositor',
        type: 'string', value: '/usr/bin/phoc',
        description: 'Path to the Phoc compositor for use in the launcher script')
@@ -46,3 +42,8 @@ option('quick-setting-plugins',
 option('introspection',
        type: 'boolean', value: false,
        description: 'Build gobject-introspection support')
+
+# Install files needed to generate some bindings (e.g. Rust).
+option('bindings-lib',
+       type: 'boolean', value: false,
+       description: 'Whether to install the headers and shared library to generate bindings.')

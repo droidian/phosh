@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: phosh\n"
 "Report-Msgid-Bugs-To: https://gitlab.gnome.org/World/Phosh/phosh/issues\n"
-"POT-Creation-Date: 2024-05-01 10:02+0000\n"
-"PO-Revision-Date: 2024-05-01 22:03+0200\n"
+"POT-Creation-Date: 2024-05-29 07:26+0000\n"
+"PO-Revision-Date: 2024-05-29 20:50+0200\n"
 "Last-Translator: Marc Riera <marcriera@softcatala.org>\n"
 "Language-Team: Catalan\n"
 "Language: ca\n"
@@ -69,6 +69,14 @@ msgstr ""
 "Afegeix llançadors a la pantalla bloquejada. <b>Aquest connector és "
 "experimental.</b>"
 
+#: plugins/mobile-data-quick-setting/mobile-data-quick-setting.desktop.in.in:5
+msgid "Mobile Data Quick Setting"
+msgstr "Configuració ràpida de dades mòbils"
+
+#: plugins/mobile-data-quick-setting/mobile-data-quick-setting.desktop.in.in:7
+msgid "Toggle mobile data on/off"
+msgstr "Commuta l'ús de dades mòbils"
+
 #: plugins/night-light-quick-setting/night-light-quick-setting.desktop.in.in:5
 msgid "Night Light Quick Setting"
 msgstr "Configuració ràpida de la llum nocturna"
@@ -96,15 +104,23 @@ msgstr "Propers esdeveniments"
 msgid "Show upcoming calendar events"
 msgstr "Mostra els propers esdeveniments del calendari"
 
-#: src/app-grid-button.c:533 src/app-grid-button.c:590
+#: src/app-grid-button.c:153
+msgid "Add to Folder"
+msgstr "Afegeix a la carpeta"
+
+#: src/app-grid-button.c:177
+msgid "Create new folder"
+msgstr "Crea una carpeta nova"
+
+#: src/app-grid-button.c:692 src/app-grid-button.c:749
 msgid "Application"
 msgstr "Aplicació"
 
-#: src/app-grid.c:256
+#: src/app-grid.c:263
 msgid "Show All Apps"
 msgstr "Mostra totes les aplicacions"
 
-#: src/app-grid.c:259
+#: src/app-grid.c:266
 msgid "Show Only Mobile Friendly Apps"
 msgstr "Mostra només les aplicacions compatibles amb mòbils"
 
@@ -212,11 +228,11 @@ msgstr "Sí"
 msgid "No"
 msgstr "No"
 
-#: src/lockscreen.c:172 src/ui/lockscreen.ui:245
+#: src/lockscreen.c:166 src/ui/lockscreen.ui:245
 msgid "Enter Passcode"
 msgstr "Introduïu la contrasenya"
 
-#: src/lockscreen.c:398
+#: src/lockscreen.c:392
 msgid "Checking…"
 msgstr "S'està comprovant…"
 
@@ -463,6 +479,10 @@ msgstr "Afegeix als _preferits"
 msgid "View _Details"
 msgstr "Veieu els _detalls"
 
+#: src/ui/app-grid-button.ui:41
+msgid "_Remove from Folder"
+msgstr "Suprimeix de la carpeta"
+
 #: src/ui/app-grid.ui:24
 msgid "Search apps…"
 msgstr "Cerca aplicacions…"
@@ -623,7 +643,7 @@ msgstr "VPN"
 
 #. Translators: This is a time format for a date in
 #. long format
-#: src/wall-clock.c:218
+#: src/wall-clock.c:222
 msgid "%A, %B %-e"
 msgstr "%A, %-e %B"
 
@@ -765,6 +785,14 @@ msgstr "No hi ha cap llançador configurat"
 #: plugins/launcher-box/launcher-box.ui:32
 msgid "Launchers"
 msgstr "Llançadors"
+
+#: plugins/mobile-data-quick-setting/mobile-data-quick-setting.c:66
+msgid "Mobile Data On"
+msgstr "Dades mòbils activades"
+
+#: plugins/mobile-data-quick-setting/mobile-data-quick-setting.c:66
+msgid "Mobile Data Off"
+msgstr "Dades mòbils desactivades"
 
 #: plugins/night-light-quick-setting/night-light-quick-setting.c:64
 msgid "Night Light On"

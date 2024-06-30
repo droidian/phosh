@@ -1,11 +1,15 @@
 project('phosh', 'c',
-          version: '0.39.0',
+          version: '0.40.0',
           license: 'GPL-3.0-or-later',
     meson_version: '>= 1.0.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
 )
 
 app_id = 'sm.puri.Phosh'
+lib_inc_subdir = 'libphosh-0'
+ver_parts = meson.project_version().split('.')
+soversion = '@0@_@1@'.format(ver_parts[0], ver_parts[1])
+
 prefix = get_option('prefix')
 bindir = join_paths(prefix, get_option('bindir'))
 datadir = join_paths(prefix, get_option('datadir'))
@@ -22,7 +26,10 @@ plugins_dir = join_paths(prefix, libdir, 'phosh', 'plugins')
 plugin_prefs_dir = join_paths(prefix, libdir, 'phosh', 'plugins', 'prefs')
 servicedir = join_paths(datadir, 'dbus-1', 'services')
 schemasdir = datadir / 'glib-2.0/schemas'
+lib_inc_dir = prefix / get_option('includedir') / lib_inc_subdir
+
 enable_introspection = get_option('introspection') or get_option('gtk_doc')
+bindings_lib = get_option('bindings-lib')
 
 if prefix != '/usr'
   sysconfdir = join_paths(prefix, get_option('sysconfdir'))
@@ -230,6 +237,8 @@ config_h.set('PHOSH_HAVE_POLKIT_AGENT_LISTENER_CLEANUP', have_polkit_agent_liste
 configure_file(
   output: 'phosh-config.h',
   configuration: config_h,
+  install: bindings_lib,
+  install_dir: lib_inc_dir,
 )
 
 subdir('data')
@@ -252,6 +261,7 @@ summary({
     'Lockscreen Plugins': get_option('lockscreen-plugins'),
     'Quick Setting Plugins': get_option('quick-setting-plugins'),
     'Animation slowdown': get_option('animation-slowdown'),
+    'Bindings Library': bindings_lib,
   },
   bool_yn: true,
   section: 'Build',
@@ -267,7 +277,6 @@ summary({
 
 summary({
     'Compositor:': get_option('compositor'),
-    'Systemd for session': get_option('systemd'),
   },
   bool_yn: true,
   section: 'Runtime',
