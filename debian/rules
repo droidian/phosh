@@ -16,6 +16,9 @@ else
   CONFIGURE_OPTS+=-Dtests=false
 endif
 
+# Droidian specific
+CONFIGURE_OPTS+=--force-fallback-for=gvc
+
 %:
 	dh $@
 
