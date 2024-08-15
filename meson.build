@@ -1,5 +1,5 @@
 project('phosh', 'c',
-          version: '0.40.0',
+          version: '0.41.0',
           license: 'GPL-3.0-or-later',
     meson_version: '>= 1.0.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
@@ -46,6 +46,7 @@ add_project_arguments([
   '-DGLIB_VERSION_MAX_REQUIRED=@0@'.format(glib_ver_str),
   '-DG_LOG_USE_STRUCTURED',
   '-DGMOBILE_USE_UNSTABLE_API',
+  '-DLIBFEEDBACK_USE_UNSTABLE_API',
 ], language: 'c')
 
 root_inc = include_directories('.')
@@ -129,6 +130,7 @@ gcr_dep = dependency('gcr-3', version: '>= 3.7.5')
 glib_dep = dependency('glib-2.0', version: glib_ver_cmp)
 gio_dep = dependency('gio-2.0', version: glib_ver_cmp)
 gio_unix_dep =  dependency('gio-unix-2.0', version: glib_ver_cmp)
+gnome_bluetooth_dep = dependency ('gnome-bluetooth-3.0', version: '>= 46.0')
 gmobile_dep = dependency('gmobile',
   version: '>= 0.1.0',
   fallback: ['gmobile', 'gmobile_dep'],
@@ -153,7 +155,7 @@ libcall_ui = subproject('libcall-ui',
     'install-i18n=@0@'.format(get_option('callui-i18n')),
   ])
 libfeedback_dep = dependency('libfeedback-0.0',
-  version: '>= 0.2.0',
+  version: '>= 0.4.0',
   fallback: ['libfeedback', 'libfeedback_dep'],
   default_options: ['introspection=disabled', 'daemon=false', 'gtk_doc=false']
   )
