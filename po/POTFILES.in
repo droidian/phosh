@@ -22,7 +22,9 @@ src/auth.c
 src/background.c
 src/background-manager.c
 src/batteryinfo.c
+src/bt-device-row.c
 src/bt-info.c
+src/bt-status-page.c
 src/call-notification.c
 src/docked-info.c
 src/emergency-menu.c
@@ -73,6 +75,7 @@ src/ui/app-auth-prompt.ui
 src/ui/app-grid-button.ui
 src/ui/app-grid.ui
 src/ui/audio-settings.ui
+src/ui/bt-status-page.ui
 src/ui/emergency-menu.ui
 src/ui/emergency-contact-row.ui
 src/ui/end-session-dialog.ui
@@ -98,6 +101,7 @@ src/wall-clock.c
 src/widget-box.c
 src/wifi-info.c
 src/wifi-manager.c
+src/wifi-status-page.c
 src/wwan-info.c
 plugins/caffeine-quick-setting/caffeine-quick-setting.c
 plugins/dark-mode-quick-setting/dark-mode-quick-setting.c
@@ -116,3 +120,4 @@ plugins/ticket-box/prefs/ticket-box-prefs.ui
 plugins/upcoming-events/event-list.c
 plugins/upcoming-events/event-list.ui
 plugins/upcoming-events/upcoming-event.c
+plugins/wifi-hotspot-quick-setting/wifi-hotspot-quick-setting.c
