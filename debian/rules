@@ -23,6 +23,9 @@ else
   CONFIGURE_OPTS+=-Dbindings-lib=false
 endif
 
+# Droidian specific
+CONFIGURE_OPTS+=--force-fallback-for=gvc
+
 %:
 	dh $@
 
