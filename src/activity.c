@@ -699,7 +699,7 @@ phosh_activity_set_thumbnail (PhoshActivity *self, PhoshThumbnail *thumbnail)
       data, CAIRO_FORMAT_ARGB32, width, height, stride);
   priv->thumbnail = thumbnail;
 
-  gtk_style_context_remove_class (gtk_widget_get_style_context (GTK_WIDGET (self)), "phosh-empty");
+  phosh_util_toggle_style_class (GTK_WIDGET (self), "phosh-empty", FALSE);
 
   /* Make sure the close button is over the thumbnail */
   w = gtk_widget_get_allocated_width (GTK_WIDGET (self));
