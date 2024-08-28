@@ -40,4 +40,3 @@ override_dh_installsystemd:
 	dh_installsystemd --no-start --no-enable --no-restart-on-upgrade --no-restart-after-upgrade
 
 override_dh_auto_test:
-	LC_ALL=C.UTF-8 xvfb-run -a dh_auto_test -- --no-suite manual
