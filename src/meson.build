@@ -7,7 +7,7 @@ subdir('gtk-list-models')
 
 phosh_enums_header_subdir = 'phosh'
 
-install_headers('phosh-settings-enums.h', subdir : phosh_enums_header_subdir)
+install_headers(schema_enum_headers, subdir : phosh_enums_header_subdir)
 
 pkgconfig.generate(
   requires : gsettings_desktop_schemas_dep,
@@ -411,6 +411,7 @@ phosh_deps = [
   libnm_dep,
   libpolkit_agent_dep,
   libsystemd_dep,
+  mm_glib_dep,
   network_agent_dep,
   upower_glib_dep,
   wayland_client_dep,
@@ -478,6 +479,7 @@ if enable_introspection
                         libphosh_tool_sources,
                         libphosh_glib_generated_sources,
                         libphosh_glib_generated_headers,
+                        phosh_enum_headers,
                       ]
 
   phosh_gir_extra_args = [
