@@ -22,11 +22,23 @@
 struct _PhoshMobileDataQuickSetting {
   PhoshQuickSetting  parent;
 
-  GSettings         *settings;
   PhoshStatusIcon   *info;
 };
 
 G_DEFINE_TYPE (PhoshMobileDataQuickSetting, phosh_mobile_data_quick_setting, PHOSH_TYPE_QUICK_SETTING);
+
+
+static void
+toggle_sensitive_cb (PhoshMobileDataQuickSetting *self)
+{
+  PhoshWWan *wwan = phosh_shell_get_wwan (phosh_shell_get_default ());
+  gboolean has_data, enabled;
+
+  has_data = phosh_wwan_has_data (wwan);
+  enabled = phosh_wwan_is_enabled (wwan);
+
+  gtk_widget_set_sensitive (GTK_WIDGET (self), has_data && enabled);
+}
 
 
 static void
@@ -71,23 +83,9 @@ transform_to_label (GBinding     *binding,
 
 
 static void
-phosh_lockscreen_finalize (GObject *object)
-{
-  PhoshMobileDataQuickSetting *self = PHOSH_MOBILE_DATA_QUICK_SETTING (object);
-
-  g_clear_object (&self->settings);
-
-  G_OBJECT_CLASS (phosh_mobile_data_quick_setting_parent_class)->finalize (object);
-}
-
-
-static void
 phosh_mobile_data_quick_setting_class_init (PhoshMobileDataQuickSettingClass *klass)
 {
-  GObjectClass *object_class = (GObjectClass *)klass;
   GtkWidgetClass *widget_class = GTK_WIDGET_CLASS (klass);
-
-  object_class->finalize = phosh_lockscreen_finalize;
 
   gtk_widget_class_set_template_from_resource (widget_class,
                                                "/mobi/phosh/plugins/mobile-data-quick-setting/qs.ui");
@@ -106,9 +104,6 @@ phosh_mobile_data_quick_setting_init (PhoshMobileDataQuickSetting *self)
   gtk_widget_init_template (GTK_WIDGET (self));
 
   wwan = phosh_shell_get_wwan (phosh_shell_get_default ());
-  g_object_bind_property (wwan, "has-data",
-                          self, "sensitive",
-                          G_BINDING_DEFAULT | G_BINDING_SYNC_CREATE);
 
   g_object_bind_property (wwan, "data-enabled",
                           self, "active",
@@ -125,4 +120,16 @@ phosh_mobile_data_quick_setting_init (PhoshMobileDataQuickSetting *self)
                                G_BINDING_DEFAULT | G_BINDING_SYNC_CREATE,
                                transform_to_label,
                                NULL, NULL, NULL);
+
+  g_signal_connect_object (wwan,
+                           "notify::enabled",
+                           G_CALLBACK (toggle_sensitive_cb),
+                           self,
+                           G_CONNECT_SWAPPED);
+
+  g_signal_connect_object (wwan,
+                           "notify::has-data",
+                           G_CALLBACK (toggle_sensitive_cb),
+                           self,
+                           G_CONNECT_SWAPPED);
 }

@@ -8,10 +8,10 @@ msgid ""
 msgstr ""
 "Project-Id-Version: phosh\n"
 "Report-Msgid-Bugs-To: https://gitlab.gnome.org/World/Phosh/phosh/issues\n"
-"POT-Creation-Date: 2024-06-06 13:01+0000\n"
-"PO-Revision-Date: 2024-06-06 22:51+0300\n"
+"POT-Creation-Date: 2024-09-09 09:28+0000\n"
+"PO-Revision-Date: 2024-09-09 17:57+0300\n"
 "Last-Translator: Yuri Chornoivan <yurchor@ukr.net>\n"
-"Language-Team: Ukrainian\n"
+"Language-Team: Ukrainian <trans-uk@lists.fedoraproject.org>\n"
 "Language: uk\n"
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
@@ -132,14 +132,28 @@ msgstr "Показати усі програми"
 msgid "Show Only Mobile Friendly Apps"
 msgstr "Показати лише програми для мобільних"
 
-#: src/bt-info.c:92
+#. Translators: a battery level in percent
+#: src/bt-device-row.c:72
+#, c-format
+msgid "Battery %.0f%%"
+msgstr "Акумулятор %.0f%%"
+
+#: src/bt-info.c:95 src/ui/bt-status-page.ui:6
+msgid "Bluetooth"
+msgstr "Bluetooth"
+
+#: src/bt-info.c:123
 msgctxt "bluetooth:enabled"
 msgid "On"
 msgstr "❙"
 
-#: src/bt-info.c:94
-msgid "Bluetooth"
-msgstr "Bluetooth"
+#: src/bt-status-page.c:86
+msgid "No connectable Bluetooth Devices found"
+msgstr "Не знайдено придатних до з'єднання пристроїв Bluetooth"
+
+#: src/bt-status-page.c:90
+msgid "Bluetooth disabled"
+msgstr "Bluetooth вимкнено"
 
 #: src/call-notification.c:63
 msgid "Unknown caller"
@@ -239,11 +253,12 @@ msgstr "Так"
 msgid "No"
 msgstr "Ні"
 
-#: src/lockscreen.c:166 src/ui/lockscreen.ui:245
+#. give visual feedback on error
+#: src/lockscreen.c:273 src/ui/lockscreen.ui:246
 msgid "Enter Passcode"
 msgstr "Уведіть пароль"
 
-#: src/lockscreen.c:392
+#: src/lockscreen.c:918
 msgid "Checking…"
 msgstr "Звіряю…"
 
@@ -256,12 +271,12 @@ msgid "Screenshot copied to clipboard"
 msgstr "Знімок вікна скопійовано до буфера"
 
 #. Translators: Used when the title of a song is unknown
-#: src/media-player.c:324 src/ui/media-player.ui:161
+#: src/media-player.c:446 src/ui/media-player.ui:213
 msgid "Unknown Title"
 msgstr "Невідома назва"
 
 #. Translators: Used when the artist of a song is unknown
-#: src/media-player.c:332 src/ui/media-player.ui:148
+#: src/media-player.c:454 src/ui/media-player.ui:201
 msgid "Unknown Artist"
 msgstr "Невідомий виконавець"
 
@@ -303,7 +318,7 @@ msgstr "Введіть пароль до мережі Wi-Fi «%s»"
 msgid "Open"
 msgstr "Відкрити"
 
-#: src/notifications/notification.c:405 src/notifications/notification.c:678
+#: src/notifications/notification.c:404 src/notifications/notification.c:677
 msgid "Notification"
 msgstr "Сповіщення"
 
@@ -418,7 +433,7 @@ msgstr[0] "Майже %dр."
 msgstr[1] "Майже %dр."
 msgstr[2] "Майже %dр."
 
-#: src/polkit-auth-agent.c:227
+#: src/polkit-auth-agent.c:271
 msgid "Authentication dialog was dismissed by the user"
 msgstr "Користувач перервав діалог автентифікації"
 
@@ -463,11 +478,11 @@ msgstr "Не вдалося запустити «%s»"
 msgid "Phone Shell Volume Control"
 msgstr "Керування гучністю оболонки телефону"
 
-#: src/system-prompt.c:365
+#: src/system-prompt.c:376
 msgid "Passwords do not match."
 msgstr "Паролі не збігаються."
 
-#: src/system-prompt.c:372
+#: src/system-prompt.c:383
 msgid "Password cannot be blank"
 msgstr "Пароль не може бути порожнім"
 
@@ -517,6 +532,14 @@ msgstr "Пристрої отримання"
 msgid "Sound Settings"
 msgstr "Параметри звуку"
 
+#: src/ui/bt-status-page.ui:32
+msgid "Enable Bluetooth"
+msgstr "Увімкнути Bluetooth"
+
+#: src/ui/bt-status-page.ui:53
+msgid "Bluetooth Settings"
+msgstr "Параметри Bluetooth"
+
 #: src/ui/emergency-menu.ui:26
 msgid "Close the emergency call dialog"
 msgstr "Закрити вікно екстреного виклику"
@@ -562,15 +585,15 @@ msgstr "Домен:"
 msgid "Co_nnect"
 msgstr "З'єд_натися"
 
-#: src/ui/lockscreen.ui:36 src/ui/lockscreen.ui:334
+#: src/ui/lockscreen.ui:37 src/ui/lockscreen.ui:335
 msgid "Back"
 msgstr "Назад"
 
-#: src/ui/lockscreen.ui:97
+#: src/ui/lockscreen.ui:98
 msgid "Slide up to unlock"
 msgstr "Протягніть угору, щоб розблокувати"
 
-#: src/ui/lockscreen.ui:297
+#: src/ui/lockscreen.ui:298
 msgid "Unlock"
 msgstr "Розблокувати"
 
@@ -607,11 +630,15 @@ msgstr "Екстрений виклик"
 msgid "Run Command"
 msgstr "Виконати команду"
 
-#: src/ui/settings.ui:327
+#: src/ui/settings.ui:329
 msgid "No notifications"
 msgstr "Немає сповіщень"
 
-#: src/ui/settings.ui:367
+#: src/ui/settings.ui:360
+msgid "Notifications"
+msgstr "Сповіщення"
+
+#: src/ui/settings.ui:369
 msgid "Clear all"
 msgstr "Очистити все"
 
@@ -635,27 +662,11 @@ msgstr "_Призупинити…"
 msgid "_Log Out…"
 msgstr "Ви_йти…"
 
-#: src/ui/wifi-status-page.ui:32
-msgid "No Wi-Fi Device Found"
-msgstr "Не знайдено жодного пристрою Wi-Fi"
+#: src/ui/wifi-status-page.ui:6 src/wifi-info.c:90
+msgid "Wi-Fi"
+msgstr "Wi-Fi"
 
-#: src/ui/wifi-status-page.ui:60
-msgid "Wi-Fi Disabled"
-msgstr "Wi-Fi вимкнено"
-
-#: src/ui/wifi-status-page.ui:97
-msgid "Wi-Fi Hotspot Active"
-msgstr "Активна точка доступу Wi-Fi"
-
-#: src/ui/wifi-status-page.ui:133
-msgid "No Wi-Fi Hotspots Found"
-msgstr "Не знайдено точок доступу Wi-Fi"
-
-#: src/ui/wifi-status-page.ui:144
-msgid "Scan"
-msgstr "Сканувати"
-
-#: src/ui/wifi-status-page.ui:176
+#: src/ui/wifi-status-page.ui:68
 msgid "Wi-Fi Settings"
 msgstr "Параметри Wi-Fi"
 
@@ -665,7 +676,7 @@ msgstr "VPN"
 
 #. Translators: This is a time format for a date in
 #. long format
-#: src/wall-clock.c:222
+#: src/wall-clock.c:239
 msgid "%A, %B %-e"
 msgstr "%A, %-d %B"
 
@@ -678,9 +689,33 @@ msgstr "Додаток не знайдено"
 msgid "The plugin '%s' could not be loaded."
 msgstr "Не вдалося завантажити додаток «%s»."
 
-#: src/wifi-info.c:90
-msgid "Wi-Fi"
-msgstr "Wi-Fi"
+#: src/wifi-status-page.c:51
+msgid "No Wi-Fi Device Found"
+msgstr "Не знайдено жодного пристрою Wi-Fi"
+
+#: src/wifi-status-page.c:55
+msgid "Wi-Fi Disabled"
+msgstr "Wi-Fi вимкнено"
+
+#: src/wifi-status-page.c:56
+msgid "Enable Wi-Fi"
+msgstr "Увімкнути Wi-Fi"
+
+#: src/wifi-status-page.c:59
+msgid "Wi-Fi Hotspot Active"
+msgstr "Активна точка доступу Wi-Fi"
+
+#: src/wifi-status-page.c:60
+msgid "Turn Off"
+msgstr "Вимкнути"
+
+#: src/wifi-status-page.c:63
+msgid "No Wi-Fi Hotspots"
+msgstr "Немає точок доступу Wi-Fi"
+
+#: src/wifi-status-page.c:64
+msgid "Scan"
+msgstr "Сканувати"
 
 #. Translators: Refers to the cellular wireless network
 #: src/wwan-info.c:210
@@ -882,11 +917,13 @@ msgstr "Завтра"
 
 #: plugins/upcoming-events/event-list.c:150
 #, c-format
-msgid "In %d day"
-msgid_plural "In %d days"
-msgstr[0] "За %d день"
-msgstr[1] "За %d дні"
-msgstr[2] "За %d днів"
+#| msgid "In %d day"
+#| msgid_plural "In %d days"
+msgid "In %u day"
+msgid_plural "In %u days"
+msgstr[0] "За %u день"
+msgstr[1] "За %u дні"
+msgstr[2] "За %u днів"
 
 #: plugins/upcoming-events/event-list.ui:26
 msgid "No events"
@@ -916,6 +953,32 @@ msgstr "Завершується"
 #: plugins/upcoming-events/upcoming-event.c:400
 msgid "Untitled event"
 msgstr "Подія без назви"
+
+#: plugins/upcoming-events/prefs/upcoming-events-prefs.ui:6
+#| msgid "Upcoming Events"
+msgid "Upcoming Events Preferences"
+msgstr "Параметри майбутніх подій"
+
+#: plugins/upcoming-events/prefs/upcoming-events-prefs.ui:13
+#: plugins/upcoming-events/prefs/upcoming-events-prefs.ui:20
+msgid "Days"
+msgstr "Дні"
+
+#: plugins/upcoming-events/prefs/upcoming-events-prefs.ui:16
+msgid "Date Range"
+msgstr "Діапазон дат"
+
+#: plugins/upcoming-events/prefs/upcoming-events-prefs.ui:17
+msgid "Number of days to show events for"
+msgstr "Кількість днів, для якої буде показано події"
+
+#: plugins/wifi-hotspot-quick-setting/wifi-hotspot-quick-setting.c:78
+msgid "Hotspot On"
+msgstr "Точку доступу увімкнено"
+
+#: plugins/wifi-hotspot-quick-setting/wifi-hotspot-quick-setting.c:80
+msgid "Hotspot Off"
+msgstr "Точку доступу вимкнено"
 
 #~ msgid "_Power Off"
 #~ msgstr "Ви_мкнути"

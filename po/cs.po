@@ -6,8 +6,8 @@ msgid ""
 msgstr ""
 "Project-Id-Version: phosh\n"
 "Report-Msgid-Bugs-To: https://gitlab.gnome.org/World/Phosh/phosh/issues\n"
-"POT-Creation-Date: 2024-06-06 13:01+0000\n"
-"PO-Revision-Date: 2024-06-07 22:48+0200\n"
+"POT-Creation-Date: 2024-09-09 09:28+0000\n"
+"PO-Revision-Date: 2024-09-10 14:12+0200\n"
 "Last-Translator: Daniel Rusek <mail@asciiwolf.com>\n"
 "Language-Team: Czech <gnome-cs-list@gnome.org>\n"
 "Language: cs\n"
@@ -132,14 +132,28 @@ msgstr "Zobrazit všechny aplikace"
 msgid "Show Only Mobile Friendly Apps"
 msgstr "Zobrazit pouze optimalizované aplikace"
 
-#: src/bt-info.c:92
+#. Translators: a battery level in percent
+#: src/bt-device-row.c:72
+#, c-format
+msgid "Battery %.0f%%"
+msgstr "Baterie %.0f %%"
+
+#: src/bt-info.c:95 src/ui/bt-status-page.ui:6
+msgid "Bluetooth"
+msgstr "Bluetooth"
+
+#: src/bt-info.c:123
 msgctxt "bluetooth:enabled"
 msgid "On"
 msgstr "Zapnout"
 
-#: src/bt-info.c:94
-msgid "Bluetooth"
-msgstr "Bluetooth"
+#: src/bt-status-page.c:86
+msgid "No connectable Bluetooth Devices found"
+msgstr "Nebyla nalezena žádná připojitelná zařízení Bluetooth"
+
+#: src/bt-status-page.c:90
+msgid "Bluetooth disabled"
+msgstr "Bluetooth zakázáno"
 
 #: src/call-notification.c:63
 msgid "Unknown caller"
@@ -239,11 +253,12 @@ msgstr "Ano"
 msgid "No"
 msgstr "Ne"
 
-#: src/lockscreen.c:166 src/ui/lockscreen.ui:245
+#. give visual feedback on error
+#: src/lockscreen.c:273 src/ui/lockscreen.ui:246
 msgid "Enter Passcode"
 msgstr "Zadejte heslo"
 
-#: src/lockscreen.c:392
+#: src/lockscreen.c:918
 msgid "Checking…"
 msgstr "Kontroluje se…"
 
@@ -256,12 +271,12 @@ msgid "Screenshot copied to clipboard"
 msgstr "Snímek obrazovky byl zkopírován do schránky"
 
 #. Translators: Used when the title of a song is unknown
-#: src/media-player.c:324 src/ui/media-player.ui:161
+#: src/media-player.c:446 src/ui/media-player.ui:213
 msgid "Unknown Title"
 msgstr "Neznámý název"
 
 #. Translators: Used when the artist of a song is unknown
-#: src/media-player.c:332 src/ui/media-player.ui:148
+#: src/media-player.c:454 src/ui/media-player.ui:201
 msgid "Unknown Artist"
 msgstr "Neznámý umělec"
 
@@ -303,7 +318,7 @@ msgstr "Vložte heslo sítě Wi-Fi „%s“"
 msgid "Open"
 msgstr "Otevřít"
 
-#: src/notifications/notification.c:405 src/notifications/notification.c:678
+#: src/notifications/notification.c:404 src/notifications/notification.c:677
 msgid "Notification"
 msgstr "Upozornění"
 
@@ -418,7 +433,7 @@ msgstr[0] "Téměř %d rok"
 msgstr[1] "Téměř %d roky"
 msgstr[2] "Téměř %d let"
 
-#: src/polkit-auth-agent.c:227
+#: src/polkit-auth-agent.c:271
 msgid "Authentication dialog was dismissed by the user"
 msgstr "Dialog ověření byl uživatelem zrušen"
 
@@ -463,11 +478,11 @@ msgstr "Spuštění „%s“ selhalo"
 msgid "Phone Shell Volume Control"
 msgstr "Ovládání hlasitosti shellu telefonu"
 
-#: src/system-prompt.c:365
+#: src/system-prompt.c:376
 msgid "Passwords do not match."
 msgstr "Hesla nesouhlasí."
 
-#: src/system-prompt.c:372
+#: src/system-prompt.c:383
 msgid "Password cannot be blank"
 msgstr "Heslo nemůže být prázdné"
 
@@ -517,6 +532,14 @@ msgstr "Vstupní zařízení"
 msgid "Sound Settings"
 msgstr "Nastavení zvuku"
 
+#: src/ui/bt-status-page.ui:32
+msgid "Enable Bluetooth"
+msgstr "Povolit Bluetooth"
+
+#: src/ui/bt-status-page.ui:53
+msgid "Bluetooth Settings"
+msgstr "Nastavení Bluetooth"
+
 #: src/ui/emergency-menu.ui:26
 msgid "Close the emergency call dialog"
 msgstr "Zavřít dialog tísňového volání"
@@ -562,15 +585,15 @@ msgstr "Doména:"
 msgid "Co_nnect"
 msgstr "_Připojit"
 
-#: src/ui/lockscreen.ui:36 src/ui/lockscreen.ui:334
+#: src/ui/lockscreen.ui:37 src/ui/lockscreen.ui:335
 msgid "Back"
 msgstr "Zpět"
 
-#: src/ui/lockscreen.ui:97
+#: src/ui/lockscreen.ui:98
 msgid "Slide up to unlock"
 msgstr "Táhnutím nahoru odemknete"
 
-#: src/ui/lockscreen.ui:297
+#: src/ui/lockscreen.ui:298
 msgid "Unlock"
 msgstr "Odemknout"
 
@@ -607,11 +630,15 @@ msgstr "Stav nouze"
 msgid "Run Command"
 msgstr "Spustit příkaz"
 
-#: src/ui/settings.ui:327
+#: src/ui/settings.ui:329
 msgid "No notifications"
 msgstr "Žádná upozornění"
 
-#: src/ui/settings.ui:367
+#: src/ui/settings.ui:360
+msgid "Notifications"
+msgstr "Upozornění"
+
+#: src/ui/settings.ui:369
 msgid "Clear all"
 msgstr "Vymazat vše"
 
@@ -635,27 +662,11 @@ msgstr "U_spat…"
 msgid "_Log Out…"
 msgstr "Odh_lásit se…"
 
-#: src/ui/wifi-status-page.ui:32
-msgid "No Wi-Fi Device Found"
-msgstr "Nebylo nalezeno žádné zařízení Wi-Fi"
+#: src/ui/wifi-status-page.ui:6 src/wifi-info.c:90
+msgid "Wi-Fi"
+msgstr "Wi-Fi"
 
-#: src/ui/wifi-status-page.ui:60
-msgid "Wi-Fi Disabled"
-msgstr "Wi-Fi zakázáno"
-
-#: src/ui/wifi-status-page.ui:97
-msgid "Wi-Fi Hotspot Active"
-msgstr "Přístupový bod Wi-Fi je aktivní"
-
-#: src/ui/wifi-status-page.ui:133
-msgid "No Wi-Fi Hotspots Found"
-msgstr "Nebyly nalezeny žádné přístupové body Wi-Fi"
-
-#: src/ui/wifi-status-page.ui:144
-msgid "Scan"
-msgstr "Skenovat"
-
-#: src/ui/wifi-status-page.ui:176
+#: src/ui/wifi-status-page.ui:68
 msgid "Wi-Fi Settings"
 msgstr "Nastavení WiFi"
 
@@ -665,9 +676,9 @@ msgstr "VPN"
 
 #. Translators: This is a time format for a date in
 #. long format
-#: src/wall-clock.c:222
+#: src/wall-clock.c:239
 msgid "%A, %B %-e"
-msgstr "%A, %B %-e"
+msgstr "%A, %-e. %B"
 
 #: src/widget-box.c:54
 msgid "Plugin not found"
@@ -678,9 +689,33 @@ msgstr "Zásuvný modul nebyl nalezen"
 msgid "The plugin '%s' could not be loaded."
 msgstr "Zásuvný modul „%s“ nelze načíst."
 
-#: src/wifi-info.c:90
-msgid "Wi-Fi"
-msgstr "Wi-Fi"
+#: src/wifi-status-page.c:51
+msgid "No Wi-Fi Device Found"
+msgstr "Nebylo nalezeno žádné zařízení Wi-Fi"
+
+#: src/wifi-status-page.c:55
+msgid "Wi-Fi Disabled"
+msgstr "Wi-Fi zakázáno"
+
+#: src/wifi-status-page.c:56
+msgid "Enable Wi-Fi"
+msgstr "Povolit Wi-Fi"
+
+#: src/wifi-status-page.c:59
+msgid "Wi-Fi Hotspot Active"
+msgstr "Přístupový bod Wi-Fi je aktivní"
+
+#: src/wifi-status-page.c:60
+msgid "Turn Off"
+msgstr "Vypnout"
+
+#: src/wifi-status-page.c:63
+msgid "No Wi-Fi Hotspots"
+msgstr "Žádné přístupové body Wi-Fi"
+
+#: src/wifi-status-page.c:64
+msgid "Scan"
+msgstr "Skenovat"
 
 #. Translators: Refers to the cellular wireless network
 #: src/wwan-info.c:210
@@ -882,11 +917,11 @@ msgstr "Zítra"
 
 #: plugins/upcoming-events/event-list.c:150
 #, c-format
-msgid "In %d day"
-msgid_plural "In %d days"
-msgstr[0] "Za %d den"
-msgstr[1] "Za %d dny"
-msgstr[2] "Za %d dní"
+msgid "In %u day"
+msgid_plural "In %u days"
+msgstr[0] "Za %u den"
+msgstr[1] "Za %u dny"
+msgstr[2] "Za %u dní"
 
 #: plugins/upcoming-events/event-list.ui:26
 msgid "No events"
@@ -916,6 +951,31 @@ msgstr "Končí"
 #: plugins/upcoming-events/upcoming-event.c:400
 msgid "Untitled event"
 msgstr "Bezejmenná událost"
+
+#: plugins/upcoming-events/prefs/upcoming-events-prefs.ui:6
+msgid "Upcoming Events Preferences"
+msgstr "Předvolby nadcházejících událostí"
+
+#: plugins/upcoming-events/prefs/upcoming-events-prefs.ui:13
+#: plugins/upcoming-events/prefs/upcoming-events-prefs.ui:20
+msgid "Days"
+msgstr "Dny"
+
+#: plugins/upcoming-events/prefs/upcoming-events-prefs.ui:16
+msgid "Date Range"
+msgstr "Časové období"
+
+#: plugins/upcoming-events/prefs/upcoming-events-prefs.ui:17
+msgid "Number of days to show events for"
+msgstr "Počet dní pro zobrazení událostí"
+
+#: plugins/wifi-hotspot-quick-setting/wifi-hotspot-quick-setting.c:78
+msgid "Hotspot On"
+msgstr "Přístupový bod zapnut"
+
+#: plugins/wifi-hotspot-quick-setting/wifi-hotspot-quick-setting.c:80
+msgid "Hotspot Off"
+msgstr "Přístupový bod vypnut"
 
 #~ msgctxt "timestamp-suffix-seconds"
 #~ msgid "s"
@@ -984,4 +1044,4 @@ msgstr "Bezejmenná událost"
 #~ msgstr "Odhlásit"
 
 #~ msgid "%d.%m.%y"
-#~ msgstr "%d.%měs.%r"
+#~ msgstr "%d. %m. %y"

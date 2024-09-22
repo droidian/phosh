@@ -24,7 +24,7 @@
             <child>
               <object class="GtkToggleButton" id="toggle_audio_details">
                 <property name="visible">True</property>
-                <property name="margin-left">6</property>
+                <property name="margin-start">6</property>
                 <style>
                   <class name="phosh-gear-button"/>
                 </style>
@@ -85,7 +85,7 @@
                     <child>
                       <object class="PhoshFadingLabel">
                         <property name="visible">True</property>
-                        <property name="margin-left">6</property>
+                        <property name="margin-start">6</property>
                         <property name="valign">end</property>
                         <property name="label" translatable="yes">Output Devices</property>
                         <style>
@@ -110,7 +110,7 @@
                     <child>
                       <object class="PhoshFadingLabel">
                         <property name="visible">True</property>
-                        <property name="margin-left">6</property>
+                        <property name="margin-start">6</property>
                         <property name="label" translatable="yes">Input Devices</property>
                         <style>
                           <class name="heading"/>

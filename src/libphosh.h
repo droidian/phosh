@@ -126,6 +126,7 @@ G_BEGIN_DECLS
 #include "session-manager.h"
 #include "shell.h"
 #include "status-page.h"
+#include "status-page-placeholder.h"
 #include "system-prompt.h"
 #include "system-prompter.h"
 #include "thumbnail.h"
@@ -164,7 +165,6 @@ G_BEGIN_DECLS
 #include "dbus/phosh-osk0-dbus.h"
 #include "dbus/phosh-screen-saver-dbus.h"
 #include "dbus/phosh-screenshot-dbus.h"
-#include "dbus/phosh-wwan-mm-dbus.h"
 #include "dbus/phosh-wwan-ofono-dbus.h"
 #include "dbus/portal-dbus.h"
 

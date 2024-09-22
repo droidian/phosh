@@ -17,7 +17,7 @@
 #include "background-cache.h"
 
 #include <handy.h>
-#include <call-ui.h>
+#include <libfeedback.h>
 
 #include <glib/gi18n.h>
 #include <glib-unix.h>
@@ -129,7 +129,7 @@ main (int argc, char *argv[])
   bindtextdomain (GETTEXT_PACKAGE, LOCALEDIR);
   gtk_init (&argc, &argv);
   hdy_init ();
-  cui_init (TRUE);
+  lfb_init (PHOSH_APP_ID, NULL);
 
   g_unix_signal_add (SIGTERM, on_shutdown_signal, NULL);
   g_unix_signal_add (SIGINT, on_shutdown_signal, NULL);
@@ -147,8 +147,6 @@ main (int argc, char *argv[])
     phosh_shell_lock (shell);
 
   gtk_main ();
-
-  cui_uninit ();
 
   phosh_log_set_log_domains (NULL);
   return EXIT_SUCCESS;

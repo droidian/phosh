@@ -1,5 +1,5 @@
 project('phosh', 'c',
-          version: '0.40.0',
+          version: '0.42.rc1',
           license: 'GPL-3.0-or-later',
     meson_version: '>= 1.0.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
@@ -46,6 +46,7 @@ add_project_arguments([
   '-DGLIB_VERSION_MAX_REQUIRED=@0@'.format(glib_ver_str),
   '-DG_LOG_USE_STRUCTURED',
   '-DGMOBILE_USE_UNSTABLE_API',
+  '-DLIBFEEDBACK_USE_UNSTABLE_API',
 ], language: 'c')
 
 root_inc = include_directories('.')
@@ -129,6 +130,7 @@ gcr_dep = dependency('gcr-3', version: '>= 3.7.5')
 glib_dep = dependency('glib-2.0', version: glib_ver_cmp)
 gio_dep = dependency('gio-2.0', version: glib_ver_cmp)
 gio_unix_dep =  dependency('gio-unix-2.0', version: glib_ver_cmp)
+gnome_bluetooth_dep = dependency ('gnome-bluetooth-3.0', version: '>= 46.0')
 gmobile_dep = dependency('gmobile',
   version: '>= 0.1.0',
   fallback: ['gmobile', 'gmobile_dep'],
@@ -153,9 +155,13 @@ libcall_ui = subproject('libcall-ui',
     'install-i18n=@0@'.format(get_option('callui-i18n')),
   ])
 libfeedback_dep = dependency('libfeedback-0.0',
-  version: '>= 0.2.0',
+  version: '>= 0.4.0',
   fallback: ['libfeedback', 'libfeedback_dep'],
-  default_options: ['introspection=disabled', 'daemon=false', 'gtk_doc=false']
+  default_options: [
+     'introspection=disabled',
+     'daemon=false',
+     'gtk_doc=false',
+     'tests=false'],
   )
 libgvc = subproject('gvc',
   default_options: [
@@ -176,9 +182,10 @@ libhandy_dep = dependency('libhandy-1',
   )
 libcall_ui_dep = libcall_ui.get_variable('libcall_ui_dep')
 libnm_dep = dependency('libnm', version: '>= 1.14')
-libpolkit_agent_dep = dependency('polkit-agent-1', version: '>= 0.105')
+libpolkit_agent_dep = dependency('polkit-agent-1', version: '>= 0.122')
 libsoup_dep = dependency('libsoup-3.0', version: '>= 3.0')
 libsystemd_dep = dependency('libsystemd', 'libelogind', version: '>= 241')
+mm_glib_dep = dependency('mm-glib')
 network_agent_dep = dependency('libsecret-1')
 upower_glib_dep = dependency('upower-glib', version: '>=0.99.1')
 wayland_client_dep = dependency('wayland-client', version: '>=1.14')
@@ -192,30 +199,6 @@ struct rfkill_event_ext e;
 have_rfkill_event_ext = cc.compiles(code, name : 'Have rfkill_event_ext')
 have_memfd_create = cc.has_function('memfd_create', prefix: '''#define _GNU_SOURCE
                                                                #include <sys/mman.h>''')
-
-have_polkit_subject_cleanup = cc.compiles('''
-#define POLKIT_AGENT_I_KNOW_API_IS_SUBJECT_TO_CHANGE
-#include <polkitagent/polkitagent.h>
-
-int main()
-{
-   g_autoptr (PolkitSubject) subj = NULL;
-}''',
-  name : 'Have PolkitSubject cleanup',
-  dependencies: libpolkit_agent_dep)
-
-
-have_polkit_agent_listener_cleanup = cc.compiles('''
-#define POLKIT_AGENT_I_KNOW_API_IS_SUBJECT_TO_CHANGE
-#include <polkitagent/polkitagent.h>
-
-int main()
-{
-   g_autoptr (PolkitAgentListener) listener = NULL;
-}''',
-  name : 'Have PolkitAgentListener cleanup',
-  dependencies: libpolkit_agent_dep)
-
 
 config_h = configuration_data()
 config_h.set_quoted('GETTEXT_PACKAGE', 'phosh')
@@ -232,8 +215,6 @@ config_h.set_quoted('PHOSH_DATA_DIR', datadir,
              description: 'Systemwide data dir')
 config_h.set_quoted('PHOSH_APP_ID', app_id)
 config_h.set_quoted('PHOSH_DBUS_PATH_PREFIX', '/' + app_id.replace('.', '/'))
-config_h.set('PHOSH_HAVE_POLKIT_SUBJECT_CLEANUP', have_polkit_subject_cleanup)
-config_h.set('PHOSH_HAVE_POLKIT_AGENT_LISTENER_CLEANUP', have_polkit_agent_listener_cleanup)
 
 configure_file(
   output: 'phosh-config.h',

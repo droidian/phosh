@@ -4,6 +4,7 @@ Slug: gettingstarted
 # Getting started with Phosh development
 
 ## Overview
+
 Phosh is a graphical shell for
 [Wayland](https://wayland.freedesktop.org/). It's target at mobile
 devices with small screens like Purism's Librem 5 running adaptive
@@ -12,7 +13,7 @@ devices with small screens like Purism's Librem 5 running adaptive
 It's purpose is to provide a graphical user interface to launch
 applications, display status information (time, battery status, ...),
 to provide a lock screen and to make often used functionality quickly
-accessible.  It's also meant to provide a proper interface when either
+accessible. It's also meant to provide a proper interface when either
 connecting a keyboard and monitor to a phone or (but to a lesser
 extend) when running on a laptop.
 
@@ -40,6 +41,7 @@ The above combination of software is also often (a bit imprecisely)
 named Phosh. For a high level overview see [Phosh Overview](https://honk.sigxcpu.org/con/phosh_overview.html).
 
 ### Wayland protocols
+
 Since Phoc (in contrast to some other solutions) aims to be a minimal
 Wayland compositor that manages rendering, handle physical and virtual
 input and display devices but not much more it needs to provide some
@@ -63,7 +65,7 @@ These are the most prominent ones use by Phosh:
 
 Besides those Phosh uses a number of "regular" Wayland client
 protocols like `xdg_output`, `wl_output` or `wl_seat` (see
-#PhoshWayland for the full list).
+`PhoshWayland` for the full list).
 
 ### Session startup
 
@@ -75,9 +77,11 @@ phoc (compositor) -> gnome-session -> phosh (and other session components)
 ```
 
 ## Hints
+
 This is a unsorted list of hints when developing for Phosh
 
 ### Running phosh
+
 For development purposes you can run phosh nested on your desktop. See
 [this blog post](https://phosh.mobi/posts/phosh-dev-part-0/) for
 details.
@@ -97,12 +101,12 @@ to simulate a mobile data connection.
 
 ### Manager Objects
 
-Phosh uses several manager objects e.g. #PhoshBackgroundManager,
-#PhoshMonitorManager, #PhoshLockscreenManager to keep track
+Phosh uses several manager objects e.g. `PhoshBackgroundManager`,
+`PhoshMonitorManager`, `PhoshLockscreenManager` to keep track
 of certain objects (monitors, lock screens, backgrounds) and to
-trigger events on those when needed.  They're usually created and
+trigger events on those when needed. They're usually created and
 disposed by #PhoshShell. Some of them like
-#PhoshWayland are singletons so you can access them from basically
+`PhoshWayland` are singletons so you can access them from basically
 anywhere in the codebase.
 
 ### Status Information Widgets
@@ -123,7 +127,7 @@ For details see [class@ScreenSaverManager].
 ### Debugging
 
 Since phosh is a GTK application you can use
-[GtkInspector](https://wiki.gnome.org/Projects/GTK/Inspector).
+[GtkInspector](https://developer.gnome.org/documentation/tools/inspector.html).
 You can use the `GTK_INSPECTOR_DISPLAY` environment variable to use a different
 Wayland display for the inspector window. This can be useful to have the
 inspector windows outside of a nested Wayland session.
