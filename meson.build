@@ -1,14 +1,14 @@
 project('phosh', 'c',
-          version: '0.42.rc1',
+          version: '0.42.0',
           license: 'GPL-3.0-or-later',
     meson_version: '>= 1.0.0',
   default_options: [ 'warning_level=1', 'buildtype=debugoptimized', 'c_std=gnu11' ],
 )
 
 app_id = 'sm.puri.Phosh'
-lib_inc_subdir = 'libphosh-0'
 ver_parts = meson.project_version().split('.')
-soversion = '@0@_@1@'.format(ver_parts[0], ver_parts[1])
+libversion = '@0@.@1@'.format(ver_parts[0], ver_parts[1])
+lib_inc_subdir = 'libphosh-@0@'.format(libversion)
 
 prefix = get_option('prefix')
 bindir = join_paths(prefix, get_option('bindir'))
