@@ -19,6 +19,12 @@ endif
 # Droidian specific
 CONFIGURE_OPTS+=--force-fallback-for=gvc
 
+ifeq ($(filter pkg.phosh.nolib,$(DEB_BUILD_OPTIONS)),)
+  CONFIGURE_OPTS+=-Dbindings-lib=true
+else
+  CONFIGURE_OPTS+=-Dbindings-lib=false
+endif
+
 %:
 	dh $@
 
