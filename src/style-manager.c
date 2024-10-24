@@ -64,7 +64,7 @@ on_accent_color_changed (PhoshStyleManager *self)
   }
 
   /* Only enable accent colors on Adwaita */
-  if (g_strcmp0 (self->theme_name, "Adwaita") != 0)
+  if ((g_strcmp0 (self->theme_name, "Adwaita") != 0) && (g_strcmp0 (self->theme_name, "adw-gtk3") != 0))
     return;
 
   switch (g_settings_get_enum (self->interface_settings, IF_KEY_ACCENT_COLOR)) {
