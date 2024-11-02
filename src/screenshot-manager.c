@@ -372,7 +372,6 @@ submit_screenshot (PhoshScreenshotManager *self)
     /* how much this monitor gets enlarged based on its scale, >= 1.0 */
     double zoom;
     g_autoptr (GdkPixbuf) transformed = NULL;
-    g_autoptr (GdkPixbuf) flipped = NULL;
 
     if (frame->monitor == NULL)
       continue;
@@ -388,10 +387,8 @@ submit_screenshot (PhoshScreenshotManager *self)
              scale);
 
     /* TODO: handle flips */
-    /* Droidian hack: needs to be handled elsewhere */
-    flipped = gdk_pixbuf_flip (frame->pixbuf, TRUE);
-    transformed = gdk_pixbuf_rotate_simple (flipped,
-                                            (get_angle (frame->monitor->transform) + 180) % 360);
+    transformed = gdk_pixbuf_rotate_simple (frame->pixbuf,
+                                            get_angle (frame->monitor->transform));
     gdk_pixbuf_composite (transformed,
                           pixbuf,
                           (frame->monitor->logical.x - box.x) * screenshot_scale,
