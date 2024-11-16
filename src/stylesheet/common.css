@@ -73,41 +73,56 @@ phosh-top-panel .phosh-topbar-date {
   background: @phosh_borders_color;
 }
 
-#phosh_quick_settings flowboxchild > button {
+phosh-quick-setting {
   border-radius: 99px;
   border: 0;
-  padding: 8px 12px;
   font-weight: bold;
   font-size: 10pt;
-  /* use selection color to make quick settings items blue  */
   background-color: @phosh_button_bg_color;
 }
 
-#phosh_quick_settings flowboxchild > button:hover {
+phosh-quick-setting button:hover {
   background-color: shade(@phosh_button_bg_color, 1.14);
 }
 
-#phosh_quick_settings flowboxchild > button.phosh-qs-active:hover {
+phosh-quick-setting:active button:hover {
   background-color: shade(@theme_selected_bg_color, 1.14);
-  color:  @theme_selected_fg_color;
+  color: @theme_selected_fg_color;
 }
 
-#phosh_quick_settings flowboxchild > button.phosh-qs-active {
+phosh-quick-setting:active {
   background-color: @theme_selected_bg_color;
-  color:  @theme_selected_fg_color;
+  color: @theme_selected_fg_color;
 }
 
-#phosh_quick_settings flowboxchild > button:disabled {
+phosh-quick-setting:disabled {
   opacity: 0.5;
   background-color: @phosh_button_bg_color;
 }
 
-#phosh_quick_settings flowboxchild:focus > button:not(:disabled) {
-  box-shadow: inset 0 0 0 2px alpha(@theme_selected_fg_color, .2);
+phosh-quick-setting button:focus {
+  box-shadow: inset 0 0 0 2px @theme_selected_bg_color;
   outline: none;
 }
 
-#phosh_quick_settings flowboxchild {
+phosh-quick-setting:active button:focus {
+  box-shadow: inset 0 0 0 2px alpha(@theme_fg_color,.3);
+  outline: none;
+}
+
+phosh-quick-setting button:first-child {
+  border-radius: 99px 0px 0px 99px;
+}
+
+phosh-quick-setting button:only-child {
+  border-radius: 99px;
+}
+
+phosh-quick-setting button:last-child:not(:only-child) {
+  border-radius: 0px 99px 99px 0px;
+}
+
+phosh-quick-setting button {
   background: none;
   background-color: transparent;
   border: none;
@@ -115,10 +130,7 @@ phosh-top-panel .phosh-topbar-date {
   -gtk-icon-shadow: none;
   padding: 0;
   text-shadow: none;
-}
-
-#phosh_quick_settings flowboxchild:focus {
-  outline: none;
+  padding: 8px 12px;
 }
 
 /*
@@ -466,6 +478,20 @@ phosh-lockscreen .phosh-notification-tray {
   transition: 200ms ease;
 }
 
+phosh-lockscreen phosh-media-player {
+  margin: 0 8px;
+}
+
+phosh-lockscreen .phosh-notification-tray separator {
+  background: @phosh_borders_color;
+}
+
+phosh-lockscreen .phosh-notification-tray row:focus {
+  border-radius: 14px;
+  box-shadow: inset 0 0 0 2px @theme_selected_bg_color;
+  outline: none;
+}
+
 /* Widget box */
 phosh-lockscreen phosh-widget-box {
   margin-left: 6px;
@@ -690,12 +716,10 @@ phosh-notification-banner .notification-container {
 }
 
 .phosh-notification-tray list row .notification-container {
-  /*border: 2px solid @phosh_bg_color;*/
   margin-top: 12px;
 }
 
 .phosh-notification-tray list row:focus .notification-container {
-  /*border-color: @theme_selected_bg_color;*/
   box-shadow: inset 0 0 0 2px @theme_selected_bg_color;
   outline-style: none;
 }
@@ -845,15 +869,6 @@ phosh-media-player > box > button {
   border-radius: 9999px;
   margin: 2px;
   padding: 8px;
-}
-
-/* The Lockscreen */
-phosh-lockscreen phosh-media-player {
-  margin: 0 8px;
-}
-
-phosh-lockscreen .phosh-notification-tray separator {
-  background: @phosh_borders_color;
 }
 
 /*
@@ -1051,7 +1066,7 @@ button.suggested-action:focus {
 
 
 /* FIXME: an override to prevent double highlighting on some buttons */
-.phosh-quick-setting:hover,
+phosh-quick-setting button:focus,
 phosh-app-grid-button button:hover,
 phosh-keypad button:hover,
 phosh-media-player button:hover {
@@ -1071,6 +1086,10 @@ scale trough {
   border-radius: 2px;
   border: none;
   background: alpha(@phosh_fg_color, 0.3);
+  outline-style: solid;
+  outline-width: 1px;
+  outline-color: @theme_selected_bg_color;
+  outline-offset: 2px;
 }
 
 scale trough > highlight {
@@ -1093,4 +1112,38 @@ scale trough slider:hover {
 scale trough slider:active {
   border-color: shade(@phosh_fg_color, 0.9);
   background: shade(@phosh_fg_color, 0.9);
+}
+
+scale highlight {
+  background-color: @theme_selected_bg_color;
+}
+
+/* Switches */
+switch:not(:disabled):checked {
+  background-color: @theme_selected_bg_color;
+}
+
+/* Entries */
+entry:focus {
+  box-shadow: inset 0 0 0 1px @theme_selected_bg_color;
+}
+
+/* Progress bars */
+progressbar progress {
+  background-color: @theme_selected_bg_color;
+}
+
+/* Levelbars */
+levelbar block.filled {
+  background-color: @theme_selected_bg_color;
+  border-color: @theme_selected_bg_color;
+}
+
+levelbar trough {
+  border-width: 0px;
+}
+
+/* Calendar widgets */
+calendar:selected {
+  background-color: @theme_selected_bg_color;
 }
