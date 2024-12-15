@@ -19,6 +19,7 @@ Build-Depends:
  libfribidi-dev,
  libgcr-3-dev,
  libgirepository1.0-dev <!nodoc>,
+ libgmobile-dev,
  libgnome-bluetooth-3.0-dev,
  libglib2.0-dev (>= 2.72.0),
  libgnome-desktop-3-dev,
