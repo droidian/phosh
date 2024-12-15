@@ -65,7 +65,7 @@ Homepage: https://phosh.mobi/
 Rules-Requires-Root: no
 
 Package: phosh
-Architecture: any
+Architecture: arm64
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
@@ -145,7 +145,7 @@ Description: Pure Wayland shell for mobile devices - GSettings tweaks
  This package contains settings to improve behaviour on mobile devices.
 
 Package: phosh-plugins
-Architecture: any
+Architecture: arm64
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
@@ -162,7 +162,7 @@ Description: Pure Wayland shell for mobile devices - Plugins
  This package contains additional plugins.
 
 Package: phosh-dev
-Architecture: any
+Architecture: arm64
 Depends:
  ${misc:Depends},
  ${shlibs:Depends},
@@ -175,7 +175,7 @@ Description: Pure Wayland shell for mobile devices - development files
  This package contains the development files.
 
 Package: libphosh-0.45-dev
-Architecture: any
+Architecture: arm64
 Section: libdevel
 Build-Profiles: <!pkg.phosh.nolib>
 Depends:
@@ -211,7 +211,7 @@ Description: Pure Wayland shell for mobile devices - binding development files
  This package contains the development files for language bindings
 
 Package: libphosh-0.45-0
-Architecture: any
+Architecture: arm64
 Section: libs
 Multi-Arch: same
 Build-Profiles: <!pkg.phosh.nolib>
