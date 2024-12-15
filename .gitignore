@@ -33,3 +33,6 @@ po/messages.mo
 po/missing
 po/notexist
 po/*.pot
+
+# Added by Droidian
+!.circleci/
