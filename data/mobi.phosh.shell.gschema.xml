@@ -32,6 +32,16 @@
     </key>
   </schema>
 
+  <schema id="mobi.phosh.shell.proximity" path="/mobi/phosh/shell/proximity/">
+    <key name="enable-proximity-sensor" type="b">
+      <default>true</default>
+      <summary>Turn off the screen during calls when the phone is near your head</summary>
+      <description>
+        Automatically turn off the screen during phone calls when the device is held close to your ear, using the proximity sensor.
+      </description>
+    </key>
+  </schema>
+
   <!-- Legacy schema -->
 
   <schema id="sm.puri.phosh" path="/sm/puri/phosh/">
