@@ -15,6 +15,8 @@
 #include "sensor-proxy-manager.h"
 #include "util.h"
 
+#include <cui-call.h>
+
 /**
  * PhoshProximity:
  *
@@ -38,10 +40,13 @@ static GParamSpec *props[LAST_PROP];
 typedef struct _PhoshProximity {
   GObject parent;
 
+  gboolean has_proximity;
   gboolean claimed;
   PhoshSensorProxyManager *sensor_proxy_manager;
   PhoshCallsManager *calls_manager;
   PhoshFader *fader;
+
+  GSettings      *settings;
 } PhoshProximity;
 
 G_DEFINE_TYPE (PhoshProximity, phosh_proximity, G_TYPE_OBJECT);
@@ -157,20 +162,26 @@ on_has_proximity_changed (PhoshProximity          *self,
                           GParamSpec              *pspec,
                           PhoshSensorProxyManager *proxy)
 {
-  gboolean has_proximity;
-
-  has_proximity = phosh_dbus_sensor_proxy_get_has_proximity (
+  self->has_proximity = phosh_dbus_sensor_proxy_get_has_proximity (
     PHOSH_DBUS_SENSOR_PROXY (self->sensor_proxy_manager));
 
-  g_debug ("Found %s proximity sensor", has_proximity ? "a" : "no");
+  g_debug ("Found %s proximity sensor", self->has_proximity ? "a" : "no");
 
   /* If the proxy went a way we always unclaim but only claim on ongoing calls: */
-  if (!phosh_calls_manager_get_active_call_handle (self->calls_manager) && has_proximity)
+  if (!phosh_calls_manager_get_active_call_handle (self->calls_manager) && self->has_proximity)
     return;
 
-  phosh_proximity_claim_proximity (self, has_proximity);
+  phosh_proximity_claim_proximity (self, self->has_proximity);
 }
 
+static void
+on_call_state_changed (PhoshProximity *self,
+                       GParamSpec     *pspec,
+                       PhoshCall      *call)
+{
+  if (cui_call_get_state (CUI_CALL (call)) == CUI_CALL_STATE_ACTIVE)
+    phosh_shell_enable_power_save (phosh_shell_get_default (), TRUE);
+}
 
 static void
 on_calls_manager_active_call_changed (PhoshProximity    *self,
@@ -178,12 +189,27 @@ on_calls_manager_active_call_changed (PhoshProximity    *self,
                                       PhoshCallsManager *calls_manager)
 {
   gboolean active;
+  const char *handle;
+  PhoshCall *call;
 
   g_return_if_fail (PHOSH_IS_PROXIMITY (self));
   g_return_if_fail (PHOSH_IS_CALLS_MANAGER (calls_manager));
 
-  active = !!phosh_calls_manager_get_active_call_handle (self->calls_manager);
-  phosh_proximity_claim_proximity (self, active);
+  handle = phosh_calls_manager_get_active_call_handle (self->calls_manager);
+  active = !!handle;
+
+  if (g_settings_get_boolean (self->settings, "enable-proximity-sensor") &&
+      self->has_proximity) {
+    phosh_proximity_claim_proximity (self, active);
+  } else {
+    if (active) {
+      call = phosh_calls_manager_get_call (self->calls_manager, handle);
+      g_signal_connect_swapped (call,
+                                "notify::state",
+                                G_CALLBACK (on_call_state_changed),
+                                self);
+    }
+  }
   /* TODO: if call is over wait until we hit the threshold */
 }
 
@@ -264,6 +290,8 @@ phosh_proximity_constructed (GObject *object)
 {
   PhoshProximity *self = PHOSH_PROXIMITY (object);
 
+  self->settings = g_settings_new (PHOSH_SHELL_PROXIMITY_SCHEMA_ID);
+
   g_signal_connect_swapped (self->calls_manager,
                             "notify::active-call",
                             G_CALLBACK (on_calls_manager_active_call_changed),
@@ -302,6 +330,8 @@ phosh_proximity_dispose (GObject *object)
                                            self);
      g_clear_object (&self->calls_manager);
   }
+
+  g_clear_object (&self->settings);
 
   g_clear_pointer (&self->fader, phosh_cp_widget_destroy);
   G_OBJECT_CLASS (phosh_proximity_parent_class)->dispose (object);
@@ -372,4 +402,10 @@ phosh_proximity_has_fader (PhoshProximity *self)
   g_return_val_if_fail (PHOSH_IS_PROXIMITY (self), FALSE);
 
   return !!self->fader;
+}
+
+gboolean
+phosh_proximity_sensor_enabled (PhoshProximity *self)
+{
+  return self->has_proximity && g_settings_get_boolean (self->settings, "enable-proximity-sensor");
 }
