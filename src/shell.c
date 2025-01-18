@@ -247,14 +247,15 @@ update_top_level_layer (PhoshShell *self)
   PhoshShellPrivate *priv;
   guint32 layer, current;
   gboolean use_top_layer;
-
-  priv = phosh_shell_get_instance_private (self);
+  gboolean proximity_sensor_enabled;
 
   g_return_if_fail (PHOSH_IS_SHELL (self));
   priv = phosh_shell_get_instance_private (self);
 
   if (priv->top_panel == NULL)
     return;
+
+  proximity_sensor_enabled = phosh_proximity_sensor_enabled (priv->proximity);
 
   g_return_if_fail (PHOSH_IS_TOP_PANEL (priv->top_panel));
   state = phosh_shell_get_state (self);
@@ -263,7 +264,9 @@ update_top_level_layer (PhoshShell *self)
      overlay layer since it uses an exclusive zone and hence the fader is
      drawn below that top-panel. This can be dropped once layer-shell allows
      to specify the z-level */
-  use_top_layer = priv->proximity && phosh_proximity_has_fader (priv->proximity);
+  use_top_layer = priv->proximity &&
+                  proximity_sensor_enabled &&
+                  phosh_proximity_has_fader (priv->proximity);
   if (use_top_layer)
     goto set_layer;
 
