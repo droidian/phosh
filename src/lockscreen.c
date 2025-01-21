@@ -754,9 +754,22 @@ static void
 on_show (PhoshLockscreen *self, gpointer userdata)
 {
   PhoshLockscreenPrivate *priv;
+  const char *active;
+
   g_return_if_fail (PHOSH_IS_LOCKSCREEN (self));
+
   priv = phosh_lockscreen_get_instance_private (self);
-  phosh_lockscreen_set_page (self, priv->default_page);
+  active = phosh_calls_manager_get_active_call_handle (priv->calls_manager);
+
+  if (active) {
+    guint duration = hdy_deck_get_transition_duration (priv->deck);
+
+    hdy_deck_set_transition_duration (priv->deck, 0);
+    hdy_deck_set_visible_child (priv->deck, GTK_WIDGET (priv->box_call_display));
+    hdy_deck_set_transition_duration (priv->deck, duration);
+  } else {
+    phosh_lockscreen_set_page (self, priv->default_page);
+  }
 }
 
 
