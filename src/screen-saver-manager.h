@@ -22,5 +22,7 @@ G_DECLARE_FINAL_TYPE (PhoshScreenSaverManager, phosh_screen_saver_manager, PHOSH
                       PhoshDBusScreenSaverSkeleton)
 
 PhoshScreenSaverManager *phosh_screen_saver_manager_new (PhoshLockscreenManager *lockscreen_manager);
+void phosh_screen_saver_manager_suspend_autolock        (PhoshScreenSaverManager *self,
+                                                         gboolean                 suspend);
 
 G_END_DECLS
