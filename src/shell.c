@@ -247,7 +247,6 @@ update_top_level_layer (PhoshShell *self)
   PhoshShellPrivate *priv;
   guint32 layer, current;
   gboolean use_top_layer;
-  gboolean proximity_sensor_enabled;
 
   g_return_if_fail (PHOSH_IS_SHELL (self));
   priv = phosh_shell_get_instance_private (self);
@@ -255,20 +254,8 @@ update_top_level_layer (PhoshShell *self)
   if (priv->top_panel == NULL)
     return;
 
-  proximity_sensor_enabled = phosh_proximity_sensor_enabled (priv->proximity);
-
   g_return_if_fail (PHOSH_IS_TOP_PANEL (priv->top_panel));
   state = phosh_shell_get_state (self);
-
-  /* When the proximity fader is on we want to remove the top-panel from the
-     overlay layer since it uses an exclusive zone and hence the fader is
-     drawn below that top-panel. This can be dropped once layer-shell allows
-     to specify the z-level */
-  use_top_layer = priv->proximity &&
-                  proximity_sensor_enabled &&
-                  phosh_proximity_has_fader (priv->proximity);
-  if (use_top_layer)
-    goto set_layer;
 
   /* We want the top-bar on the lock screen */
   use_top_layer = !phosh_shell_get_locked (self);
@@ -290,9 +277,15 @@ update_top_level_layer (PhoshShell *self)
 
 
 static void
-on_proximity_fader_changed (PhoshShell *self)
+on_proximity_near_changed (PhoshShell *self)
 {
-  update_top_level_layer (self);
+  PhoshShellPrivate *priv;
+  gboolean near;
+
+  priv = phosh_shell_get_instance_private (self);
+
+  near = phosh_proximity_near (priv->proximity);
+  phosh_shell_enable_power_save (phosh_shell_get_default (), near);
 }
 
 
@@ -846,8 +839,8 @@ setup_idle_cb (PhoshShell *self)
                                            priv->calls_manager);
     phosh_monitor_manager_set_sensor_proxy_manager (priv->monitor_manager,
                                                     priv->sensor_proxy_manager);
-    g_signal_connect_swapped (priv->proximity, "notify::fader",
-                              G_CALLBACK (on_proximity_fader_changed), self);
+    g_signal_connect_swapped (priv->proximity, "notify::near",
+                              G_CALLBACK (on_proximity_near_changed), self);
     priv->ambient = phosh_ambient_new (priv->sensor_proxy_manager);
   }
 
