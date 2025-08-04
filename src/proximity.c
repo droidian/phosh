@@ -9,7 +9,6 @@
 #define G_LOG_DOMAIN "phosh-proximity"
 
 #include "phosh-config.h"
-#include "fader.h"
 #include "proximity.h"
 #include "shell-priv.h"
 #include "sensor-proxy-manager.h"
@@ -31,7 +30,7 @@ enum {
   PROP_0,
   PROP_SENSOR_PROXY_MANAGER,
   PROP_CALLS_MANAGER,
-  PROP_FADER,
+  PROP_NEAR,
   LAST_PROP,
 };
 static GParamSpec *props[LAST_PROP];
@@ -44,40 +43,14 @@ typedef struct _PhoshProximity {
   gboolean claimed;
   PhoshSensorProxyManager *sensor_proxy_manager;
   PhoshCallsManager *calls_manager;
-  PhoshFader *fader;
+  gboolean near;
+  guint timeout_id;
 
   GCancellable *cancel;
   GSettings      *settings;
 } PhoshProximity;
 
 G_DEFINE_TYPE (PhoshProximity, phosh_proximity, G_TYPE_OBJECT);
-
-
-static void
-show_fader (PhoshProximity *self, PhoshMonitor *monitor)
-{
-  if (self->fader)
-    return;
-
-  self->fader = g_object_new (PHOSH_TYPE_FADER,
-                              "monitor", monitor,
-                              "style-class", "phosh-fader-proximity-fade",
-                              NULL);
-  gtk_widget_set_visible (GTK_WIDGET (self->fader), TRUE);
-
-  g_object_notify_by_pspec (G_OBJECT (self), props[PROP_FADER]);
-}
-
-
-static void
-hide_fader (PhoshProximity *self)
-{
-  if (self->fader == NULL)
-    return;
-
-  g_clear_pointer (&self->fader, phosh_cp_widget_destroy);
-  g_object_notify_by_pspec (G_OBJECT (self), props[PROP_FADER]);
-}
 
 
 static void
@@ -123,8 +96,8 @@ on_proximity_released (PhoshSensorProxyManager *sensor_proxy_manager,
 
   if (success == FALSE) {
     if (!phosh_async_error_warn (err, "Failed to release proximity sensor")) {
-      /* If not canceled hide fader */
-      hide_fader (self);
+      self->near = FALSE;
+      g_object_notify_by_pspec (G_OBJECT (self), props[PROP_NEAR]);
     }
     return;
   }
@@ -132,7 +105,8 @@ on_proximity_released (PhoshSensorProxyManager *sensor_proxy_manager,
   g_debug ("Released proximity sensor");
   self->claimed = FALSE;
 
-  hide_fader (self);
+  self->near = FALSE;
+  g_object_notify_by_pspec (G_OBJECT (self), props[PROP_NEAR]);
 }
 
 
@@ -214,27 +188,28 @@ on_calls_manager_active_call_changed (PhoshProximity    *self,
   /* TODO: if call is over wait until we hit the threshold */
 }
 
+static gboolean
+notify_near_state (PhoshProximity *self)
+{
+
+  g_object_notify_by_pspec (G_OBJECT (self), props[PROP_NEAR]);
+
+  return FALSE;
+}
 
 static void
 on_proximity_near_changed (PhoshProximity          *self,
                            GParamSpec              *pspec,
                            PhoshSensorProxyManager *sensor)
 {
-  gboolean near;
-  PhoshShell *shell = phosh_shell_get_default ();
-  PhoshMonitor *monitor = phosh_shell_get_builtin_monitor (shell);
-
   if (!self->claimed)
     return;
 
-  near = phosh_dbus_sensor_proxy_get_proximity_near (
+  self->near = phosh_dbus_sensor_proxy_get_proximity_near (
     PHOSH_DBUS_SENSOR_PROXY (self->sensor_proxy_manager));
-
-  g_debug ("Proximity near changed: %d", near);
-  if (near && monitor)
-    show_fader (self, monitor);
-  else
-    hide_fader (self);
+  g_clear_handle_id (&self->timeout_id, g_source_remove);
+  self->timeout_id = g_timeout_add (250, (GSourceFunc) notify_near_state, self);
+  g_debug ("Proximity near changed: %d", self->near);
 }
 
 static void
@@ -253,6 +228,10 @@ phosh_proximity_set_property (GObject *object,
     case PROP_CALLS_MANAGER:
       /* construct only */
       self->calls_manager = g_value_dup_object (value);
+      break;
+    case PROP_NEAR:
+      /* construct only */
+      self->near = g_value_get_boolean (value);
       break;
     default:
       G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -276,8 +255,8 @@ phosh_proximity_get_property (GObject *object,
   case PROP_CALLS_MANAGER:
     g_value_set_object (value, self->calls_manager);
     break;
-  case PROP_FADER:
-    g_value_set_boolean (value, !!self->fader);
+  case PROP_NEAR:
+    g_value_set_boolean (value, self->near);
     break;
   default:
     G_OBJECT_WARN_INVALID_PROPERTY_ID (object, property_id, pspec);
@@ -291,6 +270,7 @@ phosh_proximity_constructed (GObject *object)
 {
   PhoshProximity *self = PHOSH_PROXIMITY (object);
 
+  self->near = FALSE;
   self->settings = g_settings_new (PHOSH_SHELL_PROXIMITY_SCHEMA_ID);
 
   g_signal_connect_swapped (self->calls_manager,
@@ -335,9 +315,10 @@ phosh_proximity_dispose (GObject *object)
      g_clear_object (&self->calls_manager);
   }
 
+  g_clear_handle_id (&self->timeout_id, g_source_remove);
+
   g_clear_object (&self->settings);
 
-  g_clear_pointer (&self->fader, phosh_cp_widget_destroy);
   G_OBJECT_CLASS (phosh_proximity_parent_class)->dispose (object);
 }
 
@@ -371,14 +352,10 @@ phosh_proximity_class_init (PhoshProximityClass *klass)
                          PHOSH_TYPE_CALLS_MANAGER,
                          G_PARAM_CONSTRUCT_ONLY | G_PARAM_READWRITE | G_PARAM_STATIC_STRINGS);
 
-  /* PhoshProximity:fader:
-   *
-   * %TRUE if the fader to prevent accidental user input is currently active
-   */
-  props[PROP_FADER] =
-    g_param_spec_boolean ("fader", "", "",
+  props[PROP_NEAR] =
+    g_param_spec_boolean ("near", "", "",
                           FALSE,
-                          G_PARAM_READABLE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
+                          G_PARAM_READWRITE | G_PARAM_EXPLICIT_NOTIFY | G_PARAM_STATIC_STRINGS);
 
   g_object_class_install_properties (object_class, LAST_PROP, props);
 
@@ -399,15 +376,16 @@ phosh_proximity_new (PhoshSensorProxyManager *sensor_proxy_manager,
   return g_object_new (PHOSH_TYPE_PROXIMITY,
                        "sensor-proxy-manager", sensor_proxy_manager,
                        "calls-manager", calls_manager,
+                       "near", FALSE,
                        NULL);
 }
 
 gboolean
-phosh_proximity_has_fader (PhoshProximity *self)
+phosh_proximity_near (PhoshProximity *self)
 {
   g_return_val_if_fail (PHOSH_IS_PROXIMITY (self), FALSE);
 
-  return !!self->fader;
+  return self->near;
 }
 
 gboolean
