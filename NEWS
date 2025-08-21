@@ -1,3 +1,69 @@
+phosh 0.49.0
+------------
+Released August 2025
+* upcoming-events: Allow to exclude days without events
+* Use phrosh portal when available
+* overview: Don't let search entry take the whole width
+* Improve media widget's cover art thumbnails
+* Improve keypad and search bar style
+* Cellbroadcast related fixes
+* Add searchd
+* Issues fixed:
+    * https://gitlab.gnome.org/World/Phosh/phosh/-/issues/1242
+    * https://gitlab.gnome.org/World/Phosh/phosh/-/issues/1245    
+    * https://gitlab.gnome.org/World/Phosh/phosh/-/issues/290
+    * https://gitlab.gnome.org/World/Phosh/phosh/-/issues/703
+* Contributors:
+    * Achill Gilgenast
+    * Arun Mani J
+    * Evangelos Ribeiro Tzaras
+    * Gotam Gorabh
+    * Guido Günther
+    * hustlerone
+    * Rudra Pratap Singh
+    * Zander Brown
+* UI translations:
+    * Anders Jonsson (sv)
+    * Antonio Marin (ro)
+    * Artur S0 (ru)
+    * Danial Behzadi (fa)
+    * Ekaterine Papava (ka)
+    * Juliano de Souza Camargo (pt_BR)
+    * Martin (sl)
+    * Yuri Chornoivan (uk)
+    * twlvnn kraftwerk (bg)    
+
+phosh 0.48.0
+------------
+Released June 2025
+* New lockscreen plugin that allows to interact with all currently
+  running media players that use the MPRIS protocol.
+* Build VAPI files so one can also write plugins in vala (See
+  https://gitlab.gnome.org/guidog/phosh-vala-plugins) for an example
+* Enable Cell Broadcast dialogs by default. Mobile Settings has the
+  needed UI bits now.
+* Update list of adaptive apps
+* Various bug fixes and GTK4 preps
+* Issues fixed:
+    * https://gitlab.gnome.org/World/Phosh/phosh/-/issues/1234
+    * https://gitlab.gnome.org/World/Phosh/phosh/-/issues/1237
+    * https://gitlab.gnome.org/World/Phosh/phosh/-/issues/1154
+* Contributors:
+    * Arun Mani J
+    * fossdd
+    * Guido Günther
+* UI translations:
+    * Anders Jonsson (sv)
+    * Antonio Marin (ro)
+    * Artur S0 (ru)
+    * Daniel Rusek (cs)
+    * Ekaterine Papava (ka)
+    * Emin Tufan Çetin (tr)
+    * Martin (sl)
+    * Yaron Shahrabani (he)
+    * Yuri Chornoivan (uk)
+    * Álvaro Burns (pt_BR)
+
 phosh 0.47.0
 ------------
 Released May 2025

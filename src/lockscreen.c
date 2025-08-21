@@ -22,7 +22,7 @@
 #include "shell-priv.h"
 #include "util.h"
 #include "widget-box.h"
-#include "wall-clock.h"
+#include "wall-clock-priv.h"
 
 #include "gmobile.h"
 
@@ -289,10 +289,12 @@ focus_pin_entry (PhoshLockscreen *self, gboolean enable_osk)
   gtk_entry_grab_focus_without_selecting (GTK_ENTRY (priv->entry_pin));
 }
 
-/* callback of async auth task */
+
 static void
-auth_async_cb (PhoshAuth *auth, GAsyncResult *result, PhoshLockscreen *self)
+on_auth_authenticate_ready (GObject *source_object, GAsyncResult *result, gpointer user_data)
 {
+  PhoshAuth *auth = PHOSH_AUTH (source_object);
+  g_autoptr (PhoshLockscreen) self = PHOSH_LOCKSCREEN (user_data);
   PhoshLockscreenPrivate *priv;
   GError *error = NULL;
   gboolean authenticated;
@@ -314,7 +316,6 @@ auth_async_cb (PhoshAuth *auth, GAsyncResult *result, PhoshLockscreen *self)
   }
   g_clear_object (&priv->auth);
   priv->last_input = g_get_monotonic_time ();
-  g_object_unref (self);
 }
 
 
@@ -469,29 +470,12 @@ wall_clock_notify_cb (PhoshLockscreen *self,
   PhoshLockscreenPrivate *priv = phosh_lockscreen_get_instance_private (self);
   const char *time;
   g_autofree char *date = NULL;
-  g_auto (GStrv) parts = NULL;
+  g_autofree char *stripped = NULL;
 
   time = phosh_wall_clock_get_clock (wall_clock, TRUE);
 
-  /* Strip " {A,P}M" from 12h time format to look less cramped */
-  if (g_str_has_suffix (time, "AM") || g_str_has_suffix (time, "PM")) {
-    parts = g_strsplit (time, " ", -1);
-
-    if (g_strv_length (parts) == 2) {
-      /* Glib >= 2.74: padding with figure-space */
-      if (g_str_has_prefix (parts[0], "\u2007")) {
-        time = parts[0] + strlen("\u2007");
-      } else {
-        time = parts[0];
-      }
-    /* Glib < 2.74: padding with ascii space */
-    } else if (g_strv_length (parts) == 3) {
-      time = parts[1];
-    } else {
-      g_warning ("Can't parse time format: %s", time);
-    }
-  }
-  gtk_label_set_text (GTK_LABEL (priv->lbl_clock), time);
+  stripped = phosh_wall_clock_strip_am_pm (wall_clock, time);
+  gtk_label_set_text (GTK_LABEL (priv->lbl_clock), stripped);
 
   date = phosh_wall_clock_local_date (wall_clock);
   gtk_label_set_label (GTK_LABEL (priv->lbl_date), date);
@@ -647,9 +631,7 @@ on_deck_transition_running_changed (PhoshLockscreen *self)
   if (hdy_deck_get_transition_running (priv->deck))
     return;
 
-  if (hdy_deck_get_visible_child (priv->deck) != priv->carousel)
-    return;
-
+  /* Otherwise we might see stale information */
   /* See https://gitlab.gnome.org/World/Phosh/phosh/-/issues/922 */
   gtk_widget_queue_draw (priv->lbl_clock);
 }
@@ -992,7 +974,7 @@ on_unlock_submit (PhoshLockscreen *self)
   phosh_auth_authenticate_async (priv->auth,
                                  input,
                                  NULL,
-                                 (GAsyncReadyCallback)auth_async_cb,
+                                 on_auth_authenticate_ready,
                                  g_object_ref (self));
 }
 

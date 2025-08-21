@@ -21,8 +21,10 @@
                 <child>
                   <object class="GtkSearchEntry" id="search">
                     <property name="visible">1</property>
+                    <property name="halign">center</property>
                     <property name="hexpand">1</property>
                     <property name="placeholder-text" translatable="yes">Search apps…</property>
+                    <property name="max-width-chars">48</property>
                     <signal name="search-changed" handler="on_search_changed" object="PhoshAppGrid" swapped="no"/>
                     <signal name="preedit-changed" handler="on_search_preedit_changed" object="PhoshAppGrid" swapped="no"/>
                     <signal name="activate" handler="on_search_activated" object="PhoshAppGrid" swapped="no"/>
@@ -42,6 +44,7 @@
               <object class="GtkScrolledWindow" id="scrolled_window">
                 <property name="visible">1</property>
                 <property name="hexpand">1</property>
+                <property name="vexpand">1</property>
                 <child>
                   <object class="GtkBox">
                     <property name="visible">1</property>
@@ -50,6 +53,7 @@
                     <child>
                       <object class="GtkRevealer" id="favs_revealer">
                         <property name="visible">1</property>
+                        <property name="valign">start</property>
                         <property name="reveal-child">1</property>
                         <child>
                           <object class="GtkBox">
@@ -80,9 +84,6 @@
                           </object>
                         </child>
                       </object>
-                      <packing>
-                        <property name="fill">0</property>
-                      </packing>
                     </child>
                     <child>
                       <object class="GtkFlowBox" id="apps">
@@ -99,9 +100,6 @@
                         <property name="column-spacing">6</property>
                         <property name="row-spacing">6</property>
                       </object>
-                      <packing>
-                        <property name="fill">0</property>
-                      </packing>
                     </child>
                     <child>
                       <object class="GtkBox">
@@ -136,18 +134,12 @@
                               </object>
                             </child>
                           </object>
-                          <packing>
-                            <property name="fill">0</property>
-                          </packing>
                         </child>
                       </object>
                     </child>
                   </object>
                 </child>
               </object>
-              <packing>
-                <property name="expand">1</property>
-              </packing>
             </child>
           </object>
           <packing>
@@ -206,6 +198,7 @@
                       <object class="GtkEntry" id="folder_name_entry">
                         <property name="visible" bind-source="folder_name_btn" bind-property="active" bind-flags="default"/>
                         <property name="hexpand">1</property>
+                        <property name="max-width-chars">48</property>
                         <signal name="activate" handler="on_folder_entry_activated" object="PhoshAppGrid" swapped="yes"/>
                         <style>
                           <class name="heading"/>
