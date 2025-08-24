@@ -15,6 +15,7 @@ dbus_inc_dir = lib_inc_dir / 'dbus'
 dbus_client_protos = [
   # DBus-specific
   ['droidian-flashlightd-dbus', 'org.droidian.Flashlightd.xml', 'org.droidian.Flashlightd', false],
+  ['upower-kbdbacklight-dbus', 'org.freedesktop.UPower.KbdBacklight.xml', 'org.freedesktop.UPower', false],
   # Sorted by xml filename:
   ['iio-sensor-proxy-dbus', 'net.hadess.SensorProxy.xml', 'net.hadess', false],
   ['hostname1-dbus', 'org.freedesktop.hostname1.xml', 'org.freedesktop', false],

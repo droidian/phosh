@@ -70,6 +70,22 @@
       <arg name="state" type="uint" enum="shell_state" summary="Status"/>
     </request>
 
+    <event name="switch_event" since="7">
+      <description summary="forward a switch event">
+        Forwards a switch event to the client.
+      </description>
+      <arg name="event" type="uint" summary="the switch event"/>
+      <arg name="state" type="uint" summary="the switch event state"/>
+    </event>
+
+    <request name="get_switch_state" since="7">
+      <description summary="gets the state of the specified switch">
+        Gets the sate of the specified switch, or -1 if it doesn't
+        exist.
+      </description>
+      <arg name="switch_type" type="uint" summary="the switch to search for"/>
+    </request>
+
   </interface>
 
   <interface name="phosh_private_keyboard_event" version="7">
