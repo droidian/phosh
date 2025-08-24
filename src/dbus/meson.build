@@ -21,6 +21,13 @@ dbus_client_protos = [
     false,
     false
   ],
+  [
+    'upower-kbdbacklight-dbus',
+    'org.freedesktop.UPower.KbdBacklight.xml',
+    'org.freedesktop.UPower',
+    false,
+    false
+  ],
   # Sorted by xml filename:
   [
     'iio-sensor-proxy-dbus',
