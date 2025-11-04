@@ -9,6 +9,7 @@ Build-Depends:
  libadwaita-1-dev,
  libappstream-dev,
  libcallaudio-dev,
+ libdroid-dev (>= 0.2.0),
  libevince-dev,
  libgirepository1.0-dev,
  libgmobile-dev,
