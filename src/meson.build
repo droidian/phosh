@@ -481,6 +481,13 @@ phosh_deps = [
   cc.find_library('rt', required: false),
 ]
 
+# Droidian: backlight support via libdroid
+if libdroid_dep.found()
+  phosh_tool_sources += files(['backlight-libdroid.c'])
+  phosh_headers += files(['backlight-libdroid.h'])
+  phosh_deps += [libdroid_dep]
+endif
+
 phosh_inc = include_directories('.')
 phosh_lib_inc = [
   root_inc,

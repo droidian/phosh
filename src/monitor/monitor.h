@@ -11,6 +11,12 @@
 #include "phosh-wayland.h"
 #include "backlight-sysfs.h"
 
+#include "phosh-config.h"
+
+#ifdef PHOSH_HAVE_LIBDROID
+#include "backlight-libdroid.h"
+#endif
+
 #include <gdk/gdk.h>
 #include <glib-object.h>
 #include <glib/gi18n.h>
