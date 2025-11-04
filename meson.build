@@ -243,6 +243,12 @@ config_h.set_quoted(
 config_h.set_quoted('PHOSH_APP_ID', app_id)
 config_h.set_quoted('PHOSH_DBUS_PATH_PREFIX', '/' + app_id.replace('.', '/'))
 
+# Droidian-specific dependency
+libdroid_dep = dependency('libdroid-0', version: '>=0.2.0', required: false)
+if libdroid_dep.found()
+  config_h.set('PHOSH_HAVE_LIBDROID', '1')
+endif
+
 configure_file(
   output: 'phosh-config.h',
   configuration: config_h,

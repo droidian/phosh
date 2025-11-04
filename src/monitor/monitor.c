@@ -88,11 +88,20 @@ output_handle_done (void             *data,
   self->wl_output_done = TRUE;
 
   if (!self->backlight && self->name) {
+#ifdef PHOSH_HAVE_LIBDROID
+    if (phosh_monitor_is_builtin (self)) {
+      /* Try libdroid first */
+      self->backlight = PHOSH_BACKLIGHT (phosh_backlight_libdroid_new (&err));
+      if (self->backlight)
+        goto configured;
+    }
+#endif
     self->backlight = PHOSH_BACKLIGHT (phosh_backlight_sysfs_new (self->name, &err));
     if (!self->backlight)
       g_debug ("Failed to get backlight for %s: %s", self->name, err->message);
   }
 
+configured:
   g_signal_emit (self, signals[SIGNAL_CONFIGURED], 0);
 }
 

@@ -10,6 +10,7 @@ Build-Depends:
  libappstream-dev,
  libcallaudio-dev,
  libevince-gtk3-dev,
+ libdroid-dev (>= 0.2.0),
  libgirepository1.0-dev,
  libgmobile-dev,
  libjson-glib-dev,
