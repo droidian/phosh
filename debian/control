@@ -80,7 +80,7 @@ Depends:
  gsettings-desktop-schemas (>= 49),
  libcap2-bin,
  libqrcodegen1,
- phoc (>= 0.52.0),
+ phoc (>= 0.47.0),
  phosh-common (= ${source:Version}),
 Recommends:
  feedbackd (>= 0.5.0),
